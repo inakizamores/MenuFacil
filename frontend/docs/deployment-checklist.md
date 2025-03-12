@@ -1,83 +1,76 @@
 # MenúFácil Deployment Checklist
 
-Use this checklist to ensure your application is ready for deployment to Vercel.
+This checklist will help you track your progress as you deploy the MenúFácil application to Supabase and Vercel.
 
-## Pre-Deployment Checks
+## Supabase Deployment
 
-- [ ] All environment variables are properly set
-- [ ] Next.js configuration is updated with Supabase storage domain
-- [ ] Application builds successfully locally (`npm run build`)
-- [ ] All dependencies are up to date
-- [ ] No linting errors (`npm run lint`)
-- [ ] Supabase authentication settings are configured for production URLs
-- [ ] Static assets (images, fonts, etc.) are properly handled
-- [ ] API routes are tested and functioning
-- [ ] Responsive design is tested on multiple devices
+### Initial Setup
+- [ ] Create a Supabase account
+- [ ] Create a new Supabase project
+- [ ] Note down Project URL, `anon` public key, and `service_role` key
 
-## Supabase Configuration
+### Database Setup
+- [ ] Apply database migrations using SQL Editor or Supabase CLI
+- [ ] Verify tables are created correctly in Table Editor
 
-- [ ] Supabase project is created and configured
-- [ ] Database schema is applied
-- [ ] Storage buckets are created
-- [ ] Bucket policies are properly set
-- [ ] Authentication settings are updated for production
-  - [ ] Site URL points to your production domain
-  - [ ] Redirect URLs are properly configured
-  - [ ] Email templates are customized (optional)
+### Storage Setup
+- [ ] Create `avatars` bucket
+- [ ] Create `restaurant-images` bucket
+- [ ] Create `menu-images` bucket
+- [ ] Configure appropriate bucket policies
 
-## Environment Variables
+### Authentication Setup
+- [ ] Configure Site URL in Authentication settings
+- [ ] Add redirect URLs for local development and production
+- [ ] Customize email templates (optional)
 
-Ensure the following environment variables are set in Vercel:
+### Edge Functions
+- [ ] Deploy Stripe webhook function
+- [ ] Test webhook function with Stripe CLI
 
-- [ ] `NEXT_PUBLIC_SUPABASE_URL`
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] `NEXT_PUBLIC_APP_URL`
-- [ ] `NEXT_PUBLIC_SUBSCRIPTION_PRICE`
-- [ ] `NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID` (if using Stripe)
-- [ ] `STRIPE_SECRET_KEY` (if using Stripe)
-- [ ] `STRIPE_WEBHOOK_SECRET` (if using Stripe)
-- [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (if using Stripe)
+## Vercel Deployment
 
-## Vercel Project Configuration
+### Project Preparation
+- [ ] Run the preparation script: `node scripts/prepare-for-vercel.js`
+- [ ] Verify all client components have `'use client'` directive
+- [ ] Verify all API routes have `export const dynamic = 'force-dynamic'`
+- [ ] Create `.env.production` file with production values
 
-- [ ] Root directory is set correctly (if using monorepo)
-- [ ] Build command is set to `npm run build`
-- [ ] Output directory is set to `.next`
-- [ ] Framework preset is set to Next.js
-- [ ] Node.js version is set to appropriate version (e.g., 18.x)
-- [ ] Serverless functions region is set appropriately
+### Environment Variables
+- [ ] Set up Supabase environment variables in Vercel
+  - [ ] `NEXT_PUBLIC_SUPABASE_URL`
+  - [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - [ ] `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] Set up Stripe environment variables in Vercel
+  - [ ] `STRIPE_SECRET_KEY`
+  - [ ] `STRIPE_WEBHOOK_SECRET`
+  - [ ] `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- [ ] Set up application environment variables in Vercel
+  - [ ] `NEXT_PUBLIC_APP_URL` (production URL)
+  - [ ] `NEXT_PUBLIC_SUBSCRIPTION_PRICE`
 
-## Post-Deployment Checks
+### Deployment
+- [ ] Deploy to Vercel using Git integration or Vercel CLI
+- [ ] Verify build completes successfully
+- [ ] Test application functionality in production
 
-- [ ] Application loads without errors
-- [ ] Authentication flow works correctly
-- [ ] Images from Supabase storage load properly
-- [ ] Forms work and submit data correctly
-- [ ] API routes return expected responses
-- [ ] Navigation works as expected
-- [ ] Application is responsive on different devices
-- [ ] Error pages (404, 500) are properly configured
+### Post-Deployment
+- [ ] Update Supabase authentication settings with production URL
+- [ ] Test user registration and login
+- [ ] Test restaurant creation and management
+- [ ] Test subscription creation and management
+- [ ] Set up custom domain (optional)
 
-## Performance Considerations
+## Troubleshooting
 
-- [ ] Use Next.js Image component for optimized images
-- [ ] Lazy load components when appropriate
-- [ ] Minimize JavaScript bundle size
-- [ ] Set appropriate cache headers for static assets
-- [ ] Use incremental static regeneration where appropriate
+If you encounter issues during deployment, refer to:
+- [Supabase Deployment Guide](./supabase-deployment-guide.md)
+- [Vercel Deployment Guide](./vercel-deployment-guide-final.md)
 
-## Security Considerations
+## Final Verification
 
-- [ ] No sensitive information is exposed in client-side code
-- [ ] API routes are properly authenticated
-- [ ] Content Security Policy headers are configured
-- [ ] CORS settings are configured correctly
-- [ ] Rate limiting is implemented on sensitive endpoints
-
-## Monitoring Setup
-
-- [ ] Error tracking is configured (e.g., Sentry)
-- [ ] Analytics is set up (e.g., Google Analytics, Vercel Analytics)
-- [ ] Logging is configured for server-side functions
-- [ ] Performance monitoring is enabled 
+- [ ] User authentication works in production
+- [ ] Restaurant creation and management works in production
+- [ ] Menu creation and management works in production
+- [ ] Subscription creation and management works in production
+- [ ] Images upload and display correctly in production 
