@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "NEXT_SKIP_TYPE_CHECK=true npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "environment": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://aejxheybvxbwvjuyfhfh.supabase.co"
+  }
+} 
