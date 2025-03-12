@@ -5,8 +5,8 @@ const nextConfig = {
     domains: [
       'localhost',
       'menufacil.com.mx',
-      // Add your Supabase storage domain here
-      // e.g., 'your-project-id.supabase.co'
+      // Supabase storage domain
+      'aejxheybvxbwvjuyfhfh.supabase.co',
     ],
   },
   // Enable experimental features if needed
