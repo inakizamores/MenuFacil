@@ -28,6 +28,7 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+scripts/.env
 
 # vercel
 .vercel
@@ -42,6 +43,7 @@ next-env.d.ts
 
 # Supabase keys and credentials
 scripts/config.js
+scripts/.supabase_key
 *SUPABASE_*.tmp
 frontend/SUPABASE_*.tmp
 frontend/NEXT_PUBLIC_SUPABASE_*.tmp

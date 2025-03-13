@@ -1,0 +1,23 @@
+name: Create Test Users
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  create-test-users:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: cd scripts && npm install
+        
+      - name: Create test users
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: cd scripts && node create-test-users-with-env.js 

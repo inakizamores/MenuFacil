@@ -1,168 +1,277 @@
 name: Create Test Users
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger with options
     inputs:
       user_type:
+        type: choice
         description: 'Type of users to create'
         required: true
         default: 'standard'
-        type: choice
         options:
-        - standard
-        - custom
+          - standard
+          - restaurant
+          - all
 
 jobs:
   create-users:
     runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+          
       - name: Install dependencies
         run: |
           cd scripts
           npm install @supabase/supabase-js
-      
-      - name: Create standard test users
-        if: ${{ github.event.inputs.user_type == 'standard' }}
+
+      - name: Create users script
         run: |
-          cd scripts
-          node create-test-users-with-env.js
-        env:
-          SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co'
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      
-      - name: Create custom test user
-        if: ${{ github.event.inputs.user_type == 'custom' }}
-        run: |
-          cd scripts
-          # Create an inputs file for the custom user creation
-          cat > custom-user-inputs.json << EOF
-          {
-            "email": "admin@menufacil.com",
-            "password": "SecurePassword123!",
-            "fullName": "System Administrator",
-            "userType": "admin"
-          }
-          EOF
-          
-          # Create a modified version of the script that reads from the JSON file
-          cat > create-custom-user-ci.js << EOF
+          cat > scripts/create-users-workflow.js << 'EOL'
+          // Script to create test users for MenúFácil and output to Markdown
           const fs = require('fs');
+          const path = require('path');
           const { createClient } = require('@supabase/supabase-js');
+
+          // Constants
+          const SUPABASE_URL = 'https://aejxheybvxbwvjuyfhfh.supabase.co';
+          const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const USER_TYPE = process.env.USER_TYPE || 'all';
           
-          async function createCustomUserFromJson() {
-            console.log('MenúFácil - Custom User Creation from JSON');
-            console.log('----------------------------------------');
+          // Output file
+          const outputFile = path.join(__dirname, '../test-users.md');
+          
+          async function createUsers() {
+            console.log(`Creating ${USER_TYPE} test users...`);
+            
+            // Create Supabase client
+            const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+            
+            // Initialize our output
+            let mdOutput = `# MenuFácil Test Users\n\n`;
+            mdOutput += `*Generated on ${new Date().toLocaleString()}*\n\n`;
             
             try {
-              // Get configuration from environment variables
-              const supabaseUrl = process.env.SUPABASE_URL;
-              const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+              // Test connection
+              await supabase.from('profiles').select('count', { count: 'exact' }).limit(1);
+              console.log('✅ Connected to Supabase successfully');
               
-              if (!supabaseServiceKey) {
-                throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is not set');
+              // Standard test users (customer, restaurant, admin)
+              const standardUsers = [
+                {
+                  email: 'test@example.com',
+                  password: 'password123',
+                  full_name: 'Test User',
+                  user_type: 'customer'
+                },
+                {
+                  email: 'restaurant@example.com',
+                  password: 'password123',
+                  full_name: 'Restaurant Owner',
+                  user_type: 'restaurant'
+                },
+                {
+                  email: 'admin@example.com',
+                  password: 'password123',
+                  full_name: 'Admin User',
+                  user_type: 'admin'
+                }
+              ];
+              
+              // Additional restaurant users and staff
+              const restaurantUsers = [
+                {
+                  email: 'restaurant1@example.com',
+                  password: 'password123',
+                  full_name: 'Restaurant Owner 1',
+                  user_type: 'restaurant'
+                },
+                {
+                  email: 'restaurant2@example.com',
+                  password: 'password123',
+                  full_name: 'Restaurant Owner 2',
+                  user_type: 'restaurant'
+                },
+                {
+                  email: 'manager1@example.com',
+                  password: 'password123',
+                  full_name: 'Restaurant Manager 1',
+                  user_type: 'staff',
+                  role: 'manager'
+                },
+                {
+                  email: 'waiter1@example.com',
+                  password: 'password123',
+                  full_name: 'Waiter 1',
+                  user_type: 'staff',
+                  role: 'waiter'
+                },
+                {
+                  email: 'kitchen1@example.com',
+                  password: 'password123',
+                  full_name: 'Kitchen Staff 1',
+                  user_type: 'staff',
+                  role: 'kitchen'
+                }
+              ];
+              
+              // Determine which users to create
+              let usersToCreate = [];
+              if (USER_TYPE === 'standard' || USER_TYPE === 'all') {
+                usersToCreate = usersToCreate.concat(standardUsers);
+              }
+              if (USER_TYPE === 'restaurant' || USER_TYPE === 'all') {
+                usersToCreate = usersToCreate.concat(restaurantUsers);
               }
               
-              // Read user details from JSON file
-              const userDetails = JSON.parse(fs.readFileSync('./custom-user-inputs.json', 'utf8'));
-              const { email, password, fullName, userType } = userDetails;
+              // Create users and add to markdown
+              mdOutput += `## Available Test Users\n\n`;
               
-              console.log(\`Creating user: \${email}...\`);
+              // Group users by type
+              const usersByType = {
+                'customer': [],
+                'restaurant': [],
+                'admin': [],
+                'staff': []
+              };
               
-              // Create Supabase client
-              const supabase = createClient(supabaseUrl, supabaseServiceKey);
-              
-              // Create the user
-              const userResult = await supabase.auth.admin.createUser({
-                email,
-                password,
-                email_confirm: true,
-                user_metadata: { 
-                  full_name: fullName,
-                  user_type: userType
-                }
-              });
-              
-              if (userResult.error) {
-                if (userResult.error.message.includes('already exists')) {
-                  console.log(\`User with email \${email} already exists.\`);
-                  
-                  // Get the user ID
-                  const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-                  
-                  if (userError) {
-                    throw new Error(\`Could not list users: \${userError.message}\`);
-                  }
-                  
-                  const user = userData.users.find(u => u.email === email);
-                  
-                  if (user) {
-                    // Update the user
-                    const updateResult = await supabase.auth.admin.updateUserById(
-                      user.id,
-                      {
-                        password,
-                        user_metadata: { 
-                          full_name: fullName,
-                          user_type: userType
-                        }
-                      }
-                    );
-                    
-                    if (updateResult.error) {
-                      throw new Error(\`Failed to update user: \${updateResult.error.message}\`);
-                    }
-                    
-                    console.log(\`Successfully updated user: \${email}\`);
-                  } else {
-                    console.log(\`Could not find user with email: \${email}\`);
-                  }
-                } else {
-                  throw new Error(\`Error creating user: \${userResult.error.message}\`);
-                }
-              } else {
-                console.log(\`Successfully created user: \${email}\`);
+              // Create each user
+              for (const user of usersToCreate) {
+                console.log(`Creating user: ${user.email}...`);
                 
-                // Create profile record
-                const userId = userResult.data.user.id;
-                const { error: profileError } = await supabase
-                  .from('profiles')
-                  .insert([
-                    {
-                      id: userId,
-                      full_name: fullName,
-                      user_type: userType
+                // Create the auth user
+                const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+                  email: user.email,
+                  password: user.password,
+                  email_confirm: true,
+                  user_metadata: { 
+                    full_name: user.full_name,
+                    user_type: user.user_type,
+                    role: user.role || null
+                  }
+                });
+                
+                if (userError) {
+                  if (userError.message.includes('already exists')) {
+                    console.log(`User already exists: ${user.email}`);
+                    // Add to user list anyway (it exists in the system)
+                    if (usersByType[user.user_type]) {
+                      usersByType[user.user_type].push(user);
                     }
-                  ]);
-                  
-                if (profileError) {
-                  console.log(\`Warning: Could not create profile record: \${profileError.message}\`);
+                  } else {
+                    console.log(`Error creating user: ${userError.message}`);
+                  }
                 } else {
-                  console.log(\`Created profile record for user: \${email}\`);
+                  console.log(`Created user: ${user.email}`);
+                  
+                  // Create profile record
+                  const userId = userData.user.id;
+                  const profileData = {
+                    id: userId,
+                    full_name: user.full_name,
+                    user_type: user.user_type
+                  };
+                  
+                  // Add role if it exists
+                  if (user.role) {
+                    profileData.role = user.role;
+                  }
+                  
+                  const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert([profileData]);
+                    
+                  if (profileError) {
+                    console.log(`Could not create profile: ${profileError.message}`);
+                  }
+                  
+                  // Add to our user list for the markdown
+                  if (usersByType[user.user_type]) {
+                    usersByType[user.user_type].push(user);
+                  }
                 }
               }
               
-              console.log('User creation completed!');
+              // Add users to markdown by type
+              if (usersByType.customer.length > 0) {
+                mdOutput += `### Customers\n\n`;
+                mdOutput += `| Email | Password | Full Name |\n`;
+                mdOutput += `| ----- | -------- | --------- |\n`;
+                usersByType.customer.forEach(user => {
+                  mdOutput += `| ${user.email} | ${user.password} | ${user.full_name} |\n`;
+                });
+                mdOutput += `\n`;
+              }
               
-            } catch (err) {
-              console.error(\`Error: \${err.message}\`);
+              if (usersByType.restaurant.length > 0) {
+                mdOutput += `### Restaurant Owners\n\n`;
+                mdOutput += `| Email | Password | Full Name |\n`;
+                mdOutput += `| ----- | -------- | --------- |\n`;
+                usersByType.restaurant.forEach(user => {
+                  mdOutput += `| ${user.email} | ${user.password} | ${user.full_name} |\n`;
+                });
+                mdOutput += `\n`;
+              }
+              
+              if (usersByType.admin.length > 0) {
+                mdOutput += `### Administrators\n\n`;
+                mdOutput += `| Email | Password | Full Name |\n`;
+                mdOutput += `| ----- | -------- | --------- |\n`;
+                usersByType.admin.forEach(user => {
+                  mdOutput += `| ${user.email} | ${user.password} | ${user.full_name} |\n`;
+                });
+                mdOutput += `\n`;
+              }
+              
+              if (usersByType.staff.length > 0) {
+                mdOutput += `### Staff Members\n\n`;
+                mdOutput += `| Email | Password | Full Name | Role |\n`;
+                mdOutput += `| ----- | -------- | --------- | ---- |\n`;
+                usersByType.staff.forEach(user => {
+                  mdOutput += `| ${user.email} | ${user.password} | ${user.full_name} | ${user.role || 'N/A'} |\n`;
+                });
+                mdOutput += `\n`;
+              }
+              
+              mdOutput += `## How to Use\n\n`;
+              mdOutput += `1. Go to [MenuFácil](https://menufacil.vercel.app/) (or your deployed instance)\n`;
+              mdOutput += `2. Click on "Login" and enter the credentials from above\n`;
+              mdOutput += `3. Each user type has different permissions and UI experiences\n\n`;
+              mdOutput += `> Note: These are test users and should not be used in production environments.\n`;
+              
+              // Write to file
+              fs.writeFileSync(outputFile, mdOutput);
+              console.log(`✅ Test users information saved to ${outputFile}`);
+              
+            } catch (error) {
+              console.error(`Error: ${error.message}`);
               process.exit(1);
             }
           }
           
           // Run the function
-          createCustomUserFromJson();
-          EOF
-          
-          # Execute the script
-          node create-custom-user-ci.js
+          createUsers();
+          EOL
+
+      - name: Create test users and generate report
         env:
-          SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co'
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          USER_TYPE: ${{ github.event.inputs.user_type }}
+        run: |
+          cd scripts
+          echo "Creating test users with type: $USER_TYPE"
+          node create-users-workflow.js
+          
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add test-users.md
+          git commit -m "Update test users list [skip ci]" || echo "No changes to commit"
+          git push 

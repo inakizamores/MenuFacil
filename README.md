@@ -57,18 +57,45 @@ This project requires Supabase API keys to function. For security reasons, these
 
 1. **Environment Setup**:
    - Copy `frontend/.env.example` to `frontend/.env.local`
-   - Copy `scripts/config.example.js` to `scripts/config.js`
-   - Add your Supabase URL, anon key, and service role key
+   - Add your Supabase URL and anon key
 
 2. **Security Best Practices**:
-   - Never commit `.env.local` or `config.js` files to Git
+   - Never commit `.env.local` files to Git
    - Keep your service role key private and secure
    - Use environment variables in deployment environments
-   - See `docs/secure-key-handling.md` for detailed security instructions
 
 > ⚠️ **Important**: The service role key has administrative access to your Supabase project. Never expose it in client-side code or public repositories.
 
 ### Installation
 
-1. Clone the repository:
-   ```
+1. Clone the repository
+2. Install dependencies
+3. Set up environment variables
+4. Run the development server
+
+## Test Users
+
+This project includes a GitHub workflow to easily create test users in your Supabase database. The workflow will automatically generate a markdown file with the test user credentials.
+
+### Creating Test Users
+
+1. Go to the "Actions" tab in your GitHub repository
+2. Select the "Create Test Users" workflow
+3. Click "Run workflow"
+4. Choose the type of users you want to create:
+   - `standard`: Creates basic customer, restaurant owner, and admin users
+   - `restaurant`: Creates additional restaurant owners and staff members
+   - `all`: Creates all types of users
+5. Click "Run workflow" to start the process
+6. Once complete, a new commit will be created with a `test-users.md` file containing all user credentials
+
+### Available User Types
+
+- **Customer**: Regular users who can browse menus
+- **Restaurant Owners**: Users who can create and manage restaurants and menus
+- **Staff Members**: Users with limited access to restaurant functions (managers, waiters, kitchen staff)
+- **Administrators**: Users with full system access
+
+## Deployment
+
+For deployment instructions, please refer to the documentation in the `docs` directory.
