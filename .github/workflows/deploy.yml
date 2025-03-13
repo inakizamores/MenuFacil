@@ -1,0 +1,52 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Check database schema
+        run: |
+          cd scripts
+          # Create a secure temporary config file
+          echo "module.exports = {
+            SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co',
+            SUPABASE_ANON_KEY: '${{ env.ANON_KEY }}',
+            SUPABASE_SERVICE_KEY: '${{ env.SERVICE_KEY }}'
+          };" > config.js
+          
+          # Run the check
+          node check-database.js
+          
+          # Remove the config file immediately after use
+          rm config.js
+        env:
+          ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlanhoZXlidnhid3ZqdXlmaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MjQ3OTYsImV4cCI6MjA1NzMwMDc5Nn0.I91NGJDR-xzait4viwqOPPNF_CTdllc54dTTsd7Ll_k'
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }} # You'll need to add this secret too
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }} # You'll need to add this secret
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} # You'll need to add this secret
+          vercel-args: '--prod'
+          working-directory: ./frontend 
