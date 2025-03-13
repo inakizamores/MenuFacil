@@ -1,7 +1,7 @@
 {
   "buildCommand": "NEXT_SKIP_TYPE_CHECK=true npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "outputDirectory": ".next"
 }
