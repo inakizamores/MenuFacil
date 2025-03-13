@@ -63,7 +63,7 @@ Use this checklist to verify that your backend is ready for deployment to Supaba
 
 ## Deployment Plan
 
-- [x] Step-by-step deployment guide exists (`docs/supabase-deployment.md`)
+- [x] Step-by-step deployment guide exists (`frontend/docs/supabase-deployment-guide.md`)
 - [ ] Rollback strategy is defined (in case of deployment issues)
 - [ ] Testing plan after deployment is prepared
 

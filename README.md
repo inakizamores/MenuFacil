@@ -51,101 +51,24 @@ MenuFacil/
 - Supabase CLI (for local development)
 - Stripe CLI (for webhook testing)
 
+### API Keys and Secure Handling
+
+This project requires Supabase API keys to function. For security reasons, these keys are not included in the repository.
+
+1. **Environment Setup**:
+   - Copy `frontend/.env.example` to `frontend/.env.local`
+   - Copy `scripts/config.example.js` to `scripts/config.js`
+   - Add your Supabase URL, anon key, and service role key
+
+2. **Security Best Practices**:
+   - Never commit `.env.local` or `config.js` files to Git
+   - Keep your service role key private and secure
+   - Use environment variables in deployment environments
+   - See `docs/secure-key-handling.md` for detailed security instructions
+
+> ⚠️ **Important**: The service role key has administrative access to your Supabase project. Never expose it in client-side code or public repositories.
+
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/menufacil.git
-   cd menufacil
    ```
-
-2. Install dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
-
-3. Set up environment variables:
-   Create a `.env.local` file in the frontend directory with the following variables:
-   ```
-   # Supabase Configuration
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-   
-   # Stripe Configuration
-   STRIPE_SECRET_KEY=your_stripe_secret_key
-   STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-   
-   # Application Configuration
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   NEXT_PUBLIC_SUBSCRIPTION_PRICE=9.99
-   ```
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Set up local Supabase (optional):
-   ```bash
-   # For Unix/Mac
-   ./scripts/setup-local-supabase.sh
-   
-   # For Windows
-   .\scripts\setup-local-supabase.bat
-   ```
-
-## Deployment
-
-### Supabase Deployment
-
-For detailed instructions on deploying the backend to Supabase, see [Supabase Deployment Guide](./frontend/docs/supabase-deployment-guide.md).
-
-Quick steps:
-1. Create a Supabase project
-2. Apply database migrations
-3. Configure storage buckets
-4. Deploy Edge Functions
-5. Set up authentication
-
-### Vercel Deployment
-
-For detailed instructions on deploying the frontend to Vercel, see [Vercel Deployment Guide](./frontend/docs/vercel-deployment-guide-final.md).
-
-Quick steps:
-1. Prepare your project using the provided script:
-   ```bash
-   cd frontend
-   node scripts/prepare-for-vercel.js
-   ```
-2. Deploy to Vercel using Git integration or Vercel CLI
-3. Configure environment variables in Vercel dashboard
-4. Update Supabase authentication settings with production URL
-
-### Deployment Checklist
-
-Use the [Deployment Checklist](./frontend/docs/deployment-checklist.md) to track your progress during deployment.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-- [Next.js](https://nextjs.org/)
-- [Supabase](https://supabase.io/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Stripe](https://stripe.com/)
-- [Vercel](https://vercel.com/)
-
-## Contact
-
-Iñaki Zamores - [GitHub](https://github.com/inakizamores)
-
-Project Link: [https://github.com/inakizamores/MenuFacil](https://github.com/inakizamores/MenuFacil) 

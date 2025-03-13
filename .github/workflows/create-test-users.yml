@@ -1,0 +1,168 @@
+name: Create Test Users
+
+on:
+  workflow_dispatch:
+    inputs:
+      user_type:
+        description: 'Type of users to create'
+        required: true
+        default: 'standard'
+        type: choice
+        options:
+        - standard
+        - custom
+
+jobs:
+  create-users:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd scripts
+          npm install @supabase/supabase-js
+      
+      - name: Create standard test users
+        if: ${{ github.event.inputs.user_type == 'standard' }}
+        run: |
+          cd scripts
+          node create-test-users-with-env.js
+        env:
+          SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      
+      - name: Create custom test user
+        if: ${{ github.event.inputs.user_type == 'custom' }}
+        run: |
+          cd scripts
+          # Create an inputs file for the custom user creation
+          cat > custom-user-inputs.json << EOF
+          {
+            "email": "admin@menufacil.com",
+            "password": "SecurePassword123!",
+            "fullName": "System Administrator",
+            "userType": "admin"
+          }
+          EOF
+          
+          # Create a modified version of the script that reads from the JSON file
+          cat > create-custom-user-ci.js << EOF
+          const fs = require('fs');
+          const { createClient } = require('@supabase/supabase-js');
+          
+          async function createCustomUserFromJson() {
+            console.log('MenúFácil - Custom User Creation from JSON');
+            console.log('----------------------------------------');
+            
+            try {
+              // Get configuration from environment variables
+              const supabaseUrl = process.env.SUPABASE_URL;
+              const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+              
+              if (!supabaseServiceKey) {
+                throw new Error('SUPABASE_SERVICE_ROLE_KEY environment variable is not set');
+              }
+              
+              // Read user details from JSON file
+              const userDetails = JSON.parse(fs.readFileSync('./custom-user-inputs.json', 'utf8'));
+              const { email, password, fullName, userType } = userDetails;
+              
+              console.log(\`Creating user: \${email}...\`);
+              
+              // Create Supabase client
+              const supabase = createClient(supabaseUrl, supabaseServiceKey);
+              
+              // Create the user
+              const userResult = await supabase.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: { 
+                  full_name: fullName,
+                  user_type: userType
+                }
+              });
+              
+              if (userResult.error) {
+                if (userResult.error.message.includes('already exists')) {
+                  console.log(\`User with email \${email} already exists.\`);
+                  
+                  // Get the user ID
+                  const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+                  
+                  if (userError) {
+                    throw new Error(\`Could not list users: \${userError.message}\`);
+                  }
+                  
+                  const user = userData.users.find(u => u.email === email);
+                  
+                  if (user) {
+                    // Update the user
+                    const updateResult = await supabase.auth.admin.updateUserById(
+                      user.id,
+                      {
+                        password,
+                        user_metadata: { 
+                          full_name: fullName,
+                          user_type: userType
+                        }
+                      }
+                    );
+                    
+                    if (updateResult.error) {
+                      throw new Error(\`Failed to update user: \${updateResult.error.message}\`);
+                    }
+                    
+                    console.log(\`Successfully updated user: \${email}\`);
+                  } else {
+                    console.log(\`Could not find user with email: \${email}\`);
+                  }
+                } else {
+                  throw new Error(\`Error creating user: \${userResult.error.message}\`);
+                }
+              } else {
+                console.log(\`Successfully created user: \${email}\`);
+                
+                // Create profile record
+                const userId = userResult.data.user.id;
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .insert([
+                    {
+                      id: userId,
+                      full_name: fullName,
+                      user_type: userType
+                    }
+                  ]);
+                  
+                if (profileError) {
+                  console.log(\`Warning: Could not create profile record: \${profileError.message}\`);
+                } else {
+                  console.log(\`Created profile record for user: \${email}\`);
+                }
+              }
+              
+              console.log('User creation completed!');
+              
+            } catch (err) {
+              console.error(\`Error: \${err.message}\`);
+              process.exit(1);
+            }
+          }
+          
+          // Run the function
+          createCustomUserFromJson();
+          EOF
+          
+          # Execute the script
+          node create-custom-user-ci.js
+        env:
+          SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} 
