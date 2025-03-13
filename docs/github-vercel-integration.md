@@ -1,82 +1,130 @@
-# GitHub and Vercel Integration Guide
+# GitHub and Vercel Integration for MenúFácil
 
-This guide explains how to set up the MenúFácil application for continuous deployment using GitHub and Vercel without exposing sensitive credentials.
+This document explains how to set up and use GitHub Actions and Vercel integration for the MenúFácil application.
 
-## Prerequisites
+## Table of Contents
+- [Initial Setup](#initial-setup)
+- [GitHub Secrets](#github-secrets)
+- [GitHub Workflows](#github-workflows)
+- [Creating Test Users](#creating-test-users)
+- [Deploying to Vercel](#deploying-to-vercel)
+- [Utility Scripts](#utility-scripts)
 
-- A GitHub repository for your MenúFácil project
-- A Vercel account linked to your GitHub account
-- Your Supabase project and credentials
+## Initial Setup
 
-## Setting Up GitHub Secrets
+Before you can use the GitHub and Vercel integration, you need to set up the necessary secrets and configurations. The easiest way to do this is to use the setup utility script:
 
-GitHub Secrets allow you to store sensitive information securely for use in GitHub Actions:
+### For Windows:
+```
+cd scripts
+menuutil.bat
+```
 
-1. **Navigate to your GitHub repository**
-2. **Go to Settings > Secrets and variables > Actions**
-3. **Add the following repository secrets**:
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
-   - `VERCEL_TOKEN`: Your Vercel API token (from Vercel dashboard)
-   - `VERCEL_ORG_ID`: Your Vercel organization ID
-   - `VERCEL_PROJECT_ID`: Your Vercel project ID
+### For macOS/Linux:
+```
+cd scripts
+chmod +x menuutil.sh
+./menuutil.sh
+```
 
-## Setting Up Vercel Environment Variables
+Select option 3 to run the GitHub secrets setup guide.
 
-1. **Go to the Vercel Dashboard**
-2. **Select your MenúFácil project**
-3. **Navigate to Settings > Environment Variables**
-4. **Add the following environment variables**:
-   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL (not secret)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anon key (not secret)
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key (secret)
-   - `ADMIN_API_KEY`: A custom key for protecting admin API routes (secret)
+## GitHub Secrets
 
-## GitHub Actions Workflows
+The following GitHub secrets are required for the workflows to function properly:
 
-The project includes two GitHub Actions workflows:
+1. **SUPABASE_SERVICE_ROLE_KEY**: Your Supabase service role key, used for creating users and interacting with the database.
+2. **NEXT_PUBLIC_SUPABASE_URL**: Your Supabase project URL (default: 'https://aejxheybvxbwvjuyfhfh.supabase.co').
+3. **NEXT_PUBLIC_SUPABASE_ANON_KEY**: Your Supabase anonymous key, used for client-side operations.
 
-1. **Test Secret** (`.github/workflows/test-secret.yml`):
-   - A manual workflow to verify that GitHub secrets are configured correctly
-   - Trigger it from the Actions tab to test your setup
+For Vercel deployment, you also need:
 
-2. **Deployment** (`.github/workflows/deploy.yml`):
-   - Automatically deploys to Vercel when you push to the main branch
-   - Uses your GitHub secrets securely
+1. **VERCEL_TOKEN**: A token from Vercel to authorize deployments.
+2. **VERCEL_ORG_ID**: Your Vercel organization/team ID.
+3. **VERCEL_PROJECT_ID**: Your Vercel project ID.
 
-## Code Structure for Secure Deployments
+## GitHub Workflows
 
-The codebase has been structured to handle environment variables securely:
+MenúFácil includes two main GitHub workflows:
 
-- `frontend/src/lib/supabase-admin.js`: Server-side utility for admin operations
-- `frontend/src/app/api/admin/`: API routes that use the service role key securely
-- `scripts/verify-deployment.js`: Verification script for CI/CD environments
+### 1. Create Test Users (`create-test-users.yml`)
+This workflow allows you to create test users in your Supabase database directly from GitHub. You can trigger it manually from the Actions tab in your GitHub repository.
 
-## How to Run a Deployment
+Options:
+- **standard**: Creates three standard test users (customer, restaurant owner, admin)
+- **custom**: Creates a custom administrator user
 
-### Automatic Deployment (Recommended)
+### 2. Deploy to Vercel (`vercel-deploy.yml`)
+This workflow automatically deploys your application to Vercel when you push to the main branch. You can also trigger it manually to deploy to production or create a preview deployment.
 
-1. Push changes to your `main` branch
-2. GitHub Actions will automatically deploy to Vercel
-3. Check the Actions tab for deployment status
+Options:
+- **production**: Deploys to production
+- **preview**: Creates a preview deployment
 
-### Manual Deployment
+## Creating Test Users
 
-1. Install the Vercel CLI: `npm i -g vercel`
-2. Log in to Vercel: `vercel login`
-3. Deploy to production: `vercel --prod`
+### From GitHub Actions:
+1. Go to your GitHub repository
+2. Click on the "Actions" tab
+3. Select the "Create Test Users" workflow
+4. Click "Run workflow"
+5. Choose between "standard" or "custom" user creation
+6. Click "Run workflow" to start the process
 
-## Security Best Practices
+### From local machine:
+You can also create test users locally using the utility scripts:
 
-1. **Never commit sensitive keys** to your repository
-2. **Regularly rotate your Supabase service role key**
-3. **Use environment-specific variables** for development, preview, and production
-4. **Add additional validation** to admin API routes
-5. **Monitor GitHub Actions logs** for any security issues
+#### For Windows:
+```
+cd scripts
+menuutil.bat
+```
 
-## Troubleshooting
+#### For macOS/Linux:
+```
+cd scripts
+chmod +x menuutil.sh
+./menuutil.sh
+```
 
-- **Deployment failures**: Check GitHub Actions logs for details
-- **Missing environment variables**: Verify all required variables are set in Vercel
-- **API authentication errors**: Check that your service role key is valid and correctly set
+Choose option 1 for standard test users or option 2 for a custom user.
 
-If you encounter persistent issues, check Vercel logs and Supabase logs for more information. 
+## Deploying to Vercel
+
+### Automatic deployment:
+Every push to the main branch will trigger a deployment to Vercel production environment.
+
+### Manual deployment:
+1. Go to your GitHub repository
+2. Click on the "Actions" tab
+3. Select the "Deploy to Vercel" workflow
+4. Click "Run workflow"
+5. Choose between "production" or "preview" deployment
+6. Click "Run workflow" to start the deployment
+
+## Utility Scripts
+
+MenúFácil includes several utility scripts to help with development and deployment:
+
+### `menuutil.bat` (Windows) / `menuutil.sh` (macOS/Linux)
+A multi-purpose utility script with the following options:
+1. Create standard test users
+2. Create a custom user
+3. Setup GitHub secrets
+4. Sync Vercel environment variables
+
+### `setup-github-secrets.js`
+Guides you through setting up the necessary GitHub secrets for your repository.
+
+### `sync-vercel-env.js`
+Helps you synchronize environment variables between your local environment and Vercel.
+
+### `create-test-users-with-env.js`
+Creates standard test users using environment variables for authentication.
+
+### `create-user-with-env.js`
+Creates a custom user with specific details using environment variables for authentication.
+
+---
+
+For more information on MenúFácil, please refer to the main [README.md](../README.md) file. 
