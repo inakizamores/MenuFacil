@@ -26,27 +26,30 @@ jobs:
       - name: Check database schema
         run: |
           cd scripts
-          # Create a secure temporary config file
-          echo "module.exports = {
-            SUPABASE_URL: 'https://aejxheybvxbwvjuyfhfh.supabase.co',
-            SUPABASE_ANON_KEY: '${{ env.ANON_KEY }}',
-            SUPABASE_SERVICE_KEY: '${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}'
-          };" > config.js
+          echo "Current directory: $(pwd)"
+          echo "Listing files:"
+          ls -la
           
-          # Install dependencies if needed
-          npm ci
+          # Install dependencies with npm debug log
+          npm ci --verbose
           
-          # Run the check
-          node check-database.js
+          # Run the check with environment variables
+          echo "Running database check..."
+          node --trace-warnings check-database.js
           
-          # Remove the config file immediately after use
-          rm config.js
+          # Check exit code
+          EXIT_CODE=$?
+          echo "Database check script exited with code: $EXIT_CODE"
         env:
           ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlanhoZXlidnhid3ZqdXlmaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MjQ3OTYsImV4cCI6MjA1NzMwMDc5Nn0.I91NGJDR-xzait4viwqOPPNF_CTdllc54dTTsd7Ll_k"
+          CI: "true"
+          SUPABASE_URL: "https://aejxheybvxbwvjuyfhfh.supabase.co"
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
       - name: Create production env file
         run: |
           cd frontend
+          echo "Creating .env.production file..."
           echo "# Supabase Configuration
           NEXT_PUBLIC_SUPABASE_URL=https://aejxheybvxbwvjuyfhfh.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.ANON_KEY }}
@@ -55,8 +58,21 @@ jobs:
           # Application Configuration
           NEXT_PUBLIC_APP_URL=https://menufacil.vercel.app
           NEXT_PUBLIC_SUBSCRIPTION_PRICE=9.99" > .env.production
+          
+          echo ".env.production file created. Contents (redacted):"
+          cat .env.production | sed 's/SUPABASE_SERVICE_ROLE_KEY=.*/SUPABASE_SERVICE_ROLE_KEY=[REDACTED]/'
         env:
           ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlanhoZXlidnhid3ZqdXlmaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MjQ3OTYsImV4cCI6MjA1NzMwMDc5Nn0.I91NGJDR-xzait4viwqOPPNF_CTdllc54dTTsd7Ll_k"
+      
+      - name: Debug Vercel setup
+        run: |
+          echo "Verifying Vercel deployment prerequisites..."
+          echo "Frontend directory contents:"
+          cd frontend
+          ls -la
+          echo "Vercel token availability: ${{ secrets.VERCEL_TOKEN != '' }}"
+          echo "Vercel org ID availability: ${{ secrets.VERCEL_ORG_ID != '' }}"
+          echo "Vercel project ID availability: ${{ secrets.VERCEL_PROJECT_ID != '' }}"
       
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
