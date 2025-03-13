@@ -6,94 +6,58 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  deploy:
+  debug:
+    name: Debug Environment
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      # Step 1: Validate secrets (independent step)
-      - name: Validate secrets
+        
+      - name: List directory structure
         run: |
-          echo "Validating required secrets..."
-          if [ -z "$VERCEL_TOKEN" ]; then
-            echo "::error::VERCEL_TOKEN is not set or is empty"
-            exit 1
-          else
-            echo "✅ VERCEL_TOKEN is set"
-          fi
+          echo "GitHub Actions runner environment:"
+          echo "-------------------------------------"
+          echo "Runner OS: $RUNNER_OS"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+          echo "GitHub Event Name: $GITHUB_EVENT_NAME"
+          echo "GitHub Actor: $GITHUB_ACTOR"
+          echo "-------------------------------------"
           
-          if [ -z "$VERCEL_ORG_ID" ]; then
-            echo "::error::VERCEL_ORG_ID is not set or is empty"
-            exit 1
-          else
-            echo "✅ VERCEL_ORG_ID is set"
-          fi
+          echo "Directory Structure:"
+          ls -la
           
-          if [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "::error::VERCEL_PROJECT_ID is not set or is empty"
-            exit 1
-          else
-            echo "✅ VERCEL_PROJECT_ID is set"
-          fi
-          
-          if [ -z "$SUPABASE_SERVICE_KEY" ]; then
-            echo "::error::SUPABASE_SERVICE_ROLE_KEY is not set or is empty"
-            exit 1
-          else
-            echo "✅ SUPABASE_SERVICE_ROLE_KEY is set"
-          fi
-          
-          echo "All required secrets are available"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          echo "Repository files:"
+          find . -type f -not -path "*/node_modules/*" -not -path "*/.git/*" | sort
       
-      # Step 2: Install frontend dependencies (independent step)
-      - name: Install frontend dependencies
+      - name: Check frontend directory
         run: |
-          echo "Installing frontend dependencies..."
-          cd frontend
-          npm ci
-          echo "✅ Frontend dependencies installed"
-      
-      # Step 3: Create environment file
-      - name: Create production env file
-        run: |
-          echo "Creating production environment file..."
-          cd frontend
-          echo "# Supabase Configuration
-          NEXT_PUBLIC_SUPABASE_URL=https://aejxheybvxbwvjuyfhfh.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
-          SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_KEY
-          
-          # Application Configuration
-          NEXT_PUBLIC_APP_URL=https://menufacil.vercel.app
-          NEXT_PUBLIC_SUBSCRIPTION_PRICE=9.99" > .env.production
-          
-          # Verify file was created
-          if [ -f .env.production ]; then
-            echo "✅ .env.production file created successfully"
-            echo "File contents (secrets redacted):"
-            grep -v "SUPABASE_SERVICE_ROLE_KEY" .env.production || true
+          echo "Frontend directory check:"
+          if [ -d "frontend" ]; then
+            echo "✅ Frontend directory exists"
+            echo "Contents:"
+            ls -la frontend/
+            
+            echo "Checking package.json:"
+            if [ -f "frontend/package.json" ]; then
+              echo "✅ package.json exists"
+              cat frontend/package.json | grep -E "name|version"
+            else
+              echo "❌ package.json not found"
+            fi
           else
-            echo "::error::Failed to create .env.production file"
+            echo "❌ Frontend directory not found"
             exit 1
           fi
-        env:
-          ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlanhoZXlidnhid3ZqdXlmaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MjQ3OTYsImV4cCI6MjA1NzMwMDc5Nn0.I91NGJDR-xzait4viwqOPPNF_CTdllc54dTTsd7Ll_k"
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       
-      # Step 4: Deploy to Vercel (core functionality)
-      - name: Deploy to Vercel
+      - name: Check GitHub secrets availability
+        run: |
+          echo "Checking GitHub secrets:"
+          echo "VERCEL_TOKEN availability: ${{ secrets.VERCEL_TOKEN != '' }}"
+          echo "VERCEL_ORG_ID availability: ${{ secrets.VERCEL_ORG_ID != '' }}"
+          echo "VERCEL_PROJECT_ID availability: ${{ secrets.VERCEL_PROJECT_ID != '' }}"
+          echo "SUPABASE_SERVICE_ROLE_KEY availability: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}"
+      
+      - name: Try Vercel deployment with minimal configuration
         uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
