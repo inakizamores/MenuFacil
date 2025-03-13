@@ -29,7 +29,7 @@ export default function LandingPage() {
             <div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
                 Digital Menus Made Simple
-              </h1>
+        </h1>
               <p className="text-xl mb-8">
                 Create beautiful digital menus for your restaurant. Generate QR codes, update in real-time, and delight your customers.
               </p>
@@ -319,6 +319,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
   );
 } 
