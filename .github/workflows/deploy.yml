@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Vercel Deployment Diagnostic
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
-  deploy:
-    name: Deploy to Vercel
+  vercel-diagnostic:
+    name: Vercel CLI Diagnostics
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -17,59 +17,60 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          
-      - name: List directory structure
-        run: |
-          echo "GitHub Actions runner environment:"
-          echo "-------------------------------------"
-          echo "Runner OS: $RUNNER_OS"
-          echo "GitHub Workspace: $GITHUB_WORKSPACE"
-          echo "GitHub Event Name: $GITHUB_EVENT_NAME"
-          echo "GitHub Actor: $GITHUB_ACTOR"
-          echo "-------------------------------------"
-          
-          echo "Directory Structure:"
-          ls -la
       
-      - name: Check frontend directory
-        run: |
-          echo "Frontend directory check:"
-          if [ -d "frontend" ]; then
-            echo "✅ Frontend directory exists"
-            echo "Contents:"
-            ls -la frontend/
-          else
-            echo "❌ Frontend directory not found"
-            exit 1
-          fi
-      
-      - name: Check GitHub secrets availability
-        run: |
-          echo "Checking GitHub secrets:"
-          echo "VERCEL_TOKEN availability: ${{ secrets.VERCEL_TOKEN != '' }}"
-          echo "VERCEL_ORG_ID availability: ${{ secrets.VERCEL_ORG_ID != '' }}"
-          echo "VERCEL_PROJECT_ID availability: ${{ secrets.VERCEL_PROJECT_ID != '' }}"
-          
       - name: Install Vercel CLI
         run: npm install -g vercel
       
-      - name: Install frontend dependencies
+      - name: Vercel CLI Version
+        run: vercel --version
+      
+      - name: Check frontend structure
+        run: |
+          echo "Frontend directory check:"
+          ls -la frontend/
+          echo "package.json contents:"
+          cat frontend/package.json
+          echo "Checking for vercel.json:"
+          if [ -f "frontend/vercel.json" ]; then
+            echo "vercel.json found:"
+            cat frontend/vercel.json
+          else
+            echo "No vercel.json found"
+          fi
+      
+      - name: Check Vercel token
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            echo "VERCEL_TOKEN is set"
+            # Test Vercel token without deployment
+            echo "Testing Vercel authentication with token..."
+            vercel --token=$VERCEL_TOKEN whoami || echo "Auth test failed"
+          else
+            echo "VERCEL_TOKEN is not set or empty"
+            exit 1
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Try Vercel project linking
         run: |
           cd frontend
-          npm ci
-          
-      - name: Deploy to Vercel
+          echo "Testing Vercel project linking..."
+          vercel --token=$VERCEL_TOKEN link --yes || echo "Project linking test failed"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Create minimal test file for deployment
         run: |
           cd frontend
-          
-          # Create .env.production file
-          echo "Creating .env.production file..."
-          echo "NEXT_PUBLIC_SUPABASE_URL=https://aejxheybvxbwvjuyfhfh.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlanhoZXlidnhid3ZqdXlmaGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MjQ3OTYsImV4cCI6MjA1NzMwMDc5Nn0.I91NGJDR-xzait4viwqOPPNF_CTdllc54dTTsd7Ll_k
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_APP_URL=https://menufacil.vercel.app
-          NEXT_PUBLIC_SUBSCRIPTION_PRICE=9.99" > .env.production
-          
-          # Deploy using Vercel CLI with token
-          echo "Starting Vercel deployment..."
-          vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --prod --yes 
+          echo "Creating test deployment file..."
+          mkdir -p public
+          echo "<html><body>Test deployment from GitHub Actions</body></html>" > public/index.html
+      
+      - name: Attempt minimal deployment
+        run: |
+          cd frontend
+          echo "Attempting minimal deployment without project dependencies..."
+          vercel --token=$VERCEL_TOKEN deploy --name menufacil-test --prod --yes --debug
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} 
