@@ -75,7 +75,7 @@ This project requires Supabase API keys to function. For security reasons, these
 
 ## Test Users
 
-This project includes a GitHub workflow to easily create test users in your Supabase database. The workflow will generate a markdown file with the test user credentials.
+This project includes a GitHub workflow to easily create test users in your Supabase database. The workflow will create test users and display their credentials in the workflow logs.
 
 ### Creating Test Users
 
@@ -87,10 +87,9 @@ This project includes a GitHub workflow to easily create test users in your Supa
    - `restaurant`: Creates additional restaurant owners and staff members
    - `all`: Creates all types of users
 5. Click "Run workflow" to start the process
-6. Once complete, download the test users file from the workflow artifacts
-   - Go to the completed workflow run
-   - Scroll to the bottom and find the "Artifacts" section
-   - Click on "test-users" to download the markdown file with all user credentials
+6. Once complete, view the workflow logs to see the user credentials
+   - The test users information will be displayed between "TEST USERS" markers
+   - You can copy this information from the logs for your reference
 
 ### Available User Types
 

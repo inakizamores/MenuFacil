@@ -35,17 +35,12 @@ jobs:
         run: |
           cat > scripts/create-users-workflow.js << 'EOL'
           // Script to create test users for MenúFácil and output to Markdown
-          const fs = require('fs');
-          const path = require('path');
           const { createClient } = require('@supabase/supabase-js');
 
           // Constants
           const SUPABASE_URL = 'https://aejxheybvxbwvjuyfhfh.supabase.co';
           const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
           const USER_TYPE = process.env.USER_TYPE || 'all';
-          
-          // Output file
-          const outputFile = path.join(__dirname, '../test-users.md');
           
           async function createUsers() {
             console.log(`Creating ${USER_TYPE} test users...`);
@@ -245,12 +240,10 @@ jobs:
               mdOutput += `3. Each user type has different permissions and UI experiences\n\n`;
               mdOutput += `> Note: These are test users and should not be used in production environments.\n`;
               
-              // Write to file
-              fs.writeFileSync(outputFile, mdOutput);
-              console.log(`✅ Test users information saved to ${outputFile}`);
-              
-              // Also output to console for GitHub Actions logs
-              console.log('\n\n' + mdOutput);
+              // Format the output for better visibility in the logs
+              console.log('\n\n====================== TEST USERS ======================\n\n');
+              console.log(mdOutput);
+              console.log('\n====================== END OF TEST USERS ======================\n');
               
             } catch (error) {
               console.error(`Error: ${error.message}`);
@@ -270,10 +263,5 @@ jobs:
           cd scripts
           echo "Creating test users with type: $USER_TYPE"
           node create-users-workflow.js
-          
-      - name: Upload test users file as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: test-users
-          path: test-users.md
-          retention-days: 30 
+          echo "Test users have been created and are displayed in the logs above."
+          echo "You can copy this information for your reference." 
