@@ -1,0 +1,75 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - preview
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      
+      - name: Configure Supabase Environment Variables
+        run: |
+          # Create .env.local for build
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://aejxheybvxbwvjuyfhfh.supabase.co' }}" > .env.local
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
+
+      - name: Deploy to Production
+        if: ${{ github.event_name == 'push' || github.event.inputs.environment == 'production' }}
+        run: |
+          vercel --prod --confirm --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      
+      - name: Deploy Preview
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'preview' }}
+        run: |
+          vercel --token ${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }} --yes
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      
+      - name: Comment on commit with deployment URL
+        run: |
+          # Get the deployment URL from the Vercel output
+          DEPLOYMENT_URL=$(vercel --token ${{ secrets.VERCEL_TOKEN }} ls -1 | grep ${{ github.sha }} | head -n 1 | awk '{print $2}')
+          
+          if [ -n "$DEPLOYMENT_URL" ]; then
+            echo "::set-output name=deployment_url::$DEPLOYMENT_URL"
+            echo "Deployment URL: $DEPLOYMENT_URL"
+            
+            # Add a comment to the commit with the deployment URL
+            curl -s -X POST \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/commits/${{ github.sha }}/comments \
+              -d "{\"body\":\"🚀 Deployed to: $DEPLOYMENT_URL\"}"
+          else
+            echo "Could not retrieve deployment URL"
+          fi
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
