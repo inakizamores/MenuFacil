@@ -2,6 +2,9 @@
 /node_modules
 /.pnp
 .pnp.js
+**/node_modules/
+scripts/node_modules/
+frontend/node_modules/
 
 # testing
 /coverage
@@ -35,4 +38,12 @@ next-env.d.ts
 
 # IDE
 .idea
-.vscode 
+.vscode
+
+# Supabase keys and credentials
+scripts/config.js
+*SUPABASE_*.tmp
+frontend/SUPABASE_*.tmp
+frontend/NEXT_PUBLIC_SUPABASE_*.tmp
+frontend/.env.production
+frontend/.env.local 
