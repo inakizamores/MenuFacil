@@ -272,7 +272,7 @@ jobs:
           node create-users-workflow.js
           
       - name: Upload test users file as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: test-users
           path: test-users.md
