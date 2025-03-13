@@ -7,7 +7,6 @@ This document explains how to set up and use GitHub Actions and Vercel integrati
 - [GitHub Secrets](#github-secrets)
 - [GitHub Workflows](#github-workflows)
 - [Creating Test Users](#creating-test-users)
-- [Deploying to Vercel](#deploying-to-vercel)
 - [Utility Scripts](#utility-scripts)
 
 ## Initial Setup
@@ -37,29 +36,16 @@ The following GitHub secrets are required for the workflows to function properly
 2. **NEXT_PUBLIC_SUPABASE_URL**: Your Supabase project URL (default: 'https://aejxheybvxbwvjuyfhfh.supabase.co').
 3. **NEXT_PUBLIC_SUPABASE_ANON_KEY**: Your Supabase anonymous key, used for client-side operations.
 
-For Vercel deployment, you also need:
-
-1. **VERCEL_TOKEN**: A token from Vercel to authorize deployments.
-2. **VERCEL_ORG_ID**: Your Vercel organization/team ID.
-3. **VERCEL_PROJECT_ID**: Your Vercel project ID.
-
 ## GitHub Workflows
 
-MenúFácil includes two main GitHub workflows:
+MenúFácil includes one main GitHub workflow:
 
-### 1. Create Test Users (`create-test-users.yml`)
+### Create Test Users (`create-test-users.yml`)
 This workflow allows you to create test users in your Supabase database directly from GitHub. You can trigger it manually from the Actions tab in your GitHub repository.
 
 Options:
 - **standard**: Creates three standard test users (customer, restaurant owner, admin)
 - **custom**: Creates a custom administrator user
-
-### 2. Deploy to Vercel (`vercel-deploy.yml`)
-This workflow automatically deploys your application to Vercel when you push to the main branch. You can also trigger it manually to deploy to production or create a preview deployment.
-
-Options:
-- **production**: Deploys to production
-- **preview**: Creates a preview deployment
 
 ## Creating Test Users
 
@@ -88,19 +74,6 @@ chmod +x menuutil.sh
 ```
 
 Choose option 1 for standard test users or option 2 for a custom user.
-
-## Deploying to Vercel
-
-### Automatic deployment:
-Every push to the main branch will trigger a deployment to Vercel production environment.
-
-### Manual deployment:
-1. Go to your GitHub repository
-2. Click on the "Actions" tab
-3. Select the "Deploy to Vercel" workflow
-4. Click "Run workflow"
-5. Choose between "production" or "preview" deployment
-6. Click "Run workflow" to start the deployment
 
 ## Utility Scripts
 

@@ -18,10 +18,9 @@ show_menu() {
   echo "1. Create test users"
   echo "2. Create custom user"
   echo "3. Setup GitHub secrets"
-  echo "4. Sync Vercel environment variables"
-  echo "5. Exit"
+  echo "4. Exit"
   echo ""
-  echo -n "Enter your choice (1-5): "
+  echo -n "Enter your choice (1-4): "
 }
 
 # Function to create test users
@@ -85,22 +84,6 @@ setup_github() {
   read -p "Press Enter to continue..."
 }
 
-# Function to sync Vercel env vars
-sync_vercel() {
-  clear
-  echo "======================================"
-  echo "  Sync Vercel Environment Variables"
-  echo "======================================"
-  echo ""
-  echo "This utility will help you sync environment variables to Vercel."
-  echo ""
-  echo "Running sync-vercel-env.js..."
-  node sync-vercel-env.js
-  
-  echo ""
-  read -p "Press Enter to continue..."
-}
-
 # Main menu loop
 while true; do
   show_menu
@@ -110,8 +93,7 @@ while true; do
     1) create_test_users ;;
     2) create_custom_user ;;
     3) setup_github ;;
-    4) sync_vercel ;;
-    5) 
+    4) 
       echo "Exiting MenuFacil Utilities..."
       exit 0
       ;;

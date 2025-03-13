@@ -70,47 +70,10 @@ async function setupGitHubSecrets() {
     printColored('\n⚠️ Please get your Supabase service role key before continuing.', 'yellow');
   }
   
-  // Step 3: Vercel credentials
-  printColored('\nSTEP 3: Vercel Credentials', 'yellow');
-  console.log('For CI/CD deployment, you need to add Vercel credentials to GitHub secrets.');
-  
-  const shouldSetupVercel = await ask('Do you want to set up Vercel deployment? (yes/no): ');
-  
-  if (shouldSetupVercel.toLowerCase() === 'yes') {
-    // Guide for getting Vercel token
-    console.log('\nTo get your Vercel token:');
-    console.log('1. Go to https://vercel.com/account/tokens');
-    console.log('2. Click "Create" to create a new token');
-    console.log('3. Give it a name like "GitHub Actions"');
-    console.log('4. Set the expiration and scope as needed');
-    console.log('5. Click "Create Token" and copy the token');
-    
-    console.log('\nTo get your Vercel Organization ID and Project ID:');
-    console.log('1. Make sure your project is already created in Vercel');
-    console.log('2. Install Vercel CLI: npm i -g vercel');
-    console.log('3. Run "vercel login" and follow the prompts');
-    console.log('4. Run "vercel link" in your project directory');
-    console.log('5. Check the .vercel/project.json file for your projectId and orgId');
-    
-    console.log('\nIn GitHub repository, add these secrets:');
-    printColored('   VERCEL_TOKEN: [Your Vercel token]', 'green');
-    printColored('   VERCEL_ORG_ID: [Your Vercel organization/team ID]', 'green');
-    printColored('   VERCEL_PROJECT_ID: [Your Vercel project ID]', 'green');
-    
-    const hasAddedVercelSecrets = await ask('\nHave you added all three Vercel secrets? (yes/no): ');
-    
-    if (hasAddedVercelSecrets.toLowerCase() === 'yes') {
-      printColored('\n✅ Vercel secrets added successfully!', 'green');
-    } else {
-      printColored('\n⚠️ Please add the Vercel secrets before deploying.', 'yellow');
-    }
-  }
-  
-  // Step 4: Creating a test workflow
-  printColored('\nSTEP 4: Enable GitHub Workflows', 'yellow');
+  // Step 3: Creating a test workflow
+  printColored('\nSTEP 3: Enable GitHub Workflows', 'yellow');
   console.log('Now that you have set up the secrets, you can use GitHub Actions to:');
   printColored('1. Create test users automatically', 'green');
-  printColored('2. Deploy to Vercel automatically', 'green');
   
   console.log('\nTo create test users, go to:');
   console.log(`https://github.com/${repoOwner}/${repoName}/actions/workflows/create-test-users.yml`);
@@ -121,8 +84,7 @@ async function setupGitHubSecrets() {
   console.log('You have completed the setup guide for MenúFácil GitHub secrets.');
   console.log('Here\'s what you can do now:');
   console.log('1. Create test users using GitHub Actions workflow');
-  console.log('2. Deploy your application to Vercel');
-  console.log('3. Run scripts locally using environment variables');
+  console.log('2. Run scripts locally using environment variables');
   
   printColored('\nHappy cooking with MenúFácil! 🍽️', 'cyan');
   

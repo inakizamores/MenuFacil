@@ -13,16 +13,14 @@ echo.
 echo 1. Create test users
 echo 2. Create custom user
 echo 3. Setup GitHub secrets
-echo 4. Sync Vercel environment variables
-echo 5. Exit
+echo 4. Exit
 echo.
-set /p choice=Enter your choice (1-5): 
+set /p choice=Enter your choice (1-4): 
 
 if "%choice%"=="1" goto create_test_users
 if "%choice%"=="2" goto create_custom_user
 if "%choice%"=="3" goto setup_github
-if "%choice%"=="4" goto sync_vercel
-if "%choice%"=="5" goto end
+if "%choice%"=="4" goto end
 goto menu
 
 :create_test_users
@@ -74,20 +72,6 @@ echo for your MenuFacil repository.
 echo.
 echo Running setup-github-secrets.js...
 node setup-github-secrets.js
-echo.
-pause
-goto menu
-
-:sync_vercel
-cls
-echo ======================================
-echo   Sync Vercel Environment Variables
-echo ======================================
-echo.
-echo This utility will help you sync environment variables to Vercel.
-echo.
-echo Running sync-vercel-env.js...
-node sync-vercel-env.js
 echo.
 pause
 goto menu
