@@ -7,7 +7,6 @@
   - [Supabase MCP Server](#supabase-mcp-server)
   - [GitHub MCP Server](#github-mcp-server)
   - [Vercel MCP Server](#vercel-mcp-server)
-  - [Sequential Thinking MCP Server](#sequential-thinking-mcp-server)
 - [Standard Protocol Methods](#standard-protocol-methods)
 - [Testing the MCP Servers](#testing-the-mcp-servers)
 - [Environment Configuration](#environment-configuration)
@@ -24,7 +23,6 @@ This project implements several MCP servers that expose different data sources a
 - **Supabase MCP Server**: For interacting with Supabase databases
 - **GitHub MCP Server**: For accessing GitHub repositories and performing GitHub operations
 - **Vercel MCP Server**: For managing Vercel deployments and projects
-- **Sequential Thinking MCP Server**: For structured, step-by-step thinking processes
 
 All these servers follow the MCP specification, allowing them to be used with any MCP client.
 
@@ -291,57 +289,6 @@ You can create a token in your Vercel account settings.
   {}
   ```
 
-### Sequential Thinking MCP Server
-
-The Sequential Thinking MCP server provides access to structured thinking methodologies through the Smithery.ai API.
-
-#### Implementation Details
-
-The server is implemented using:
-- The MCP TypeScript SDK
-- Node-fetch for API requests
-- Zod for schema validation
-
-#### Configuration
-
-Create a `.env` file with your Smithery.ai API key:
-```
-SMITHERY_API_KEY=your_smithery_api_key
-```
-
-You can obtain an API key by signing up at [smithery.ai](https://smithery.ai).
-
-#### Resources
-
-- `sequential-thinking://processes` - Lists all available thinking processes
-- `sequential-thinking://processes/{processId}` - Shows details of a specific thinking process including all steps
-
-#### Tools
-
-- `execute-sequential-thinking` - Executes a sequential thinking process
-  ```json
-  {
-    "processId": "process_id",
-    "input": "The input to start the thinking process",
-    "maxSteps": 10
-  }
-  ```
-
-- `create-thinking-process` - Creates a new sequential thinking process
-  ```json
-  {
-    "name": "Process Name",
-    "description": "Process Description",
-    "steps": [
-      {
-        "name": "Step Name",
-        "description": "Step Description",
-        "prompt": "Step Prompt Template"
-      }
-    ]
-  }
-  ```
-
 ## Standard Protocol Methods
 
 All MCP servers implement the following standard methods:
@@ -461,20 +408,6 @@ Several test scripts are available for testing the Supabase MCP server:
    node mcp-servers/vercel_api_test.js
    ```
 
-### Sequential Thinking MCP Server Tests
-
-1. **Basic Test**: Tests basic functionality of the Sequential Thinking MCP server
-   ```
-   node mcp-servers/sequential-thinking/test.js
-   ```
-
-### All Servers Test
-
-Tests all MCP servers in sequence:
-```
-node mcp-servers/test-all.js
-```
-
 ## Environment Configuration
 
 All MCP servers require environment variables to be set for authentication with their respective services. Create a `.env` file in the root directory with the necessary credentials:
@@ -489,9 +422,6 @@ GITHUB_TOKEN=your_github_personal_access_token
 
 # Vercel Configuration
 VERCEL_TOKEN=your_vercel_token
-
-# Sequential Thinking Configuration
-SMITHERY_API_KEY=your_smithery_api_key
 ```
 
 ## Security Considerations

@@ -77,8 +77,7 @@ async function runTests() {
   const results = {
     github: await testServer('github'),
     vercel: await testServer('vercel'),
-    supabase: await testServer('supabase'),
-    'sequential-thinking': await testServer('sequential-thinking')
+    supabase: await testServer('supabase')
   };
   
   console.log('\n--- TEST RESULTS ---');
