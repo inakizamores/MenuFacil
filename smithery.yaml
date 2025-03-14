@@ -1,0 +1,25 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - githubToken
+    properties:
+      githubToken:
+        type: string
+        description: Your GitHub personal access token to access GitHub APIs
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['mcp-servers/github/index.js'],
+      env: {
+        GITHUB_TOKEN: config.githubToken
+      }
+    })
+  exampleConfig:
+    githubToken: ghp_yourGitHubTokenHere
