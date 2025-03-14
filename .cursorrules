@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "MCP Configuration",
+      "description": "Rules for working with MCP servers",
+      "include": ["**/*"],
+      "commands": {
+        "preferredAIModel": "claude-3-opus-20240229"
+      },
+      "mcpContextRules": {
+        "enabledByDefault": true,
+        "servers": {
+          "@jlia0-servers": {
+            "enabled": true,
+            "priority": 1
+          },
+          "sequential-thinking": {
+            "enabled": true,
+            "priority": 2
+          },
+          "supabase": {
+            "enabled": true,
+            "priority": 3,
+            "paths": ["mcp-servers/supabase/**/*"]
+          },
+          "github": {
+            "enabled": true,
+            "priority": 3,
+            "paths": ["mcp-servers/github/**/*"]
+          },
+          "vercel": {
+            "enabled": true,
+            "priority": 3,
+            "paths": ["mcp-servers/vercel/**/*"]
+          }
+        }
+      }
+    },
+    {
+      "name": "MCP Server Development",
+      "description": "Rules for MCP server development files",
+      "include": ["mcp-servers/**/*"],
+      "fileAssociations": {
+        "*.js": "javascript"
+      },
+      "linting": {
+        "eslint": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "name": "Documentation Rules",
+      "description": "Rules for working with MCP documentation",
+      "include": ["**/MCP_DOCUMENTATION.md", "mcp-servers/**/README.md"],
+      "fileAssociations": {
+        "*.md": "markdown"
+      }
+    },
+    {
+      "name": "Persistent Memory Rules",
+      "description": "Rules for files related to persistent memory",
+      "include": ["memory.json"],
+      "fileAssociations": {
+        "*.json": "json"
+      },
+      "fileWatching": {
+        "enabled": true
+      }
+    },
+    {
+      "name": "Environment Configuration",
+      "description": "Rules for environment configuration files",
+      "include": [".env", ".env.example"],
+      "sensitivePatterns": [
+        "(?i)token\\s*=\\s*.+",
+        "(?i)key\\s*=\\s*.+",
+        "(?i)secret\\s*=\\s*.+",
+        "(?i)password\\s*=\\s*.+"
+      ]
+    }
+  ],
+  "aiSettings": {
+    "contextStrategy": {
+      "relevanceThreshold": 0.5,
+      "maxFiles": 10,
+      "preferWorkspaceFiles": true
+    },
+    "conversationPersistence": {
+      "enabled": true,
+      "storageProvider": "memory"
+    },
+    "mcpIntegration": {
+      "enabled": true,
+      "allowAutoInvocation": true,
+      "memoryPath": "${workspaceFolder}/memory.json",
+      "projectContext": "MenuFacil is a project that uses multiple MCP servers including Supabase, GitHub, Vercel, Persistent Memory, and Sequential Thinking to provide enhanced AI capabilities."
+    }
+  }
+} 
