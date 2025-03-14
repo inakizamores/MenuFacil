@@ -1,5 +1,7 @@
 # MenuFacil MCP Servers
 
+[![smithery badge](https://smithery.ai/badge/@inakizamores/menufacil)](https://smithery.ai/server/@inakizamores/menufacil)
+
 This repository contains Model Context Protocol (MCP) servers for integration with GitHub, Vercel, and Supabase.
 
 ## Model Context Protocol (MCP)
