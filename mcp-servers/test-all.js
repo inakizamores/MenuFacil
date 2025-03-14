@@ -70,13 +70,15 @@ console.log('VERCEL_TOKEN: ' + (process.env.VERCEL_TOKEN ? 'Present' : 'Missing'
 console.log('SUPABASE_URL: ' + (process.env.SUPABASE_URL ? 'Present' : 'Missing'));
 console.log('SUPABASE_ANON_KEY: ' + (process.env.SUPABASE_ANON_KEY ? 'Present' : 'Missing'));
 console.log('SUPABASE_SERVICE_KEY: ' + (process.env.SUPABASE_SERVICE_KEY ? 'Present' : 'Missing'));
+console.log('SMITHERY_API_KEY: ' + (process.env.SMITHERY_API_KEY ? 'Present' : 'Missing'));
 
 // Run tests
 async function runTests() {
   const results = {
     github: await testServer('github'),
     vercel: await testServer('vercel'),
-    supabase: await testServer('supabase')
+    supabase: await testServer('supabase'),
+    'sequential-thinking': await testServer('sequential-thinking')
   };
   
   console.log('\n--- TEST RESULTS ---');

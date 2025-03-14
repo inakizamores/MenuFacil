@@ -1,0 +1,21 @@
+{
+  "name": "sequential-thinking-mcp-server",
+  "version": "1.0.0",
+  "description": "Sequential Thinking MCP Server for structured thinking processes",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "mcp",
+    "sequential-thinking",
+    "smithery"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.1.6",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4",
+    "node-fetch": "^2.7.0"
+  }
+} 
