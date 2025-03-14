@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "@jlia0-servers": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@jlia0/servers",
+        "--config",
+        "{\"memoryFilePath\":\"memory.json\"}"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "sequential-thinking",
+        "--config",
+        "{}"
+      ]
+    }
+  }
+} 
