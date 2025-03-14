@@ -1,38 +1,52 @@
+// Load environment variables from .env file
+require('dotenv').config({ path: '../../.env' });
+
 const { McpServer, ResourceTemplate } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { createClient } = require('@supabase/supabase-js');
+const { z } = require('zod'); // Add zod for schema validation
 
-// Create an MCP server for Supabase
+// Create an MCP server for Supabase with explicit capabilities
 const server = new McpServer({
   name: "Supabase MCP Server",
   version: "1.0.0"
+}, {
+  capabilities: {
+    resources: {},
+    tools: {}
+  }
 });
 
 // Get Supabase credentials from environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://iawspochdngompqmxyhf.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY;
 
-// Initialize Supabase client
+// Initialize Supabase client on demand
 let supabase;
-
-// Resource for getting table schema
-server.resource(
-  "table-schema",
-  new ResourceTemplate("supabase://tables/{tableName}/schema", { list: undefined }),
-  async (uri, { tableName }) => {
+function getSupabaseClient() {
+  if (!supabase) {
     if (!SUPABASE_KEY) {
       throw new Error("SUPABASE_KEY is not set");
     }
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+  return supabase;
+}
 
-    if (!supabase) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
+// Resource for listing Supabase tables
+server.resource(
+  "tables-list",
+  "supabase://tables",
+  async (uri) => {
+    const client = getSupabaseClient();
+    
     try {
-      // Query RPC function that returns table info
-      const { data, error } = await supabase.rpc('get_table_schema', {
-        table_name: tableName
-      });
+      // Query the list of tables
+      const { data, error } = await client
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .limit(100);
       
       if (error) throw error;
       
@@ -43,7 +57,46 @@ server.resource(
         }]
       };
     } catch (error) {
-      throw new Error(`Failed to fetch table schema: ${error.message}`);
+      return {
+        contents: [{
+          uri: uri.href,
+          text: `Error listing tables: ${error.message}\n\nYou can still query specific tables if you know their names.`
+        }]
+      };
+    }
+  }
+);
+
+// Resource for getting table schema
+server.resource(
+  "table-schema",
+  new ResourceTemplate("supabase://tables/{tableName}/schema", {}),
+  async (uri, { tableName }) => {
+    const client = getSupabaseClient();
+    
+    try {
+      // Query columns from information_schema
+      const { data, error } = await client
+        .from('information_schema.columns')
+        .select('column_name, data_type, is_nullable')
+        .eq('table_name', tableName)
+        .eq('table_schema', 'public');
+      
+      if (error) throw error;
+      
+      return {
+        contents: [{
+          uri: uri.href,
+          text: JSON.stringify(data, null, 2)
+        }]
+      };
+    } catch (error) {
+      return {
+        contents: [{
+          uri: uri.href,
+          text: `Error fetching schema for table ${tableName}: ${error.message}`
+        }]
+      };
     }
   }
 );
@@ -51,18 +104,12 @@ server.resource(
 // Resource for querying a table
 server.resource(
   "table-query",
-  new ResourceTemplate("supabase://tables/{tableName}", { list: undefined }),
+  new ResourceTemplate("supabase://tables/{tableName}", {}),
   async (uri, { tableName }) => {
-    if (!SUPABASE_KEY) {
-      throw new Error("SUPABASE_KEY is not set");
-    }
-
-    if (!supabase) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
+    const client = getSupabaseClient();
+    
     try {
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from(tableName)
         .select('*')
         .limit(100);
@@ -76,7 +123,12 @@ server.resource(
         }]
       };
     } catch (error) {
-      throw new Error(`Failed to query table: ${error.message}`);
+      return {
+        contents: [{
+          uri: uri.href,
+          text: `Error querying table ${tableName}: ${error.message}`
+        }]
+      };
     }
   }
 );
@@ -85,31 +137,49 @@ server.resource(
 server.tool(
   "execute-sql",
   {
-    query: String
+    query: z.string().describe("SQL query to execute")
   },
   async ({ query }) => {
-    if (!SUPABASE_KEY) {
-      throw new Error("SUPABASE_KEY is not set");
-    }
-
-    if (!supabase) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
+    const client = getSupabaseClient();
+    
     try {
-      // Use RPC to execute SQL (assuming a SQL executor function exists)
-      const { data, error } = await supabase.rpc('execute_sql', {
-        sql_query: query
-      });
-      
-      if (error) throw error;
-      
-      return {
-        content: [{ 
-          type: "text", 
-          text: JSON.stringify(data, null, 2) 
-        }]
-      };
+      // Try to use the execute_sql RPC function if it exists
+      try {
+        const { data, error } = await client.rpc('execute_sql', {
+          sql_query: query
+        });
+        
+        if (error) throw error;
+        
+        return {
+          content: [{ 
+            type: "text", 
+            text: JSON.stringify(data, null, 2) 
+          }]
+        };
+      } catch (rpcError) {
+        // If the RPC function doesn't exist, return a helpful message
+        return {
+          content: [{ 
+            type: "text", 
+            text: `The execute_sql RPC function does not exist in your Supabase database. 
+            
+To create it, you can run the following SQL in the Supabase SQL editor:
+
+CREATE OR REPLACE FUNCTION execute_sql(sql_query TEXT)
+RETURNS JSONB AS $$
+DECLARE
+  result JSONB;
+BEGIN
+  EXECUTE sql_query INTO result;
+  RETURN result;
+EXCEPTION WHEN OTHERS THEN
+  RETURN jsonb_build_object('error', SQLERRM);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;` 
+          }]
+        };
+      }
     } catch (error) {
       return {
         content: [{ 
@@ -125,20 +195,14 @@ server.tool(
 server.tool(
   "insert-data",
   {
-    tableName: String,
-    data: Object
+    tableName: z.string().describe("Name of the table to insert data into"),
+    data: z.record(z.any()).describe("Data to insert")
   },
   async ({ tableName, data }) => {
-    if (!SUPABASE_KEY) {
-      throw new Error("SUPABASE_KEY is not set");
-    }
-
-    if (!supabase) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
+    const client = getSupabaseClient();
+    
     try {
-      const { data: result, error } = await supabase
+      const { data: result, error } = await client
         .from(tableName)
         .insert(data)
         .select();
@@ -166,21 +230,15 @@ server.tool(
 server.tool(
   "update-data",
   {
-    tableName: String,
-    filter: Object,
-    data: Object
+    tableName: z.string().describe("Name of the table to update"),
+    filter: z.record(z.any()).describe("Filter criteria"),
+    data: z.record(z.any()).describe("Data to update")
   },
   async ({ tableName, filter, data }) => {
-    if (!SUPABASE_KEY) {
-      throw new Error("SUPABASE_KEY is not set");
-    }
-
-    if (!supabase) {
-      supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-
+    const client = getSupabaseClient();
+    
     try {
-      let query = supabase.from(tableName).update(data);
+      let query = client.from(tableName).update(data);
       
       // Apply filters
       Object.entries(filter).forEach(([key, value]) => {
@@ -208,9 +266,9 @@ server.tool(
   }
 );
 
-// Start the server
+// Connect the server using stdio transport
 const transport = new StdioServerTransport();
-server.connect(transport).catch(error => {
-  console.error("Error connecting to transport:", error);
+server.connect(transport).catch(err => {
+  console.error("Failed to connect MCP server:", err);
   process.exit(1);
 }); 

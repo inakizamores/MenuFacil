@@ -1,0 +1,39 @@
+name: Security Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  check-sensitive-files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Check for sensitive files
+        run: |
+          echo "Checking for sensitive files that should not be in the repository..."
+          
+          # Check for .env files
+          ENV_FILES=$(find . -type f -name ".env*" -not -path "*/node_modules/*" -not -path "*/.git/*")
+          if [ -n "$ENV_FILES" ]; then
+            echo "⚠️ WARNING: Found .env files in the repository:"
+            echo "$ENV_FILES"
+            echo "These files may contain sensitive information and should be removed."
+            exit 1
+          fi
+          
+          # Check for other potential sensitive files
+          SENSITIVE_FILES=$(find . -type f \( -name "*secret*" -o -name "*password*" -o -name "*credential*" -o -name "*token*" \) -not -path "*/node_modules/*" -not -path "*/.git/*" -not -path "*/.github/workflows/*")
+          if [ -n "$SENSITIVE_FILES" ]; then
+            echo "⚠️ WARNING: Found potentially sensitive files:"
+            echo "$SENSITIVE_FILES"
+            echo "Please verify these files don't contain sensitive information."
+            echo "This is a warning only and won't fail the workflow."
+          fi
+          
+          echo "✅ No .env files found in the repository." 

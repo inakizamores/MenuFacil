@@ -1,5 +1,5 @@
 {
-  "name": "supabase",
+  "name": "github",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,8 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "@supabase/supabase-js": "^2.49.1",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "octokit": "^4.1.2",
+    "tweetsodium": "^0.0.4"
   }
 }

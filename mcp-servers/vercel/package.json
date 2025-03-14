@@ -1,5 +1,5 @@
 {
-  "name": "supabase",
+  "name": "vercel",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -13,6 +13,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@supabase/supabase-js": "^2.49.1",
+    "@vercel/client": "^15.1.6",
     "dotenv": "^16.4.7"
   }
 }

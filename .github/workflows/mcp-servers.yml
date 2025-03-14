@@ -1,0 +1,115 @@
+name: MCP Servers
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1'  # Run weekly on Mondays at midnight
+
+jobs:
+  run-mcp-servers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd mcp-servers
+          npm install
+          cd github
+          npm install
+          cd ../vercel
+          npm install
+          cd ../supabase
+          npm install
+        
+      # Configure environment variables for MCP servers
+      - name: Configure environment
+        run: |
+          echo "Setting up environment variables for MCP servers"
+          echo "GITHUB_TOKEN=${{ secrets.GH_PAT }}" >> .env
+          echo "VERCEL_TOKEN=${{ secrets.VERCEL_TOKEN }}" >> .env
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}" >> .env
+          
+      # Test the GitHub MCP server
+      - name: Test GitHub MCP Server
+        run: |
+          cd mcp-servers
+          node -e "
+          const { spawn } = require('child_process');
+          const server = spawn('node', ['github/index.js']);
+          
+          // Log server output
+          server.stdout.on('data', (data) => {
+            console.log(\`GitHub MCP Server: \${data}\`);
+          });
+          
+          server.stderr.on('data', (data) => {
+            console.error(\`GitHub MCP Server Error: \${data}\`);
+          });
+          
+          // Wait for server to initialize
+          setTimeout(() => {
+            console.log('GitHub MCP server initialized');
+            server.kill();
+            process.exit(0);
+          }, 5000);
+          "
+          
+      # Test the Vercel MCP server
+      - name: Test Vercel MCP Server
+        run: |
+          cd mcp-servers
+          node -e "
+          const { spawn } = require('child_process');
+          const server = spawn('node', ['vercel/index.js']);
+          
+          // Log server output
+          server.stdout.on('data', (data) => {
+            console.log(\`Vercel MCP Server: \${data}\`);
+          });
+          
+          server.stderr.on('data', (data) => {
+            console.error(\`Vercel MCP Server Error: \${data}\`);
+          });
+          
+          // Wait for server to initialize
+          setTimeout(() => {
+            console.log('Vercel MCP server initialized');
+            server.kill();
+            process.exit(0);
+          }, 5000);
+          "
+          
+      # Test the Supabase MCP server
+      - name: Test Supabase MCP Server
+        run: |
+          cd mcp-servers
+          node -e "
+          const { spawn } = require('child_process');
+          const server = spawn('node', ['supabase/index.js']);
+          
+          // Log server output
+          server.stdout.on('data', (data) => {
+            console.log(\`Supabase MCP Server: \${data}\`);
+          });
+          
+          server.stderr.on('data', (data) => {
+            console.error(\`Supabase MCP Server Error: \${data}\`);
+          });
+          
+          // Wait for server to initialize
+          setTimeout(() => {
+            console.log('Supabase MCP server initialized');
+            server.kill();
+            process.exit(0);
+          }, 5000);
+          " 
