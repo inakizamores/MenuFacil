@@ -15,10 +15,6 @@
             "enabled": true,
             "priority": 1
           },
-          "sequential-thinking": {
-            "enabled": true,
-            "priority": 2
-          },
           "supabase": {
             "enabled": true,
             "priority": 3,
@@ -95,7 +91,7 @@
       "enabled": true,
       "allowAutoInvocation": true,
       "memoryPath": "${workspaceFolder}/memory.json",
-      "projectContext": "MenuFacil is a project that uses multiple MCP servers including Supabase, GitHub, Vercel, Persistent Memory, and Sequential Thinking to provide enhanced AI capabilities."
+      "projectContext": "MenuFacil is a project that uses multiple MCP servers including Supabase, GitHub, Vercel, and Persistent Memory to provide enhanced AI capabilities."
     }
   }
 } 

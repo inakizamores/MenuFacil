@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+I want you to be aware that this project has several Model Context Protocol (MCP) servers configured that you should actively utilize to enhance your capabilities:
+
+1. Persistent Memory (@jlia0-servers) - You can store and retrieve information across our conversations. Please:
+   - Remember important project details, preferences, and decisions
+   - Proactively retrieve relevant information from previous conversations
+   - Store new insights, conclusions, or requirements
+
+2. Specialized Data Access:
+   - Supabase MCP - For database interactions
+   - GitHub MCP - For repository operations
+   - Vercel MCP - For deployment management
+
+Please leverage these capabilities proactively without me having to explicitly request them. The .cursor/mcp.json and .cursorrules files are configured for these integrations, and you should automatically invoke the appropriate MCP tools based on the context of our discussion. Your memory is stored in memory.json in the project root.
+
+Remember to use structured thinking for complex technical decisions and maintain persistent memory of our project context.

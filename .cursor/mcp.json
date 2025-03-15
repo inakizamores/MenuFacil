@@ -12,19 +12,6 @@
         "--config",
         "{\"memoryFilePath\":\"memory.json\"}"
       ]
-    },
-    "sequential-thinking": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "sequential-thinking",
-        "--config",
-        "{}"
-      ]
     }
   }
 } 

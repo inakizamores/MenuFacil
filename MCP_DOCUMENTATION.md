@@ -8,7 +8,6 @@
   - [GitHub MCP Server](#github-mcp-server)
   - [Vercel MCP Server](#vercel-mcp-server)
   - [Persistent Memory MCP Server](#persistent-memory-mcp-server)
-  - [Sequential Thinking MCP Server](#sequential-thinking-mcp-server)
 - [Standard Protocol Methods](#standard-protocol-methods)
 - [Testing the MCP Servers](#testing-the-mcp-servers)
 - [Environment Configuration](#environment-configuration)
@@ -26,7 +25,6 @@ This project implements several MCP servers that expose different data sources a
 - **GitHub MCP Server**: For accessing GitHub repositories and performing GitHub operations
 - **Vercel MCP Server**: For managing Vercel deployments and projects
 - **Persistent Memory MCP Server**: For storing and retrieving persistent memory across conversations
-- **Sequential Thinking MCP Server**: For structured, step-by-step thinking processes
 
 All these servers follow the MCP specification, allowing them to be used with any MCP client.
 
@@ -368,88 +366,6 @@ The server uses a local file (`memory.json`) to store conversation data that per
   }
   ```
 
-### Sequential Thinking MCP Server
-
-The Sequential Thinking MCP server provides capabilities for structured, step-by-step thinking processes, enabling LLMs to break down complex problems into manageable steps.
-
-#### Implementation Details
-
-The server is implemented using:
-- The Smithery MCP infrastructure
-- Structured thinking frameworks
-- JSON for data exchange
-
-#### Configuration
-
-This server is configured in the `.cursor/mcp.json` file:
-```json
-{
-  "mcpServers": {
-    "sequential-thinking": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@smithery/cli@latest",
-        "run",
-        "sequential-thinking",
-        "--config",
-        "{}"
-      ]
-    }
-  }
-}
-```
-
-#### Resources
-
-- `sequential-thinking://frameworks` - Lists available thinking frameworks
-- `sequential-thinking://frameworks/{id}` - Shows details of a specific thinking framework
-- `sequential-thinking://sessions` - Lists active thinking sessions
-
-#### Tools
-
-- `create-thinking-session` - Creates a new sequential thinking session
-  ```json
-  {
-    "framework": "problem-solving",
-    "context": "Analyzing performance bottlenecks in a web application",
-    "steps": [
-      "Define the problem",
-      "Gather information",
-      "Identify possible causes",
-      "Evaluate solutions",
-      "Implement and test"
-    ]
-  }
-  ```
-
-- `advance-thinking` - Advances to the next step in a thinking process
-  ```json
-  {
-    "sessionId": "session-123",
-    "currentStep": {
-      "name": "Define the problem",
-      "result": "The web application loads slowly on mobile devices"
-    },
-    "nextStep": "Gather information"
-  }
-  ```
-
-- `conclude-thinking` - Finalizes a thinking session with conclusions
-  ```json
-  {
-    "sessionId": "session-123",
-    "conclusion": "The performance bottleneck is caused by large unoptimized images",
-    "recommendations": [
-      "Implement lazy loading for images",
-      "Use responsive image sizing",
-      "Apply WebP format conversion"
-    ]
-  }
-  ```
-
 ## Standard Protocol Methods
 
 All MCP servers implement the following standard methods:
@@ -575,14 +491,6 @@ Testing the Persistent Memory MCP server:
 ```
 # No dedicated test files yet
 # The server can be tested by running Cursor and using memory functions
-```
-
-### Sequential Thinking MCP Server Tests
-
-Testing the Sequential Thinking MCP server:
-```
-# No dedicated test files yet
-# The server can be tested by running Cursor and using sequential thinking
 ```
 
 ## Environment Configuration
