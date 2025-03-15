@@ -1,0 +1,437 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/context/auth-context';
+import { getMenu, getMenuCategories, createCategory, deleteCategory } from '@/app/utils/db';
+import { MenuCategory } from '@/app/types/database';
+import Button from '@/app/components/ui/button';
+import Input from '@/app/components/ui/input';
+
+// Components
+const CategoryCard = ({ 
+  category, 
+  onEdit, 
+  onDelete, 
+  onView 
+}: { 
+  category: MenuCategory;
+  onEdit: () => void;
+  onDelete: () => void;
+  onView: () => void;
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isDeleting) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete the "${category.name}" category? This will delete all items in this category.`);
+    
+    if (confirmed) {
+      setIsDeleting(true);
+      onDelete();
+    }
+  };
+  
+  return (
+    <div className="overflow-hidden rounded-lg bg-white shadow">
+      <div className="px-4 py-5 sm:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium leading-6 text-gray-900 line-clamp-1">
+              {category.name}
+            </h3>
+            {!category.is_active && (
+              <span className="mt-1 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                Inactive
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {category.description && (
+          <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+            {category.description}
+          </p>
+        )}
+        
+        <div className="mt-4 flex justify-end space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+          >
+            Edit
+          </Button>
+          <Button 
+            variant="primary" 
+            size="sm"
+            onClick={onView}
+          >
+            View Items
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AddCategoryForm = ({ 
+  onCancel, 
+  onSubmit,
+  menuId
+}: { 
+  onCancel: () => void;
+  onSubmit: (category: Omit<MenuCategory, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  menuId: string;
+}) => {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!name.trim()) {
+      setError('Category name is required');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      await onSubmit({
+        menu_id: menuId as `${string}-${string}-${string}-${string}-${string}`,
+        name,
+        description: description || null,
+        image_url: null,
+        sort_order: 0,
+        is_active: true
+      });
+      
+      // Reset form
+      setName('');
+      setDescription('');
+    } catch (err: any) {
+      setError(err.message || 'Failed to add category');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <div className="mb-6 rounded-lg bg-white p-6 shadow">
+      <h3 className="mb-4 text-lg font-medium text-gray-900">Add Category</h3>
+      
+      {error && (
+        <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+      
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 gap-4">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+              Category Name <span className="text-red-500">*</span>
+            </label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+              Description (optional)
+            </label>
+            <textarea
+              id="description"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
+            >
+              Add Category
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const EmptyState = ({ onAddCategory }: { onAddCategory: () => void }) => {
+  return (
+    <div className="flex min-h-[40vh] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-8 text-center">
+      <h3 className="mt-2 text-sm font-medium text-gray-900">No categories</h3>
+      <p className="mt-1 text-sm text-gray-500">
+        Start by adding categories to your menu.
+      </p>
+      <div className="mt-6">
+        <Button onClick={onAddCategory}>
+          <svg 
+            className="-ml-1 mr-2 h-5 w-5" 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Add Category
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const LoadingState = () => {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center">
+      <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+      <p className="mt-4 text-sm text-gray-500">Loading menu...</p>
+    </div>
+  );
+};
+
+interface MenuPageProps {
+  params: {
+    restaurantId: string;
+    menuId: string;
+  };
+}
+
+export default function MenuPage({ params }: MenuPageProps) {
+  const { restaurantId, menuId } = params;
+  const [menu, setMenu] = useState<any>(null);
+  const [categories, setCategories] = useState<MenuCategory[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const fetchData = async () => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    try {
+      const menuData = await getMenu(menuId);
+      
+      if (!menuData) {
+        setError('Menu not found');
+        setIsLoading(false);
+        return;
+      }
+      
+      setMenu(menuData);
+      
+      const categoriesData = await getMenuCategories(menuId);
+      setCategories(categoriesData);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Failed to load data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [menuId, user, router]);
+
+  const handleAddCategory = async (category: Omit<MenuCategory, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      await createCategory(category);
+      setShowAddCategory(false);
+      // Refresh categories
+      const categoriesData = await getMenuCategories(menuId);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error adding category:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      const success = await deleteCategory(categoryId);
+      if (success) {
+        // Filter out the deleted category
+        setCategories(categories => categories?.filter(cat => cat.id !== categoryId) || null);
+      } else {
+        throw new Error('Failed to delete category');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Failed to delete category. Please try again.');
+    }
+  };
+
+  const handleEditCategory = (categoryId: string) => {
+    router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}/edit`);
+  };
+
+  const handleViewCategoryItems = (categoryId: string) => {
+    router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error || !menu) {
+    return (
+      <div className="rounded-md bg-red-50 p-4">
+        <div className="flex">
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>{error || 'Failed to load menu'}</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
+              >
+                Back to menus
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <div className="flex items-center">
+            <button
+              onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
+              className="mr-2 text-gray-500 hover:text-gray-700"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+              {menu.name}
+            </h1>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">
+            {menu.is_active ? (
+              <span className="text-green-600">Active</span>
+            ) : (
+              <span className="text-red-600">Inactive</span>
+            )}{' '}
+            {menu.is_default && (
+              <span className="ml-2 text-blue-600">Default Menu</span>
+            )}
+          </p>
+        </div>
+        <div className="flex space-x-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/edit`)}
+          >
+            Edit Menu
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/preview`)}
+          >
+            Preview
+          </Button>
+        </div>
+      </div>
+
+      {menu.description && (
+        <div className="mb-6">
+          <h2 className="text-sm font-medium text-gray-500">Description</h2>
+          <p className="text-gray-700">{menu.description}</p>
+        </div>
+      )}
+
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-lg font-medium text-gray-900">Categories</h2>
+        <Button 
+          onClick={() => setShowAddCategory(!showAddCategory)}
+          disabled={showAddCategory}
+        >
+          <svg 
+            className="-ml-1 mr-2 h-5 w-5" 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Add Category
+        </Button>
+      </div>
+
+      {showAddCategory && (
+        <AddCategoryForm 
+          onCancel={() => setShowAddCategory(false)} 
+          onSubmit={handleAddCategory}
+          menuId={menuId}
+        />
+      )}
+
+      {categories && categories.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {categories.map((category) => (
+            <CategoryCard
+              key={category.id as string}
+              category={category}
+              onEdit={() => handleEditCategory(category.id as string)}
+              onDelete={() => handleDeleteCategory(category.id as string)}
+              onView={() => handleViewCategoryItems(category.id as string)}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState onAddCategory={() => setShowAddCategory(true)} />
+      )}
+    </div>
+  );
+} 

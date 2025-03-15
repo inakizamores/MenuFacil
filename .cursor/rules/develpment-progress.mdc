@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+[develpment-progress.mdc](mdc:.cursor/rules/develpment-progress.mdc) keep track in this file of the advancement is feature develpment, whtas missing, whats complete, what needs improvemnt, etc. After each run that succesfully adds features.
