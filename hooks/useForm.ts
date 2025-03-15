@@ -1,18 +1,27 @@
 import { useState, useCallback, ChangeEvent, FormEvent } from 'react';
 
 type ValidationFunction<T> = (value: any, values: T) => string | null;
-type ValidationRule<T> = ValidationFunction<T>;
-type ValidationRules<T> = Partial<Record<keyof T, ValidationRule<T>[]>>;
+
+type ValidationRules<T> = {
+  [K in keyof T]?: ValidationFunction<T>[];
+};
+
+// This is the validation schema format used in the menu item pages
+type ValidationSchema<T> = {
+  [K in keyof T]?: (value: any) => string | null;
+};
 
 interface UseFormOptions<T> {
   initialValues: T;
   validationRules?: ValidationRules<T>;
+  validationSchema?: ValidationSchema<T>; // Support for older pattern
   onSubmit?: (values: T) => void | Promise<void>;
 }
 
 export function useForm<T extends Record<string, any>>({
   initialValues,
   validationRules = {},
+  validationSchema = {},
   onSubmit
 }: UseFormOptions<T>) {
   const [values, setValues] = useState<T>(initialValues);
@@ -23,17 +32,25 @@ export function useForm<T extends Record<string, any>>({
   // Validate a single field
   const validateField = useCallback(
     (name: keyof T, value: any): string | null => {
+      // First check validation rules (array-based)
       const fieldRules = validationRules[name];
-      if (!fieldRules) return null;
+      if (fieldRules) {
+        for (const rule of fieldRules) {
+          const error = rule(value, values);
+          if (error) return error;
+        }
+      }
 
-      for (const rule of fieldRules) {
-        const error = rule(value, values);
+      // Then check validation schema (function-based)
+      const schemaValidator = validationSchema[name];
+      if (schemaValidator) {
+        const error = schemaValidator(value);
         if (error) return error;
       }
 
       return null;
     },
-    [validationRules, values]
+    [validationRules, validationSchema, values]
   );
 
   // Validate all fields
@@ -54,61 +71,70 @@ export function useForm<T extends Record<string, any>>({
     return isValid;
   }, [values, validateField]);
 
-  // Handle field change
+  // Handle input change
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const { name, value, type } = e.target as HTMLInputElement;
+      const { name, value, type } = e.target;
       const fieldName = name as keyof T;
       
-      let fieldValue: any = value;
-      
-      // Handle checkbox
-      if (type === 'checkbox') {
-        fieldValue = (e.target as HTMLInputElement).checked;
-      }
-      
-      setValues((prevValues) => ({
-        ...prevValues,
-        [fieldName]: fieldValue,
-      }));
+      // Handle checkbox inputs
+      const newValue = type === 'checkbox' 
+        ? (e.target as HTMLInputElement).checked
+        : value;
 
-      // Validate on change for better UX
-      if (touched[fieldName]) {
-        const error = validateField(fieldName, fieldValue);
-        setErrors((prevErrors) => ({
-          ...prevErrors,
-          [fieldName]: error || undefined,
+      // Handle nested object paths (e.g., "address.street")
+      if (name.includes('.')) {
+        const parts = name.split('.');
+        const [parentKey, childKey] = parts;
+        
+        setValues((prevValues) => ({
+          ...prevValues,
+          [parentKey]: {
+            ...prevValues[parentKey],
+            [childKey]: newValue,
+          },
+        }));
+      } else {
+        setValues((prevValues) => ({
+          ...prevValues,
+          [fieldName]: newValue,
         }));
       }
     },
-    [touched, validateField]
+    []
   );
 
-  // Handle direct field value setting
+  // Set a specific field value
   const setFieldValue = useCallback(
-    (name: keyof T, value: any) => {
-      const fieldName = name as keyof T;
-      
-      setValues((prevValues) => ({
-        ...prevValues,
-        [fieldName]: value,
-      }));
-
-      // Validate on change for better UX
-      if (touched[fieldName]) {
-        const error = validateField(fieldName, value);
-        setErrors((prevErrors) => ({
-          ...prevErrors,
-          [fieldName]: error || undefined,
+    (name: keyof T | string, value: any) => {
+      // Handle nested object paths (e.g., "address.street")
+      if (typeof name === 'string' && name.includes('.')) {
+        const parts = name.split('.');
+        const [parentKey, childKey] = parts;
+        
+        setValues((prevValues) => ({
+          ...prevValues,
+          [parentKey]: {
+            ...prevValues[parentKey],
+            [childKey]: value,
+          },
+        }));
+      } else {
+        setValues((prevValues) => ({
+          ...prevValues,
+          [name]: value,
         }));
       }
     },
-    [touched, validateField]
+    []
   );
 
-  // Set all form values
+  // Set entire form values
   const setFormValues = useCallback((newValues: Partial<T>) => {
-    setValues(prev => ({ ...prev, ...newValues }));
+    setValues((prevValues) => ({
+      ...prevValues,
+      ...newValues,
+    }));
   }, []);
 
   // Handle field blur

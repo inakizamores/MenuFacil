@@ -6,7 +6,8 @@ import {
   MenuCategory,
   MenuItem,
   RestaurantMember,
-  TeamRole
+  TeamRole,
+  QRCode
 } from '../types/database';
 
 // ===== PROFILES =====
@@ -516,4 +517,168 @@ export async function getCompleteMenu(menuId: string): Promise<{
     menu,
     categories: categoriesWithItems
   };
+}
+
+// ===== QR CODES =====
+export async function createQRCode(qrCodeData: Omit<QRCode, 'id' | 'created_at' | 'updated_at' | 'unique_views' | 'total_views'>): Promise<QRCode | null> {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .insert({
+        ...qrCodeData,
+        unique_views: 0,
+        total_views: 0,
+        updated_at: new Date().toISOString()
+      })
+      .select('*')
+      .single();
+      
+    if (error) {
+      console.error('Error creating QR code:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception creating QR code:', err);
+    return null;
+  }
+}
+
+export async function getQRCodes(restaurantId: string): Promise<QRCode[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching QR codes:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching QR codes:', err);
+    return null;
+  }
+}
+
+export async function getMenuQRCodes(menuId: string): Promise<QRCode[] | null> {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select('*')
+      .eq('menu_id', menuId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching menu QR codes:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching menu QR codes:', err);
+    return null;
+  }
+}
+
+export async function getQRCode(qrCodeId: string): Promise<QRCode | null> {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select('*')
+      .eq('id', qrCodeId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching QR code:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching QR code:', err);
+    return null;
+  }
+}
+
+export async function updateQRCode(qrCodeId: string, qrCodeData: Partial<QRCode>): Promise<QRCode | null> {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .update({
+        ...qrCodeData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', qrCodeId)
+      .select('*')
+      .single();
+      
+    if (error) {
+      console.error('Error updating QR code:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception updating QR code:', err);
+    return null;
+  }
+}
+
+export async function deleteQRCode(qrCodeId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('qr_codes')
+      .delete()
+      .eq('id', qrCodeId);
+      
+    if (error) {
+      console.error('Error deleting QR code:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception deleting QR code:', err);
+    return false;
+  }
+}
+
+export async function incrementQRCodeViews(qrCodeId: string): Promise<boolean> {
+  try {
+    // Get current view counts
+    const { data: qrCode, error: fetchError } = await supabase
+      .from('qr_codes')
+      .select('unique_views, total_views')
+      .eq('id', qrCodeId)
+      .single();
+      
+    if (fetchError || !qrCode) {
+      console.error('Error fetching QR code for view increment:', fetchError);
+      return false;
+    }
+    
+    // Update the views
+    const { error: updateError } = await supabase
+      .from('qr_codes')
+      .update({
+        total_views: qrCode.total_views + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', qrCodeId);
+      
+    if (updateError) {
+      console.error('Error incrementing QR code views:', updateError);
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    console.error('Exception incrementing QR code views:', err);
+    return false;
+  }
 } 

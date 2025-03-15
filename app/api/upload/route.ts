@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+
+export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
     // Create a Supabase client
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createServerClient();
     
     // Get the file from the request
     const formData = await request.formData();
@@ -78,10 +79,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}; 
+} 

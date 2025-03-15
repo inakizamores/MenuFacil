@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -5,6 +7,7 @@ import { useForm } from '@/hooks/useForm';
 import { validate, combineValidators } from '@/lib/validation';
 import { getCategory } from '@/actions/categories';
 import { createMenuItem } from '@/actions/menuItems';
+import { saveItemVariants } from '@/actions/menuItemVariants';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -12,6 +15,8 @@ import { Button } from '@/components/ui/Button';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { PriceInput } from '@/components/ui/PriceInput';
 import { Spinner } from '@/components/ui/Spinner';
+import VariantsManager from '@/app/components/menu/VariantsManager';
+import { MenuItemVariant } from '@/app/types/database';
 
 type MenuItemFormValues = {
   name: string;
@@ -35,8 +40,12 @@ const CreateMenuItemPage: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [variantError, setVariantError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSavingVariants, setIsSavingVariants] = useState(false);
+  const [pendingVariants, setPendingVariants] = useState<Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]>([]);
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
   
   // Get the restaurantId, menuId, and categoryId from the URL
   const path = window.location.pathname;
@@ -58,7 +67,8 @@ const CreateMenuItemPage: FC = () => {
     handleChange,
     handleBlur,
     handleSubmit,
-    setFieldValue
+    setFieldValue,
+    setValues
   } = useForm<MenuItemFormValues>({
     initialValues: {
       name: '',
@@ -94,11 +104,6 @@ const CreateMenuItemPage: FC = () => {
           return;
         }
 
-        if (!category) {
-          setError('Category not found');
-          return;
-        }
-
         // Create the menu item
         const result = await createMenuItem({
           name: values.name,
@@ -119,6 +124,17 @@ const CreateMenuItemPage: FC = () => {
           return;
         }
 
+        // Save variants if any
+        if (pendingVariants.length > 0 && result.id) {
+          setCreatedItemId(result.id);
+          const updatedVariants = pendingVariants.map(variant => ({
+            ...variant,
+            item_id: result.id as `${string}-${string}-${string}-${string}-${string}`
+          }));
+          
+          await saveItemVariants(result.id, updatedVariants);
+        }
+
         // Redirect back to category items page
         router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
         router.refresh();
@@ -131,38 +147,58 @@ const CreateMenuItemPage: FC = () => {
 
   // Fetch category details
   useEffect(() => {
-    const fetchCategoryDetails = async () => {
+    const fetchData = async () => {
       if (!user || !categoryId) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const result = await getCategory(categoryId);
+        // Fetch the category
+        const categoryResult = await getCategory(categoryId);
         
-        if (result.error) {
-          setError(result.error);
+        if (categoryResult.error) {
+          setError(categoryResult.error);
           setIsLoading(false);
           return;
         }
 
-        if (!result.data) {
+        if (!categoryResult.data) {
           setError('Category not found');
           setIsLoading(false);
           return;
         }
 
-        setCategory(result.data);
+        setCategory(categoryResult.data);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching category:', err);
+        console.error('Error fetching data:', err);
         setError('Failed to load category details');
         setIsLoading(false);
       }
     };
 
-    fetchCategoryDetails();
+    fetchData();
   }, [user, categoryId]);
+
+  // Handle saving variants
+  const handleSaveVariants = async (updatedVariants: Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]) => {
+    setIsSavingVariants(true);
+    setVariantError(null);
+    
+    try {
+      // When creating a new item, we don't have an item ID yet, so we'll store the variants
+      // and save them after the item is created
+      setPendingVariants(updatedVariants);
+      return Promise.resolve();
+    } catch (err) {
+      console.error('Error saving variants:', err);
+      setVariantError('Failed to save variants. Please try again.');
+      throw err;
+    } finally {
+      setIsSavingVariants(false);
+    }
+  };
 
   // Handle image upload
   const handleImageUpload = async (file: File) => {
@@ -251,7 +287,7 @@ const CreateMenuItemPage: FC = () => {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Add New Menu Item</h1>
+        <h1 className="text-2xl font-semibold">Create Menu Item</h1>
         <Button 
           onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`)}
           variant="outline"
@@ -337,6 +373,7 @@ const CreateMenuItemPage: FC = () => {
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="isAvailable"
+                  name="isAvailable"
                   checked={values.isAvailable}
                   onCheckedChange={(checked) => 
                     setFieldValue('isAvailable', checked === true)
@@ -350,6 +387,7 @@ const CreateMenuItemPage: FC = () => {
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="isPopular"
+                  name="isPopular"
                   checked={values.isPopular}
                   onCheckedChange={(checked) => 
                     setFieldValue('isPopular', checked === true)
@@ -453,10 +491,31 @@ const CreateMenuItemPage: FC = () => {
           </div>
         </div>
         
+        {/* Variants Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-medium mb-4">Item Variants</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Add size or variation options for this menu item, such as Small, Medium, Large, etc.
+            Each variant can have its own price adjustment relative to the base price.
+          </p>
+          
+          <VariantsManager 
+            itemId={createdItemId || 'temp-id'}
+            initialVariants={[]}
+            onSave={handleSaveVariants}
+          />
+          
+          {variantError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+              <p>{variantError}</p>
+            </div>
+          )}
+        </div>
+        
         <div className="border-t pt-6">
           <Button 
             type="submit" 
-            disabled={isSubmitting || isUploading}
+            disabled={isSubmitting || isUploading || isSavingVariants}
             className="w-full sm:w-auto"
           >
             {isSubmitting ? <Spinner size="sm" /> : 'Create Menu Item'}

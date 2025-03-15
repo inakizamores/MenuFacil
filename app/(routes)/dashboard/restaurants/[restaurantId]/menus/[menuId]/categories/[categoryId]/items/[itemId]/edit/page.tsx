@@ -1,3 +1,5 @@
+'use client';
+
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -5,6 +7,7 @@ import { useForm } from '@/hooks/useForm';
 import { validate, combineValidators } from '@/lib/validation';
 import { getCategory } from '@/actions/categories';
 import { getMenuItem, updateMenuItem } from '@/actions/menuItems';
+import { getItemVariants, saveItemVariants } from '@/actions/menuItemVariants';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -12,6 +15,8 @@ import { Button } from '@/components/ui/Button';
 import { FileUpload } from '@/components/ui/FileUpload';
 import { PriceInput } from '@/components/ui/PriceInput';
 import { Spinner } from '@/components/ui/Spinner';
+import VariantsManager from '@/app/components/menu/VariantsManager';
+import { MenuItemVariant } from '@/app/types/database';
 
 type MenuItemFormValues = {
   name: string;
@@ -35,9 +40,12 @@ const EditMenuItemPage: FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [category, setCategory] = useState<any>(null);
   const [menuItem, setMenuItem] = useState<any>(null);
+  const [variants, setVariants] = useState<MenuItemVariant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [variantError, setVariantError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSavingVariants, setIsSavingVariants] = useState(false);
   
   // Get the restaurantId, menuId, categoryId, and itemId from the URL
   const path = window.location.pathname;
@@ -177,6 +185,12 @@ const EditMenuItemPage: FC = () => {
 
         setCategory(categoryResult.data);
         
+        // Fetch variants
+        const variantsResult = await getItemVariants(itemId);
+        if (variantsResult.data) {
+          setVariants(variantsResult.data);
+        }
+        
         // Set form values from menu item data
         const item = itemResult.data;
         let nutritionInfo = null;
@@ -215,6 +229,35 @@ const EditMenuItemPage: FC = () => {
 
     fetchData();
   }, [user, itemId, categoryId, setValues]);
+
+  // Handle saving variants
+  const handleSaveVariants = async (updatedVariants: Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]) => {
+    setIsSavingVariants(true);
+    setVariantError(null);
+    
+    try {
+      const result = await saveItemVariants(itemId, updatedVariants);
+      
+      if (!result.success) {
+        setVariantError(result.error || 'Failed to save variants');
+        return;
+      }
+      
+      // Refresh variants
+      const variantsResult = await getItemVariants(itemId);
+      if (variantsResult.data) {
+        setVariants(variantsResult.data);
+      }
+      
+      return Promise.resolve();
+    } catch (err) {
+      console.error('Error saving variants:', err);
+      setVariantError('Failed to save variants. Please try again.');
+      throw err;
+    } finally {
+      setIsSavingVariants(false);
+    }
+  };
 
   // Handle image upload
   const handleImageUpload = async (file: File) => {
@@ -509,10 +552,31 @@ const EditMenuItemPage: FC = () => {
           </div>
         </div>
         
+        {/* Variants Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-medium mb-4">Item Variants</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Add size or variation options for this menu item, such as Small, Medium, Large, etc.
+            Each variant can have its own price adjustment relative to the base price.
+          </p>
+          
+          <VariantsManager 
+            itemId={itemId}
+            initialVariants={variants || []}
+            onSave={handleSaveVariants}
+          />
+          
+          {variantError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+              <p>{variantError}</p>
+            </div>
+          )}
+        </div>
+        
         <div className="border-t pt-6">
           <Button 
             type="submit" 
-            disabled={isSubmitting || isUploading}
+            disabled={isSubmitting || isUploading || isSavingVariants}
             className="w-full sm:w-auto"
           >
             {isSubmitting ? <Spinner size="sm" /> : 'Save Changes'}

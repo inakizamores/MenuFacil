@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
-import { getMenu, getMenuCategories, createCategory, deleteCategory } from '@/app/utils/db';
-import { MenuCategory } from '@/app/types/database';
+import { getMenu, getMenuCategories, createCategory, deleteCategory, updateMenu, createQRCode, getMenuQRCodes } from '@/app/utils/db';
+import { MenuCategory, Menu, QRCode } from '@/app/types/database';
 import Button from '@/app/components/ui/button';
 import Input from '@/app/components/ui/input';
+import QRCodeGenerator, { QRCodeDesignProps } from '@/app/components/qr-code/QRCodeGenerator';
 
 // Components
 const CategoryCard = ({ 
@@ -229,6 +230,177 @@ const LoadingState = () => {
   );
 };
 
+const MenuPublishPanel = ({ 
+  menu, 
+  onUpdate,
+  restaurantId
+}: { 
+  menu: Menu;
+  onUpdate: () => void;
+  restaurantId: string;
+}) => {
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showQROptions, setShowQROptions] = useState(false);
+  const [existingQRCodes, setExistingQRCodes] = useState<QRCode[] | null>(null);
+  const [isLoadingQRCodes, setIsLoadingQRCodes] = useState(false);
+  
+  const menuPublicUrl = `${window.location.origin}/menus/${menu.id}`;
+  
+  useEffect(() => {
+    if (showQROptions && menu.is_active) {
+      loadExistingQRCodes();
+    }
+  }, [showQROptions, menu.is_active]);
+  
+  const loadExistingQRCodes = async () => {
+    setIsLoadingQRCodes(true);
+    try {
+      const qrCodes = await getMenuQRCodes(menu.id as string);
+      setExistingQRCodes(qrCodes);
+    } catch (error) {
+      console.error('Error loading QR codes:', error);
+    } finally {
+      setIsLoadingQRCodes(false);
+    }
+  };
+  
+  const handlePublishToggle = async () => {
+    setIsPublishing(true);
+    
+    try {
+      await updateMenu(menu.id as string, { 
+        is_active: !menu.is_active,
+        updated_at: new Date().toISOString()
+      });
+      
+      onUpdate();
+    } catch (error) {
+      console.error('Error toggling menu published state:', error);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+  
+  const handleSaveQRCode = async (designOptions: QRCodeDesignProps) => {
+    try {
+      await createQRCode({
+        restaurant_id: restaurantId as `${string}-${string}-${string}-${string}-${string}`,
+        menu_id: menu.id as `${string}-${string}-${string}-${string}-${string}`,
+        name: `${menu.name} QR Code`,
+        description: `QR Code for ${menu.name}`,
+        url: menuPublicUrl,
+        custom_design: {
+          foregroundColor: designOptions.foregroundColor,
+          backgroundColor: designOptions.backgroundColor,
+          margin: designOptions.margin,
+          cornerRadius: designOptions.cornerRadius || 0
+        },
+        is_active: true,
+        image_url: null,
+        table_number: null
+      });
+      
+      // Reload QR codes
+      await loadExistingQRCodes();
+    } catch (error) {
+      console.error('Error creating QR code:', error);
+    }
+  };
+  
+  return (
+    <div className="mb-6 overflow-hidden rounded-lg bg-white shadow">
+      <div className="px-4 py-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+          <div>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">
+              Menu Status
+            </h3>
+            <div className="mt-1 max-w-xl text-sm text-gray-500">
+              <p>
+                {menu.is_active 
+                  ? 'Your menu is published and available to the public.' 
+                  : 'Your menu is currently unpublished and only visible to you.'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <Button
+              variant={menu.is_active ? "outline" : "primary"}
+              onClick={handlePublishToggle}
+              isLoading={isPublishing}
+              disabled={isPublishing}
+            >
+              {menu.is_active ? 'Unpublish Menu' : 'Publish Menu'}
+            </Button>
+          </div>
+        </div>
+        
+        {menu.is_active && (
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between">
+              <div>
+                <h4 className="text-base font-medium text-gray-900">QR Code</h4>
+                <p className="mt-1 text-sm text-gray-500">
+                  Generate a QR code for customers to scan and view your menu.
+                </p>
+              </div>
+              <div className="mt-4 sm:mt-0">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowQROptions(!showQROptions)}
+                >
+                  {showQROptions ? 'Hide Options' : 'Generate QR Code'}
+                </Button>
+              </div>
+            </div>
+            
+            {showQROptions && (
+              <div className="mt-4">
+                <QRCodeGenerator
+                  url={menuPublicUrl}
+                  menuName={menu.name}
+                  restaurantId={restaurantId}
+                  menuId={menu.id as string}
+                  onSave={handleSaveQRCode}
+                />
+                
+                {isLoadingQRCodes && (
+                  <div className="mt-4 text-center">
+                    <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-primary-500 border-r-transparent"></div>
+                    <p className="mt-2 text-sm text-gray-500">Loading QR codes...</p>
+                  </div>
+                )}
+                
+                {!isLoadingQRCodes && existingQRCodes && existingQRCodes.length > 0 && (
+                  <div className="mt-6">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Your QR Codes</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {existingQRCodes.map((qrCode) => (
+                        <div 
+                          key={qrCode.id} 
+                          className="border border-gray-200 rounded-md p-3 flex flex-col"
+                        >
+                          <div className="font-medium">{qrCode.name}</div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            Created: {new Date(qrCode.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-1">
+                            Views: {qrCode.total_views}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 interface MenuPageProps {
   params: {
     restaurantId: string;
@@ -313,6 +485,15 @@ export default function MenuPage({ params }: MenuPageProps) {
     router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
   };
 
+  const refreshMenu = async () => {
+    try {
+      const menuData = await getMenu(menuId);
+      setMenu(menuData);
+    } catch (err) {
+      console.error('Error refreshing menu:', err);
+    }
+  };
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -389,6 +570,12 @@ export default function MenuPage({ params }: MenuPageProps) {
           <p className="text-gray-700">{menu.description}</p>
         </div>
       )}
+
+      <MenuPublishPanel 
+        menu={menu} 
+        onUpdate={refreshMenu} 
+        restaurantId={restaurantId} 
+      />
 
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-lg font-medium text-gray-900">Categories</h2>

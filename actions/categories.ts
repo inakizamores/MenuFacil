@@ -1,3 +1,5 @@
+'use server';
+
 import { createServerClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -31,7 +33,7 @@ interface UpdateCategoryParams {
  */
 export async function getCategory(id: string) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     const { data, error } = await supabase
       .from('menu_categories')
@@ -56,14 +58,13 @@ export async function getCategory(id: string) {
  */
 export async function getMenuCategories(menuId: string) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     const { data, error } = await supabase
       .from('menu_categories')
       .select('*')
-      .eq('menuId', menuId)
-      .order('order', { ascending: true })
-      .order('name');
+      .eq('menu_id', menuId)
+      .order('sort_order');
     
     if (error) {
       console.error('Error fetching menu categories:', error);
@@ -87,7 +88,7 @@ export async function createCategory({
   order
 }: CreateCategoryParams) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     // If order not provided, get the highest order value and increment by 10
     let categoryOrder = order;
@@ -138,7 +139,7 @@ export async function updateCategory({
   order
 }: UpdateCategoryParams) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     const categoryData: any = {
       name,
@@ -172,7 +173,7 @@ export async function updateCategory({
  */
 export async function deleteCategory(id: string) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     // First, check if the category has any menu items
     const { data: itemCount, error: countError } = await supabase
@@ -212,7 +213,7 @@ export async function deleteCategory(id: string) {
  */
 export async function reorderCategories(categories: { id: string, order: number }[]) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     
     // Use a transaction to update all categories at once
     const updates = categories.map(cat => ({

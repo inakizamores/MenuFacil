@@ -1,0 +1,214 @@
+'use client';
+
+import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import Button from '@/app/components/ui/button';
+import Input from '@/app/components/ui/input';
+
+interface QRCodeGeneratorProps {
+  url: string;
+  menuName: string;
+  restaurantId: string;
+  menuId: string;
+  onSave: (designOptions: QRCodeDesignProps) => Promise<void>;
+}
+
+export interface QRCodeDesignProps {
+  foregroundColor: string;
+  backgroundColor: string;
+  logoUrl?: string;
+  cornerRadius?: number;
+  margin: number;
+}
+
+const QRCodeGenerator = ({
+  url,
+  menuName,
+  restaurantId,
+  menuId,
+  onSave
+}: QRCodeGeneratorProps) => {
+  const [designOptions, setDesignOptions] = useState<QRCodeDesignProps>({
+    foregroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
+    margin: 1,
+    cornerRadius: 0
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [qrName, setQrName] = useState(`${menuName} QR Code`);
+  
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(designOptions);
+    } catch (error) {
+      console.error('Error saving QR code:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const handleDownload = () => {
+    // Create a canvas element and draw the QR code
+    const canvas = document.createElement('canvas');
+    const size = 1024; // High-resolution for good quality prints
+    canvas.width = size;
+    canvas.height = size;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Draw background
+    ctx.fillStyle = designOptions.backgroundColor;
+    ctx.fillRect(0, 0, size, size);
+    
+    // Create a temporary SVG QR Code for rendering to canvas
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = `
+      <svg width="${size}" height="${size}">
+        ${document.querySelector('.qr-code-container svg')?.innerHTML}
+      </svg>
+    `;
+    
+    // Convert SVG to image and draw on canvas
+    const svgData = new XMLSerializer().serializeToString(tempContainer.querySelector('svg') as SVGElement);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, size, size);
+      
+      // Convert canvas to data URL
+      const dataUrl = canvas.toDataURL('image/png');
+      
+      // Create link and trigger download
+      const link = document.createElement('a');
+      link.download = `${qrName.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+    };
+    
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+  };
+  
+  return (
+    <div className="p-4 border border-gray-200 rounded-lg shadow-sm">
+      <h3 className="text-lg font-medium mb-4">QR Code Generator</h3>
+      
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* QR Code Preview */}
+        <div className="flex-1 flex flex-col items-center">
+          <div className="qr-code-container p-4 bg-white rounded-lg shadow mb-4">
+            <QRCodeSVG
+              value={url}
+              size={200}
+              bgColor={designOptions.backgroundColor}
+              fgColor={designOptions.foregroundColor}
+              level="H"
+              includeMargin={true}
+              className="mx-auto"
+            />
+          </div>
+          <div className="mt-4 w-full">
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="w-full"
+            >
+              Download QR Code
+            </Button>
+          </div>
+        </div>
+        
+        {/* Customization Options */}
+        <div className="flex-1">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="qrName" className="block text-sm font-medium text-gray-700 mb-1">
+                QR Code Name
+              </label>
+              <Input
+                id="qrName"
+                type="text"
+                value={qrName}
+                onChange={(e) => setQrName(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="fgColor" className="block text-sm font-medium text-gray-700 mb-1">
+                Foreground Color
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  id="fgColor"
+                  type="color"
+                  value={designOptions.foregroundColor}
+                  onChange={(e) => setDesignOptions({...designOptions, foregroundColor: e.target.value})}
+                  className="h-10 w-10 p-0 border border-gray-300 rounded"
+                />
+                <Input
+                  type="text"
+                  value={designOptions.foregroundColor}
+                  onChange={(e) => setDesignOptions({...designOptions, foregroundColor: e.target.value})}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 mb-1">
+                Background Color
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  id="bgColor"
+                  type="color"
+                  value={designOptions.backgroundColor}
+                  onChange={(e) => setDesignOptions({...designOptions, backgroundColor: e.target.value})}
+                  className="h-10 w-10 p-0 border border-gray-300 rounded"
+                />
+                <Input
+                  type="text"
+                  value={designOptions.backgroundColor}
+                  onChange={(e) => setDesignOptions({...designOptions, backgroundColor: e.target.value})}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="margin" className="block text-sm font-medium text-gray-700 mb-1">
+                Margin Size (0-4)
+              </label>
+              <input
+                id="margin"
+                type="range"
+                min="0"
+                max="4"
+                step="1"
+                value={designOptions.margin}
+                onChange={(e) => setDesignOptions({...designOptions, margin: parseInt(e.target.value)})}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+              <div className="text-sm text-gray-500 mt-1">{designOptions.margin}</div>
+            </div>
+            
+            <div className="mt-6">
+              <Button
+                variant="primary"
+                onClick={handleSave}
+                isLoading={isSaving}
+                disabled={isSaving}
+                className="w-full"
+              >
+                Save QR Code
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QRCodeGenerator; 
