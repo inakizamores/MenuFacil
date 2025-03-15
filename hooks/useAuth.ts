@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import React from 'react';
 
 interface AuthContextType {
   user: User | null;
@@ -14,7 +15,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: string | null }>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -87,7 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  // Use createElement instead of JSX in a .ts file
+  return React.createElement(AuthContext.Provider, { value }, children);
 }
 
 export function useAuth() {

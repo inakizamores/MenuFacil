@@ -75,12 +75,13 @@ export default function EditMenuItemPage() {
         const menuId = params.menuId as string;
 
         // Fetch menu item data
-        const itemData = await getMenuItem(itemId);
-        if (!itemData) {
-          setError('Menu item not found');
+        const itemResult = await getMenuItem(itemId);
+        if (itemResult.error || !itemResult.data) {
+          setError(itemResult.error || 'Menu item not found');
           setIsLoading(false);
           return;
         }
+        const itemData = itemResult.data;
 
         // Fetch category data
         const categoryData = await getCategory(categoryId);
@@ -174,7 +175,8 @@ export default function EditMenuItemPage() {
     }
   };
 
-  const handleImageChange = (file: File | null) => {
+  // Update handleImageChange to match FileUpload component's onFileSelected prop
+  const handleImageChange = (file: File) => {
     setFieldValue('image', file);
   };
 
@@ -250,7 +252,7 @@ export default function EditMenuItemPage() {
               name="price"
               value={values.price}
               onChange={(value) => setFieldValue('price', value)}
-              onBlur={handleBlur}
+              onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
               error={touched.price && errors.price ? errors.price : undefined}
             />
           </div>
@@ -270,10 +272,10 @@ export default function EditMenuItemPage() {
               </div>
             )}
             <FileUpload
-              id="image"
+              onFileSelected={handleImageChange}
               accept="image/*"
-              onChange={handleImageChange}
-              maxSize={5 * 1024 * 1024} // 5MB
+              maxSizeInMB={5}
+              preview={currentImageUrl || undefined}
             />
             <p className="text-xs text-muted-foreground">
               Recommended size: 800x600px. Max file size: 5MB.

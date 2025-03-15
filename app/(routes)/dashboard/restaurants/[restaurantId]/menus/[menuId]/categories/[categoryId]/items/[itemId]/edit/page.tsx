@@ -22,7 +22,7 @@ type MenuItemFormValues = {
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
+  image?: File | null;
   isAvailable: boolean;
   isPopular: boolean;
   preparationTime?: number;
@@ -46,6 +46,8 @@ const EditMenuItemPage: FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSavingVariants, setIsSavingVariants] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   
   // Get the restaurantId, menuId, categoryId, and itemId from the URL
   const path = window.location.pathname;
@@ -60,87 +62,34 @@ const EditMenuItemPage: FC = () => {
   const categoryId = pathParts[categoryIdIndex];
   const itemId = pathParts[itemIdIndex + 1]; // +1 because "items" is followed by the itemId
   
-  // Form setup with validation
-  const { 
-    values, 
-    errors, 
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    setFieldValue,
-    setValues
-  } = useForm<MenuItemFormValues>({
-    initialValues: {
-      name: '',
-      description: '',
-      price: 0,
-      imageUrl: '',
-      isAvailable: true,
-      isPopular: false,
-      preparationTime: undefined,
-      nutrition: {
-        calories: undefined,
-        protein: undefined,
-        carbs: undefined,
-        fat: undefined
+  // Validation rules
+  const validationRules = {
+    name: [validate.required('Name is required')],
+    price: [validate.required('Price is required')]
+  };
+
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldValue, setValues } = 
+    useForm<MenuItemFormValues>({
+      initialValues: {
+        name: '',
+        description: '',
+        price: 0,
+        image: null,
+        isAvailable: true,
+        isPopular: false,
+        preparationTime: undefined,
+        nutrition: {
+          calories: undefined,
+          protein: undefined,
+          carbs: undefined,
+          fat: undefined
+        }
+      },
+      validationRules,
+      onSubmit: async (formValues) => {
+        await handleUpdateMenuItem(formValues);
       }
-    },
-    validationSchema: {
-      name: (value) => validate.required(value, 'Item name is required'),
-      price: (value) => {
-        if (value === undefined || value === null) {
-          return 'Price is required';
-        }
-        if (value < 0) {
-          return 'Price cannot be negative';
-        }
-        return null;
-      }
-    },
-    onSubmit: async (values) => {
-      try {
-        if (!user) {
-          setError('You must be logged in');
-          return;
-        }
-
-        if (!menuItem) {
-          setError('Menu item not found');
-          return;
-        }
-
-        // Update the menu item
-        const result = await updateMenuItem({
-          id: itemId,
-          name: values.name,
-          description: values.description,
-          price: values.price,
-          image_url: values.imageUrl,
-          is_available: values.isAvailable,
-          is_popular: values.isPopular,
-          preparation_time: values.preparationTime,
-          nutrition_info: values.nutrition && Object.values(values.nutrition).some(val => val !== undefined) 
-            ? JSON.stringify(values.nutrition)
-            : null,
-          category_id: categoryId
-        });
-
-        if (result.error) {
-          setError(result.error);
-          return;
-        }
-
-        // Redirect back to category items page
-        router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
-        router.refresh();
-      } catch (err) {
-        console.error('Error updating menu item:', err);
-        setError('Failed to update menu item. Please try again.');
-      }
-    }
-  });
+    });
 
   // Fetch menu item and category details
   useEffect(() => {
@@ -207,7 +156,7 @@ const EditMenuItemPage: FC = () => {
           name: item.name || '',
           description: item.description || '',
           price: item.price || 0,
-          imageUrl: item.image_url || '',
+          image: null,
           isAvailable: item.is_available !== false,
           isPopular: item.is_popular === true,
           preparationTime: item.preparation_time,
@@ -218,6 +167,11 @@ const EditMenuItemPage: FC = () => {
             fat: undefined
           }
         });
+
+        // Set current image URL if available
+        if (item.image_url) {
+          setCurrentImageUrl(item.image_url);
+        }
 
         setIsLoading(false);
       } catch (err) {
@@ -299,7 +253,8 @@ const EditMenuItemPage: FC = () => {
       }
       
       const data = await response.json();
-      setFieldValue('imageUrl', data.url);
+      setFieldValue('image', file);
+      setCurrentImageUrl(data.url);
       setUploadProgress(100);
       
       // Reset upload state after a delay
@@ -313,6 +268,55 @@ const EditMenuItemPage: FC = () => {
       setError('Failed to upload image. Please try again.');
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  // Handle menu item update
+  const handleUpdateMenuItem = async (values: MenuItemFormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!user) {
+        setError('You must be logged in');
+        return;
+      }
+
+      if (!menuItem) {
+        setError('Menu item not found');
+        return;
+      }
+
+      // Update the menu item
+      const result = await updateMenuItem({
+        id: itemId,
+        name: values.name,
+        description: values.description,
+        price: values.price,
+        isAvailable: values.isAvailable,
+        shouldUpdateImage: !!values.image,
+        image: values.image,
+        is_available: values.isAvailable,
+        is_popular: values.isPopular,
+        preparation_time: values.preparationTime,
+        nutrition_info: values.nutrition && Object.values(values.nutrition).some(val => val !== undefined) 
+          ? JSON.stringify(values.nutrition)
+          : null,
+        category_id: categoryId
+      });
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      // Redirect back to category items page
+      router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
+      router.refresh();
+    } catch (err) {
+      console.error('Error updating menu item:', err);
+      setError('Failed to update menu item. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -408,7 +412,7 @@ const EditMenuItemPage: FC = () => {
                 name="price"
                 value={values.price}
                 onChange={(value) => setFieldValue('price', value)}
-                onBlur={handleBlur}
+                onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
                 error={touched.price && errors.price ? errors.price : undefined}
               />
             </div>
@@ -434,9 +438,7 @@ const EditMenuItemPage: FC = () => {
                   id="isAvailable"
                   name="isAvailable"
                   checked={values.isAvailable}
-                  onCheckedChange={(checked) => 
-                    setFieldValue('isAvailable', checked === true)
-                  }
+                  onChange={(e) => setFieldValue('isAvailable', e.target.checked)}
                 />
                 <label htmlFor="isAvailable" className="text-sm font-medium">
                   Available
@@ -448,9 +450,7 @@ const EditMenuItemPage: FC = () => {
                   id="isPopular"
                   name="isPopular"
                   checked={values.isPopular}
-                  onCheckedChange={(checked) => 
-                    setFieldValue('isPopular', checked === true)
-                  }
+                  onChange={(e) => setFieldValue('isPopular', e.target.checked)}
                 />
                 <label htmlFor="isPopular" className="text-sm font-medium">
                   Popular
@@ -473,11 +473,11 @@ const EditMenuItemPage: FC = () => {
                 maxSizeInMB={5}
                 isLoading={isUploading}
                 progress={uploadProgress}
-                preview={values.imageUrl}
+                preview={currentImageUrl || undefined}
               />
-              {values.imageUrl && (
+              {currentImageUrl && (
                 <p className="mt-1 text-xs text-gray-500">
-                  {menuItem?.image_url === values.imageUrl 
+                  {menuItem?.image_url === currentImageUrl 
                     ? 'Current image' 
                     : 'New image uploaded successfully!'}
                 </p>

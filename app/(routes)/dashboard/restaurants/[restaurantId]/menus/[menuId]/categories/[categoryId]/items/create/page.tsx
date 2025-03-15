@@ -18,34 +18,28 @@ import { Spinner } from '@/components/ui/Spinner';
 import VariantsManager from '@/app/components/menu/VariantsManager';
 import { MenuItemVariant } from '@/app/types/database';
 
-type MenuItemFormValues = {
+interface MenuItemFormValues {
   name: string;
   description: string;
   price: number;
-  imageUrl: string;
   isAvailable: boolean;
-  isPopular: boolean;
-  preparationTime?: number;
-  nutrition?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
-};
+  image?: File | null;
+}
 
 const CreateMenuItemPage: FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [category, setCategory] = useState<any>(null);
+  const [menu, setMenu] = useState<any>(null);
+  const [pendingVariants, setPendingVariants] = useState<any[]>([]);
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
   const [variantError, setVariantError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSavingVariants, setIsSavingVariants] = useState(false);
-  const [pendingVariants, setPendingVariants] = useState<Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]>([]);
-  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
   
   // Get the restaurantId, menuId, and categoryId from the URL
   const path = window.location.pathname;
@@ -58,92 +52,26 @@ const CreateMenuItemPage: FC = () => {
   const menuId = pathParts[menuIdIndex];
   const categoryId = pathParts[categoryIdIndex];
   
-  // Form setup with validation
-  const { 
-    values, 
-    errors, 
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-    setFieldValue,
-    setValues
-  } = useForm<MenuItemFormValues>({
-    initialValues: {
-      name: '',
-      description: '',
-      price: 0,
-      imageUrl: '',
-      isAvailable: true,
-      isPopular: false,
-      preparationTime: undefined,
-      nutrition: {
-        calories: undefined,
-        protein: undefined,
-        carbs: undefined,
-        fat: undefined
+  // Validation rules
+  const validationRules = {
+    name: [validate.required('Item name is required')],
+    price: [validate.required('Price is required')]
+  };
+
+  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldValue } = 
+    useForm<MenuItemFormValues>({
+      initialValues: {
+        name: '',
+        description: '',
+        price: 0,
+        image: undefined,
+        isAvailable: true,
+      },
+      validationRules,
+      onSubmit: async (formValues) => {
+        await handleCreateMenuItem(formValues);
       }
-    },
-    validationSchema: {
-      name: (value) => validate.required(value, 'Item name is required'),
-      price: (value) => {
-        if (value === undefined || value === null) {
-          return 'Price is required';
-        }
-        if (value < 0) {
-          return 'Price cannot be negative';
-        }
-        return null;
-      }
-    },
-    onSubmit: async (values) => {
-      try {
-        if (!user) {
-          setError('You must be logged in');
-          return;
-        }
-
-        // Create the menu item
-        const result = await createMenuItem({
-          name: values.name,
-          description: values.description,
-          price: values.price,
-          image_url: values.imageUrl,
-          is_available: values.isAvailable,
-          is_popular: values.isPopular,
-          preparation_time: values.preparationTime,
-          nutrition_info: values.nutrition && Object.values(values.nutrition).some(val => val !== undefined) 
-            ? JSON.stringify(values.nutrition)
-            : null,
-          category_id: categoryId
-        });
-
-        if (result.error) {
-          setError(result.error);
-          return;
-        }
-
-        // Save variants if any
-        if (pendingVariants.length > 0 && result.id) {
-          setCreatedItemId(result.id);
-          const updatedVariants = pendingVariants.map(variant => ({
-            ...variant,
-            item_id: result.id as `${string}-${string}-${string}-${string}-${string}`
-          }));
-          
-          await saveItemVariants(result.id, updatedVariants);
-        }
-
-        // Redirect back to category items page
-        router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
-        router.refresh();
-      } catch (err) {
-        console.error('Error creating menu item:', err);
-        setError('Failed to create menu item. Please try again.');
-      }
-    }
-  });
+    });
 
   // Fetch category details
   useEffect(() => {
@@ -240,7 +168,7 @@ const CreateMenuItemPage: FC = () => {
       }
       
       const data = await response.json();
-      setFieldValue('imageUrl', data.url);
+      setFieldValue('image', file);
       setUploadProgress(100);
       
       // Reset upload state after a delay
@@ -254,6 +182,53 @@ const CreateMenuItemPage: FC = () => {
       setError('Failed to upload image. Please try again.');
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  // Handle menu item creation
+  const handleCreateMenuItem = async (values: MenuItemFormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!user) {
+        setError('You must be logged in');
+        return;
+      }
+
+      // Create the menu item
+      const result = await createMenuItem({
+        name: values.name,
+        description: values.description,
+        price: values.price,
+        isAvailable: values.isAvailable,
+        categoryId,
+        image: values.image,
+      });
+
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+
+      // Save variants if any
+      if (pendingVariants.length > 0 && result.id) {
+        setCreatedItemId(result.id);
+        const updatedVariants = pendingVariants.map(variant => ({
+          ...variant,
+          item_id: result.id as `${string}-${string}-${string}-${string}-${string}`
+        }));
+        
+        await saveItemVariants(result.id, updatedVariants);
+      }
+
+      // Redirect back to category items page
+      router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
+      router.refresh();
+    } catch (err) {
+      console.error('Error creating menu item:', err);
+      setError('Failed to create menu item. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -349,52 +324,21 @@ const CreateMenuItemPage: FC = () => {
                 name="price"
                 value={values.price}
                 onChange={(value) => setFieldValue('price', value)}
-                onBlur={handleBlur}
+                onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
                 error={touched.price && errors.price ? errors.price : undefined}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="preparationTime" className="block text-sm font-medium mb-1">
-                Preparation Time (minutes)
-              </label>
-              <Input
-                id="preparationTime"
-                name="preparationTime"
-                type="number"
-                value={values.preparationTime || ''}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="e.g., 15"
               />
             </div>
             
             <div className="flex space-x-4">
               <div className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id="isAvailable"
                   name="isAvailable"
                   checked={values.isAvailable}
-                  onCheckedChange={(checked) => 
-                    setFieldValue('isAvailable', checked === true)
-                  }
+                  onChange={(e) => setFieldValue('isAvailable', e.target.checked)}
                 />
                 <label htmlFor="isAvailable" className="text-sm font-medium">
-                  Available
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="isPopular"
-                  name="isPopular"
-                  checked={values.isPopular}
-                  onCheckedChange={(checked) => 
-                    setFieldValue('isPopular', checked === true)
-                  }
-                />
-                <label htmlFor="isPopular" className="text-sm font-medium">
-                  Popular
+                  Item is available for ordering
                 </label>
               </div>
             </div>
@@ -414,79 +358,12 @@ const CreateMenuItemPage: FC = () => {
                 maxSizeInMB={5}
                 isLoading={isUploading}
                 progress={uploadProgress}
-                preview={values.imageUrl}
               />
-              {values.imageUrl && (
+              {values.image && (
                 <p className="mt-1 text-xs text-gray-500">
                   Image uploaded successfully!
                 </p>
               )}
-            </div>
-            
-            <div className="mt-6">
-              <h3 className="text-md font-medium mb-3">Nutrition Information (Optional)</h3>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="calories" className="block text-sm font-medium mb-1">
-                    Calories
-                  </label>
-                  <Input
-                    id="calories"
-                    name="nutrition.calories"
-                    type="number"
-                    value={values.nutrition?.calories || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 450"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="protein" className="block text-sm font-medium mb-1">
-                    Protein (g)
-                  </label>
-                  <Input
-                    id="protein"
-                    name="nutrition.protein"
-                    type="number"
-                    value={values.nutrition?.protein || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 10"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="carbs" className="block text-sm font-medium mb-1">
-                    Carbs (g)
-                  </label>
-                  <Input
-                    id="carbs"
-                    name="nutrition.carbs"
-                    type="number"
-                    value={values.nutrition?.carbs || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 50"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="fat" className="block text-sm font-medium mb-1">
-                    Fat (g)
-                  </label>
-                  <Input
-                    id="fat"
-                    name="nutrition.fat"
-                    type="number"
-                    value={values.nutrition?.fat || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 15"
-                  />
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { Menu } from '@/app/types/database';
+import { revalidatePath } from 'next/cache';
 
 export interface CreateMenuParams {
   restaurantId: string;
@@ -103,6 +104,9 @@ export async function createMenu(params: CreateMenuParams) {
       return { data: null, error: error.message };
     }
     
+    // Revalidate the restaurant menus page
+    revalidatePath(`/dashboard/restaurants/${params.restaurantId}/menus`);
+    
     return { data, error: null };
   } catch (error) {
     console.error('Error in createMenu:', error);
@@ -143,6 +147,9 @@ export async function updateMenu(params: UpdateMenuParams) {
       return { data: null, error: error.message };
     }
     
+    // Revalidate the menu page
+    revalidatePath(`/dashboard/restaurants/[restaurantId]/menus/${id}`);
+    
     return { data, error: null };
   } catch (error) {
     console.error('Error in updateMenu:', error);
@@ -160,7 +167,7 @@ export async function deleteMenu(id: string) {
     // First check if the menu exists
     const { data: menu, error: fetchError } = await supabase
       .from('menus')
-      .select('id')
+      .select('id, restaurant_id')
       .eq('id', id)
       .single();
     
@@ -184,6 +191,11 @@ export async function deleteMenu(id: string) {
       return { success: false, error: error.message };
     }
     
+    // Revalidate the restaurant menus page
+    if (menu.restaurant_id) {
+      revalidatePath(`/dashboard/restaurants/${menu.restaurant_id}/menus`);
+    }
+    
     return { success: true, error: null };
   } catch (error) {
     console.error('Error in deleteMenu:', error);
@@ -192,7 +204,14 @@ export async function deleteMenu(id: string) {
 }
 
 /**
- * Publish a menu (make it active and create a published version)
+ * Publish a menu
+ * 
+ * Makes a menu visible to the public by setting is_published to true
+ * and updating the last_published_at timestamp. After publishing,
+ * related pages are revalidated to reflect the changes.
+ * 
+ * @param {PublishMenuParams} params - Object containing menu ID and optional publishing metadata
+ * @returns {Promise<{ success: boolean; error?: string; version?: string; publishDate?: string }>}
  */
 export async function publishMenu(params: PublishMenuParams) {
   try {
@@ -238,13 +257,13 @@ export async function publishMenu(params: PublishMenuParams) {
       return { success: false, error: publishError.message };
     }
     
-    // Update the menu to be active
+    // Update the menu to mark it as published
     const { error: updateError } = await supabase
       .from('menus')
       .update({
         is_active: true,
-        current_published_version: version,
-        last_published_at: new Date().toISOString(),
+        is_published: true,
+        last_published_at: publishData.publish_date,
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id);
@@ -254,11 +273,15 @@ export async function publishMenu(params: PublishMenuParams) {
       return { success: false, error: updateError.message };
     }
     
+    // Revalidate the menu pages
+    revalidatePath(`/dashboard/restaurants/[restaurantId]/menus/${params.id}`);
+    revalidatePath(`/r/[restaurantId]/menu/${params.id}`);
+    
     return { 
       success: true, 
-      version, 
+      version: version,
       publishDate: publishData.publish_date,
-      error: null 
+      error: null
     };
   } catch (error) {
     console.error('Error in publishMenu:', error);
@@ -267,17 +290,25 @@ export async function publishMenu(params: PublishMenuParams) {
 }
 
 /**
- * Unpublish a menu (make it inactive)
+ * Unpublish a menu
+ * 
+ * Hides a menu from the public by setting is_published to false.
+ * The menu remains available in the dashboard but is no longer
+ * accessible through public URLs. After unpublishing,
+ * related pages are revalidated to reflect the changes.
+ * 
+ * @param {string} id - The ID of the menu to unpublish
+ * @returns {Promise<{ success: boolean; error?: string }>}
  */
 export async function unpublishMenu(id: string) {
   try {
     const supabase = await createServerClient();
     
-    // Update the menu to be inactive
+    // Update the menu to mark it as unpublished
     const { error } = await supabase
       .from('menus')
       .update({
-        is_active: false,
+        is_published: false,
         updated_at: new Date().toISOString()
       })
       .eq('id', id);
@@ -286,6 +317,10 @@ export async function unpublishMenu(id: string) {
       console.error('Error unpublishing menu:', error);
       return { success: false, error: error.message };
     }
+    
+    // Revalidate the menu pages
+    revalidatePath(`/dashboard/restaurants/[restaurantId]/menus/${id}`);
+    revalidatePath(`/r/[restaurantId]/menu/${id}`);
     
     return { success: true, error: null };
   } catch (error) {

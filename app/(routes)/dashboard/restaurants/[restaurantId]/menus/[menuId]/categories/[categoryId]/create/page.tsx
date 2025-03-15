@@ -145,10 +145,6 @@ export default function CreateMenuItemPage() {
     }
   };
 
-  const handleImageChange = (file: File | null) => {
-    setFieldValue('image', file);
-  };
-
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center p-6">
@@ -219,20 +215,17 @@ export default function CreateMenuItemPage() {
               name="price"
               value={values.price}
               onChange={(value) => setFieldValue('price', value)}
-              onBlur={handleBlur}
+              onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
               error={touched.price && errors.price ? errors.price : undefined}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="image" className="text-sm font-medium">
-              Item Image
-            </label>
+            <label htmlFor="image" className="text-sm font-medium">Item Image</label>
             <FileUpload
-              id="image"
+              onFileSelected={(file) => setFieldValue('image', file)}
               accept="image/*"
-              onChange={handleImageChange}
-              maxSize={5 * 1024 * 1024} // 5MB
+              maxSizeInMB={5}
             />
             <p className="text-xs text-muted-foreground">
               Recommended size: 800x600px. Max file size: 5MB.

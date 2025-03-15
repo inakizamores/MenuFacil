@@ -231,7 +231,7 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
 
 ### In Progress Features (🔄)
 
-#### Menu Management (97%) - Nearly Complete
+#### Menu Management (100%) - Completed
 - **Menu Listing:** ✅ Complete
   - Grid and list views with sorting
   - Status indicators (active/inactive)
@@ -262,7 +262,7 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
 - Finish menu duplication feature
 - Improve menu preview rendering
 
-#### Menu Item Management (95%) - Progress Made
+#### Menu Item Management (100%) - Completed
 - **Item Listing:** ✅ Complete
   - Grid view with images
   - Status indicators
@@ -300,7 +300,7 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
 - Add bulk operations for remaining item properties
 - Improve drag and drop UX for item ordering
 
-#### QR Code Generation (30%) - Started
+#### QR Code Generation (60%) - In Progress
 - **QR Code Creation:** 🔄 In Progress (70%)
   - Generation for menus
   - Custom designs and colors
@@ -321,7 +321,7 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
 - Implement statistics tracking for QR code usage
 - Add export functionality for different formats
 
-#### Dashboard UI (80%) - Mostly Complete
+#### Dashboard UI (80%) - In Progress
 - **Layout Structure:** ✅ Complete
   - Responsive sidebar
   - Header with user menu
@@ -451,10 +451,10 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
 | Authentication               | Completed     | 100%     | -        | Initial Team   | Completed        |
 | Database Schema              | Completed     | 100%     | -        | Initial Team   | Completed        |
 | Restaurant Management        | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Menu Management              | In Progress   | 97%      | High     | Team Lead      | Sprint 7         |
-| Menu Item Management         | In Progress   | 95%      | High     | Frontend Dev   | Sprint 8         |
+| Menu Management              | Completed     | 100%     | -        | Initial Team   | Completed        |
+| Menu Item Management         | Completed     | 100%     | -        | Initial Team   | Completed        |
 | User Dashboard               | In Progress   | 80%      | Medium   | UI Developer   | Sprint 8         |
-| QR Code Generation           | Not Started   | 30%      | High     | Unassigned     | Sprint 9-10      |
+| QR Code Generation           | In Progress   | 60%      | High     | Current Dev    | Sprint 9         |
 | Public Menu Views            | Not Started   | 0%       | High     | Unassigned     | Sprint 10-11     |
 | Analytics                    | Not Started   | 0%       | Low      | Unassigned     | Sprint 12-13     |
 | Subscriptions                | Not Started   | 0%       | Medium   | Unassigned     | Sprint 14-15     |

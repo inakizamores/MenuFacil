@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import Button from '@/app/components/ui/button';
-import Input from '@/app/components/ui/input';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 interface QRCodeGeneratorProps {
   url: string;
@@ -195,13 +195,11 @@ const QRCodeGenerator = ({
             
             <div className="mt-6">
               <Button
-                variant="primary"
                 onClick={handleSave}
-                isLoading={isSaving}
                 disabled={isSaving}
                 className="w-full"
               >
-                Save QR Code
+                {isSaving ? 'Saving...' : 'Save QR Code'}
               </Button>
             </div>
           </div>

@@ -1,11 +1,28 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useDrag, useDrop } from 'react-dnd';
-import type { DragSourceMonitor, DropTargetMonitor } from 'react-dnd';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors, 
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+  UniqueIdentifier
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  arrayMove
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Category {
   id: string;
@@ -26,223 +43,330 @@ interface ItemCategorizerProps {
   onSave: (itemChanges: { itemId: string; categoryId: string }[]) => Promise<void>;
 }
 
-interface DraggableItemProps {
+interface SortableItemProps {
   item: MenuItem;
-  index: number;
-  moveItem: (dragIndex: number, hoverIndex: number) => void;
-  onCategoryChange: (itemId: string, categoryId: string) => void;
   categories: Category[];
-  currentCategory: string;
+  onCategoryChange: (itemId: string, categoryId: string) => void;
 }
 
-// Item drag type
-const ITEM_TYPE = 'menu-item';
-
-const DraggableItem = ({ 
-  item, 
-  index, 
-  moveItem, 
-  onCategoryChange,
-  categories,
-  currentCategory
-}: DraggableItemProps) => {
-  const [{ isDragging }, drag] = useDrag({
-    type: ITEM_TYPE,
-    item: () => ({ id: item.id, index }),
-    collect: (monitor: DragSourceMonitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  });
-
-  const [, drop] = useDrop({
-    accept: ITEM_TYPE,
-    hover: (draggedItem: { id: string; index: number }, monitor: DropTargetMonitor) => {
-      if (!draggedItem || draggedItem.index === index) {
-        return;
-      }
-      moveItem(draggedItem.index, index);
-      draggedItem.index = index;
+// Sortable menu item component
+const SortableItem = ({ item, categories, onCategoryChange }: SortableItemProps) => {
+  const { 
+    attributes, 
+    listeners, 
+    setNodeRef, 
+    transform, 
+    transition,
+    isDragging
+  } = useSortable({ 
+    id: item.id,
+    data: {
+      type: 'item',
+      item
     }
   });
-
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  
   return (
     <div 
-      ref={(node) => drag(drop(node))} 
-      className={`p-4 mb-2 rounded-lg border bg-white shadow-sm flex items-center justify-between ${
-        isDragging ? 'opacity-50' : 'opacity-100'
-      }`}
+      ref={setNodeRef} 
+      style={style} 
+      className="p-4 mb-2 bg-white rounded-md shadow-sm border border-gray-200 cursor-move"
+      {...attributes} 
+      {...listeners}
     >
-      <div className="flex items-center space-x-3">
-        <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-md overflow-hidden">
-          {item.image_url && (
-            <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
+            {item.image_url ? (
+              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-md" />
+            ) : (
+              <span className="text-gray-500">${item.price.toFixed(2)}</span>
+            )}
+          </div>
+          <span className="font-medium">{item.name}</span>
         </div>
-        <div>
-          <div className="font-medium">{item.name}</div>
-          <div className="text-sm text-gray-500">${item.price.toFixed(2)}</div>
-        </div>
+        
+        <select
+          value={item.categoryId}
+          onChange={(e) => onCategoryChange(item.id, e.target.value)}
+          onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking select
+          className="text-sm border border-gray-300 rounded-md p-1"
+        >
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
       </div>
-      
-      {/* Category selector */}
-      <select
-        value={item.categoryId}
-        onChange={(e) => onCategoryChange(item.id, e.target.value)}
-        className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-      >
-        {categories.map(category => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
     </div>
   );
 };
 
-const CategoryItems = ({ 
-  category, 
-  items,
-  allCategories,
-  onCategoryChange,
-  onSaveOrder,
-  isChanged
-}: { 
-  category: Category; 
-  items: MenuItem[];
-  allCategories: Category[];
-  onCategoryChange: (itemId: string, categoryId: string) => void;
-  onSaveOrder: () => Promise<void>;
-  isChanged: boolean;
-}) => {
-  const [categoryItems, setCategoryItems] = useState<MenuItem[]>([]);
-
-  useEffect(() => {
-    setCategoryItems(items.filter(item => item.categoryId === category.id));
-  }, [items, category.id]);
-
-  const moveItem = (dragIndex: number, hoverIndex: number) => {
-    const dragItem = categoryItems[dragIndex];
-    if (!dragItem) return;
-    
-    const newItems = [...categoryItems];
-    newItems.splice(dragIndex, 1);
-    newItems.splice(hoverIndex, 0, dragItem);
-    
-    setCategoryItems(newItems);
-  };
-
+// Item preview during drag
+const DragOverlayItem = ({ item }: { item: MenuItem }) => {
   return (
-    <div className="mb-8">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">{category.name}</h3>
-        {isChanged && (
-          <Button
-            variant="outline"
-            onClick={onSaveOrder}
-            className="text-sm"
-          >
-            Save Order
-          </Button>
-        )}
+    <div className="p-4 mb-2 bg-white rounded-md shadow-md border-2 border-blue-500 cursor-move">
+      <div className="flex items-center space-x-3">
+        <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
+          {item.image_url ? (
+            <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-md" />
+          ) : (
+            <span className="text-gray-500">${item.price.toFixed(2)}</span>
+          )}
+        </div>
+        <span className="font-medium">{item.name}</span>
       </div>
-      {categoryItems.length === 0 ? (
-        <div className="p-4 rounded-lg border border-dashed border-gray-300 text-center text-gray-500">
-          No items in this category
-        </div>
-      ) : (
-        <div>
-          {categoryItems.map((item, index) => (
-            <DraggableItem
-              key={item.id}
-              item={item}
-              index={index}
-              moveItem={moveItem}
-              onCategoryChange={onCategoryChange}
-              categories={allCategories}
-              currentCategory={category.id}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 };
 
 const ItemCategorizer = ({ categories, items, onSave }: ItemCategorizerProps) => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [changes, setChanges] = useState<Map<string, string>>(new Map());
+  const [itemsByCategory, setItemsByCategory] = useState<Record<string, MenuItem[]>>({});
+  const [changes, setChanges] = useState<{ itemId: string; categoryId: string }[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [activeItem, setActiveItem] = useState<MenuItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+  
+  // Initialize items by category
   useEffect(() => {
-    setMenuItems(items);
-  }, [items]);
-
-  const handleCategoryChange = (itemId: string, newCategoryId: string) => {
-    setMenuItems(prev => 
-      prev.map(item => 
-        item.id === itemId 
-          ? { ...item, categoryId: newCategoryId } 
-          : item
-      )
-    );
+    const groupedItems: Record<string, MenuItem[]> = {};
     
-    setChanges(prev => {
-      const newChanges = new Map(prev);
-      newChanges.set(itemId, newCategoryId);
-      return newChanges;
+    // Initialize empty arrays for each category
+    categories.forEach((category) => {
+      groupedItems[category.id] = [];
     });
-  };
-
-  const handleSaveChanges = async () => {
-    if (changes.size === 0) return;
     
-    setIsSaving(true);
-    try {
-      const itemChanges = Array.from(changes.entries()).map(([itemId, categoryId]) => ({
-        itemId,
-        categoryId
-      }));
+    // Group items by category
+    items.forEach((item) => {
+      if (groupedItems[item.categoryId]) {
+        groupedItems[item.categoryId].push(item);
+      }
+    });
+    
+    setItemsByCategory(groupedItems);
+  }, [categories, items]);
+  
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveId(active.id);
+    
+    // Find the active item
+    let draggedItem: MenuItem | null = null;
+    
+    Object.values(itemsByCategory).forEach((categoryItems) => {
+      const item = categoryItems.find((item) => item.id === active.id);
+      if (item) {
+        draggedItem = item;
+      }
+    });
+    
+    if (draggedItem) {
+      setActiveItem(draggedItem);
+    }
+  };
+  
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    setActiveId(null);
+    setActiveItem(null);
+    
+    if (!over) return;
+    
+    // Extract the categoryId from the over.id (format: "category-{categoryId}")
+    const overId = String(over.id);
+    
+    if (overId.startsWith('category-')) {
+      const targetCategoryId = overId.replace('category-', '');
+      const sourceItem = active.data.current?.item as MenuItem;
       
-      await onSave(itemChanges);
-      setChanges(new Map());
-    } catch (error) {
-      console.error('Error saving category changes:', error);
+      if (sourceItem && sourceItem.categoryId !== targetCategoryId) {
+        handleCategoryChange(String(active.id), targetCategoryId);
+      }
+    }
+  };
+  
+  const handleCategoryChange = (itemId: string, newCategoryId: string) => {
+    // Find which category the item is currently in
+    let sourceCategory = '';
+    let foundItem: MenuItem | undefined;
+    
+    Object.entries(itemsByCategory).forEach(([categoryId, categoryItems]) => {
+      const item = categoryItems.find((item) => item.id === itemId);
+      if (item) {
+        sourceCategory = categoryId;
+        foundItem = item;
+      }
+    });
+    
+    if (foundItem && sourceCategory !== newCategoryId) {
+      // Create a new items by category object
+      const newItemsByCategory = { ...itemsByCategory };
+      
+      // Remove the item from its current category
+      newItemsByCategory[sourceCategory] = newItemsByCategory[sourceCategory].filter(
+        (item) => item.id !== itemId
+      );
+      
+      // Add the item to the new category
+      newItemsByCategory[newCategoryId] = [
+        ...newItemsByCategory[newCategoryId],
+        { ...foundItem, categoryId: newCategoryId }
+      ];
+      
+      setItemsByCategory(newItemsByCategory);
+      
+      // Track the change
+      const existingChangeIndex = changes.findIndex((change) => change.itemId === itemId);
+      
+      if (existingChangeIndex !== -1) {
+        // Update existing change
+        const newChanges = [...changes];
+        newChanges[existingChangeIndex].categoryId = newCategoryId;
+        setChanges(newChanges);
+      } else {
+        // Add new change
+        setChanges([...changes, { itemId, categoryId: newCategoryId }]);
+      }
+    }
+  };
+  
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      await onSave(changes);
+      setChanges([]);
+      setSuccess('Changes saved successfully');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+    } catch (error: any) {
+      console.error('Error saving changes:', error);
+      setError(error.message || 'Failed to save changes. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
-
+  
+  // Create notification component
+  const Notification = ({ type, message }: { type: 'error' | 'success'; message: string }) => {
+    return (
+      <div className={`flex items-center p-3 rounded-md ${
+        type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 
+                          'bg-green-50 text-green-700 border border-green-200'
+      }`}>
+        {type === 'error' ? 
+          <AlertCircle className="mr-2 h-5 w-5" /> : 
+          <CheckCircle2 className="mr-2 h-5 w-5" />
+        }
+        <span>{message}</span>
+      </div>
+    );
+  };
+  
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Item Categorization</h2>
-          {changes.size > 0 && (
-            <Button
-              onClick={handleSaveChanges}
-              disabled={isSaving}
-            >
-              {isSaving ? 'Saving...' : `Save Changes (${changes.size})`}
-            </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Item Categories</h2>
+        <Button 
+          onClick={handleSave} 
+          disabled={changes.length === 0 || isSaving}
+          className="flex items-center"
+        >
+          {isSaving ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              Saving...
+            </>
+          ) : (
+            `Save Changes (${changes.length})`
           )}
+        </Button>
+      </div>
+      
+      {error && (
+        <Notification type="error" message={error} />
+      )}
+      
+      {success && (
+        <Notification type="success" message={success} />
+      )}
+      
+      {changes.length > 0 && (
+        <div className="p-3 bg-blue-50 border border-blue-100 rounded-md text-blue-700 text-sm">
+          You have {changes.length} unsaved {changes.length === 1 ? 'change' : 'changes'}. 
+          Click "Save Changes" to apply them.
         </div>
-        
-        <div className="space-y-6">
-          {categories.map(category => (
-            <CategoryItems
-              key={category.id}
-              category={category}
-              items={menuItems}
-              allCategories={categories}
-              onCategoryChange={handleCategoryChange}
-              onSaveOrder={handleSaveChanges}
-              isChanged={changes.size > 0}
-            />
+      )}
+      
+      <DndContext 
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {categories.map((category) => (
+            <div 
+              key={category.id} 
+              id={`category-${category.id}`} // Used for drop target identification
+              className="border rounded-md p-4 bg-gray-50"
+            >
+              <h3 className="font-medium mb-3 pb-2 border-b">{category.name}</h3>
+              
+              <SortableContext items={itemsByCategory[category.id]?.map(item => item.id) || []}>
+                <div className="space-y-2 min-h-[50px]">
+                  {itemsByCategory[category.id]?.map((item) => (
+                    <SortableItem
+                      key={item.id}
+                      item={item}
+                      categories={categories}
+                      onCategoryChange={handleCategoryChange}
+                    />
+                  ))}
+                  {itemsByCategory[category.id]?.length === 0 && (
+                    <div className="p-4 text-center text-gray-500 bg-white rounded-md border border-dashed">
+                      No items in this category
+                    </div>
+                  )}
+                </div>
+              </SortableContext>
+            </div>
           ))}
         </div>
-      </div>
-    </DndProvider>
+        
+        {/* Overlay for the dragged item */}
+        <DragOverlay>
+          {activeItem ? <DragOverlayItem item={activeItem} /> : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 };
 

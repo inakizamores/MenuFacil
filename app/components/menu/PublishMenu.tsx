@@ -1,186 +1,179 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Textarea } from '@/components/ui/Textarea';
-import { publishMenu, unpublishMenu } from '@/actions/menus';
+import { Spinner } from '@/components/ui/Spinner';
+import { AlertCircle, CheckCircle2, Globe, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/Switch';
 
+/**
+ * Props for the PublishMenu component
+ * @interface PublishMenuProps
+ * @property {string} menuId - ID of the menu to publish/unpublish
+ * @property {string} restaurantId - ID of the restaurant the menu belongs to
+ * @property {boolean} isPublished - Current published state of the menu
+ * @property {string|null} lastPublishedAt - Timestamp of when the menu was last published
+ * @property {Function} onPublish - Callback function to publish the menu
+ * @property {Function} onUnpublish - Callback function to unpublish the menu
+ */
 interface PublishMenuProps {
-  /** The ID of the menu to publish or unpublish */
   menuId: string;
-  /** Whether the menu is currently active/published */
-  isActive: boolean;
-  /** The name of the menu for display purposes */
-  menuName: string;
-  /** Callback function triggered when publish/unpublish is successful */
-  onSuccess: () => void;
+  restaurantId: string;
+  isPublished: boolean;
+  lastPublishedAt: string | null;
+  onPublish: (menuId: string) => Promise<{ success: boolean; error?: string }>;
+  onUnpublish: (menuId: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 /**
  * PublishMenu Component
  * 
- * A component for publishing and unpublishing menus with version tracking.
- * Provides a UI for setting version information and publication notes.
+ * A component for managing the publication status of a menu.
+ * Provides toggle functionality to publish or unpublish a menu,
+ * along with status indicators and links to view the published menu.
  *
- * @param menuId - The ID of the menu to publish/unpublish
- * @param isActive - Whether the menu is currently active/published
- * @param menuName - The name of the menu for display
- * @param onSuccess - Callback when publish/unpublish succeeds
+ * @param {PublishMenuProps} props - Component props
+ * @returns {JSX.Element} - The rendered component
  */
-const PublishMenu = ({ menuId, isActive, menuName, onSuccess }: PublishMenuProps) => {
-  const [isPublishing, setIsPublishing] = useState(false);
-  const [isUnpublishing, setIsUnpublishing] = useState(false);
+const PublishMenu: React.FC<PublishMenuProps> = ({
+  menuId,
+  restaurantId,
+  isPublished,
+  lastPublishedAt,
+  onPublish,
+  onUnpublish
+}) => {
+  const router = useRouter();
+  
+  // State management
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const [publishNotes, setPublishNotes] = useState('');
-  const [version, setVersion] = useState('');
+  const [success, setSuccess] = useState<string | null>(null);
+  const [publishState, setPublishState] = useState(isPublished);
 
   /**
-   * Handles the publish menu action
-   * Creates a new published version and marks the menu as active
+   * Handles toggling the publish state of the menu
+   * @param {boolean} checked - The new publish state
    */
-  const handlePublish = async () => {
-    setIsPublishing(true);
+  const handlePublishToggle = async (checked: boolean) => {
+    setLoading(true);
     setError(null);
-
+    setSuccess(null);
+    
     try {
-      const result = await publishMenu({
-        id: menuId,
-        version: version || undefined,
-        publishNotes: publishNotes || undefined
-      });
-
+      const result = checked 
+        ? await onPublish(menuId)
+        : await onUnpublish(menuId);
+        
       if (result.success) {
-        setShowForm(false);
-        onSuccess();
+        setPublishState(checked);
+        setSuccess(`Menu successfully ${checked ? 'published' : 'unpublished'}`);
+        // Refresh the page data
+        router.refresh();
       } else {
-        setError(result.error || 'Failed to publish menu');
+        setError(result.error || `Failed to ${checked ? 'publish' : 'unpublish'} menu`);
       }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error('Error publishing menu:', err);
+    } catch (err: any) {
+      console.error('Error toggling menu publish state:', err);
+      setError(err.message || `Failed to ${checked ? 'publish' : 'unpublish'} menu`);
     } finally {
-      setIsPublishing(false);
+      setLoading(false);
     }
   };
-
+  
   /**
-   * Handles the unpublish menu action
-   * Marks the menu as inactive, preserving version history
+   * Opens the published menu in a new tab
    */
-  const handleUnpublish = async () => {
-    setIsUnpublishing(true);
-    setError(null);
-
+  const viewPublishedMenu = () => {
+    window.open(`/r/${restaurantId}/menu/${menuId}`, '_blank');
+  };
+  
+  /**
+   * Formats a date string for display
+   * @param {string|null} dateString - ISO date string or null
+   * @returns {string} - Formatted date string or "Never" if null
+   */
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    
     try {
-      const result = await unpublishMenu(menuId);
-
-      if (result.success) {
-        onSuccess();
-      } else {
-        setError(result.error || 'Failed to unpublish menu');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-      console.error('Error unpublishing menu:', err);
-    } finally {
-      setIsUnpublishing(false);
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    } catch (e) {
+      return 'Invalid date';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-xl font-semibold mb-4">Menu Publication</h2>
+    <div className="bg-white border rounded-lg shadow-sm p-6">
+      <h2 className="text-xl font-semibold mb-4">Menu Visibility</h2>
       
+      {/* Error notification */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md border border-red-200">
-          {error}
+        <div className="mb-4 flex items-center p-3 rounded-md bg-red-50 text-red-700 border border-red-200">
+          <AlertCircle className="mr-2 h-5 w-5" />
+          <span>{error}</span>
         </div>
       )}
       
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <p className="text-gray-700">
-            Status: <span className={isActive ? 'text-green-600 font-medium' : 'text-yellow-600 font-medium'}>
-              {isActive ? 'Published' : 'Draft'}
-            </span>
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            {isActive 
-              ? 'This menu is currently visible to customers.' 
-              : 'This menu is not published and is only visible to you.'}
-          </p>
+      {/* Success notification */}
+      {success && (
+        <div className="mb-4 flex items-center p-3 rounded-md bg-green-50 text-green-700 border border-green-200">
+          <CheckCircle2 className="mr-2 h-5 w-5" />
+          <span>{success}</span>
+        </div>
+      )}
+      
+      {/* Main toggle control */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-gray-100 rounded-full p-2">
+            <Globe className="h-5 w-5 text-gray-700" />
+          </div>
+          <div>
+            <p className="font-medium">Public availability</p>
+            <p className="text-sm text-gray-500">
+              {publishState 
+                ? 'Your menu is currently visible to the public' 
+                : 'Your menu is currently hidden from the public'}
+            </p>
+          </div>
         </div>
         
-        {isActive ? (
-          <Button
-            variant="outline"
-            onClick={handleUnpublish}
-            disabled={isUnpublishing}
-          >
-            {isUnpublishing ? 'Unpublishing...' : 'Unpublish Menu'}
-          </Button>
-        ) : (
-          <Button
-            onClick={() => setShowForm(true)}
-            disabled={isPublishing || showForm}
-          >
-            Publish Menu
-          </Button>
-        )}
+        <div className="flex items-center">
+          {loading ? (
+            <Spinner size="sm" className="mr-3" />
+          ) : (
+            <>
+              <span className="mr-3 text-sm font-medium text-gray-700">
+                {publishState ? 'Published' : 'Draft'}
+              </span>
+              <Switch 
+                checked={publishState} 
+                onCheckedChange={handlePublishToggle}
+                disabled={loading}
+              />
+            </>
+          )}
+        </div>
       </div>
       
-      {showForm && (
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-medium mb-3">Publish "{menuName}"</h3>
-          
-          <div className="space-y-4 mb-6">
-            <div>
-              <label htmlFor="version" className="block text-sm font-medium text-gray-700 mb-1">
-                Version (Optional)
-              </label>
-              <Input
-                id="version"
-                placeholder="e.g., 1.0.0 or Summer 2024"
-                value={version}
-                onChange={(e) => setVersion(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                If left blank, a date-based version will be generated automatically.
-              </p>
-            </div>
-            
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Publication Notes (Optional)
-              </label>
-              <Textarea
-                id="notes"
-                placeholder="What's new in this version?"
-                value={publishNotes}
-                onChange={(e) => setPublishNotes(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="outline"
-              onClick={() => setShowForm(false)}
-              disabled={isPublishing}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePublish}
-              disabled={isPublishing}
-            >
-              {isPublishing ? 'Publishing...' : 'Publish Now'}
-            </Button>
-          </div>
-        </div>
+      {/* Last published info */}
+      <div className="text-sm text-gray-600 mb-4">
+        Last published: <span className="font-medium">{formatDate(lastPublishedAt)}</span>
+      </div>
+      
+      {/* View published menu button - only shown when menu is published */}
+      {publishState && (
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={viewPublishedMenu}
+        >
+          <EyeIcon className="h-4 w-4" />
+          View Published Menu
+        </Button>
       )}
     </div>
   );
