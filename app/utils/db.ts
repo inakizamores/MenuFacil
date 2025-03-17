@@ -678,7 +678,7 @@ export async function incrementQRCodeViews(qrCodeId: string): Promise<boolean> {
     
     return true;
   } catch (err) {
-    console.error('Exception incrementing QR code views:', err);
+    console.error('Error in incrementQRCodeViews:', err);
     return false;
   }
 } 

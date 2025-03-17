@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getCompleteMenu, incrementQRCodeViews } from '@/app/utils/db';
+import { getCompleteMenu } from '@/app/utils/db';
+import { trackQRCodeView } from '@/app/utils/analytics';
 import { Menu, MenuCategory, MenuItem } from '@/app/types/database';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface PublicMenuPageProps {
   params: {
@@ -18,6 +20,8 @@ interface PublicMenuPageProps {
 export default function PublicMenuPage({ params, searchParams }: PublicMenuPageProps) {
   const { menuId } = params;
   const qrCodeId = searchParams?.qr;
+  const clientSearchParams = useSearchParams();
+  const source = clientSearchParams.get('source') || 'direct';
   
   const [menu, setMenu] = useState<Menu | null>(null);
   const [categories, setCategories] = useState<(MenuCategory & { items: MenuItem[] })[] | null>(null);
@@ -30,7 +34,11 @@ export default function PublicMenuPage({ params, searchParams }: PublicMenuPageP
       try {
         // Track QR code view if qrCodeId is provided
         if (qrCodeId) {
-          await incrementQRCodeViews(qrCodeId);
+          await trackQRCodeView({
+            qrId: qrCodeId,
+            source: source as 'scan' | 'direct' | 'share',
+            location: window.location.href
+          });
         }
         
         // Fetch menu data
@@ -70,7 +78,7 @@ export default function PublicMenuPage({ params, searchParams }: PublicMenuPageP
     };
     
     fetchData();
-  }, [menuId, qrCodeId]);
+  }, [menuId, qrCodeId, source]);
   
   if (isLoading) {
     return (

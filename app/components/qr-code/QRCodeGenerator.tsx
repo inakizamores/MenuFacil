@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { exportQRAsPNG, exportQRAsPDF, exportQRAsSVG } from '@/app/utils/qrCodeExport';
+import { QRCodeDesign } from '@/types/qrCode';
 
 interface QRCodeGeneratorProps {
   url: string;
@@ -48,45 +50,40 @@ const QRCodeGenerator = ({
     }
   };
   
-  const handleDownload = () => {
-    // Create a canvas element and draw the QR code
-    const canvas = document.createElement('canvas');
-    const size = 1024; // High-resolution for good quality prints
-    canvas.width = size;
-    canvas.height = size;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Draw background
-    ctx.fillStyle = designOptions.backgroundColor;
-    ctx.fillRect(0, 0, size, size);
-    
-    // Create a temporary SVG QR Code for rendering to canvas
-    const tempContainer = document.createElement('div');
-    tempContainer.innerHTML = `
-      <svg width="${size}" height="${size}">
-        ${document.querySelector('.qr-code-container svg')?.innerHTML}
-      </svg>
-    `;
-    
-    // Convert SVG to image and draw on canvas
-    const svgData = new XMLSerializer().serializeToString(tempContainer.querySelector('svg') as SVGElement);
-    const img = new Image();
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, size, size);
-      
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL('image/png');
-      
-      // Create link and trigger download
-      const link = document.createElement('a');
-      link.download = `${qrName.replace(/\s+/g, '-').toLowerCase()}.png`;
-      link.href = dataUrl;
-      link.click();
-    };
-    
-    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+  const handleExportPNG = () => {
+    exportQRAsPNG(
+      url,
+      qrName,
+      {
+        foregroundColor: designOptions.foregroundColor,
+        backgroundColor: designOptions.backgroundColor,
+        margin: designOptions.margin
+      }
+    );
+  };
+
+  const handleExportSVG = () => {
+    exportQRAsSVG(
+      url,
+      qrName,
+      {
+        foregroundColor: designOptions.foregroundColor,
+        backgroundColor: designOptions.backgroundColor,
+        margin: designOptions.margin
+      }
+    );
+  };
+
+  const handleExportPDF = () => {
+    exportQRAsPDF(
+      url,
+      qrName,
+      {
+        foregroundColor: designOptions.foregroundColor,
+        backgroundColor: designOptions.backgroundColor,
+        margin: designOptions.margin
+      }
+    );
   };
   
   return (
@@ -107,14 +104,19 @@ const QRCodeGenerator = ({
               className="mx-auto"
             />
           </div>
-          <div className="mt-4 w-full">
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              className="w-full"
-            >
-              Download QR Code
-            </Button>
+          <div className="mt-4 w-full space-y-2">
+            <p className="text-sm font-medium text-gray-700 mb-2">Export Options:</p>
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" onClick={handleExportPNG}>
+                PNG
+              </Button>
+              <Button variant="outline" onClick={handleExportSVG}>
+                SVG
+              </Button>
+              <Button variant="outline" onClick={handleExportPDF}>
+                PDF
+              </Button>
+            </div>
           </div>
         </div>
         
