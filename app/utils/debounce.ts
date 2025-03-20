@@ -14,12 +14,11 @@ export function debounce<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
   
-  return function (this: any, ...args: Parameters<T>): void {
-    const context = this;
-    
+  return function(this: unknown, ...args: Parameters<T>): void {
+    // Using arrow functions to preserve the 'this' context
     const later = () => {
       timeout = null;
-      if (!immediate) func.apply(context, args);
+      if (!immediate) func.apply(this, args);
     };
     
     const callNow = immediate && !timeout;
@@ -27,7 +26,7 @@ export function debounce<T extends (...args: any[]) => any>(
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(later, wait);
     
-    if (callNow) func.apply(context, args);
+    if (callNow) func.apply(this, args);
   };
 }
 
@@ -45,7 +44,7 @@ export function throttle<T extends (...args: any[]) => any>(
 ): (...args: Parameters<T>) => void {
   let lastCall = 0;
   
-  return function (this: any, ...args: Parameters<T>): void {
+  return function(this: unknown, ...args: Parameters<T>): void {
     const now = Date.now();
     
     if (now - lastCall >= wait) {
