@@ -97,6 +97,23 @@ export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 /**
  * Zod schema for restaurant form validation
+ * 
+ * This schema validates restaurant creation and editing forms with the following features:
+ * - Required name field with minimum length validation
+ * - Optional description field with appropriate trimming
+ * - Color validation for primary and secondary colors using hex format
+ * - Address fields with optional validation
+ * - Specialized validation for postal/zip codes supporting both US and Canadian formats
+ * - Phone number validation with international format support
+ * - Email validation for contact information
+ * - URL validation for website
+ * 
+ * Note: When using this schema with the database, remember that the field names
+ * in the schema use camelCase (e.g., primaryColor) while the database uses
+ * snake_case (e.g., primary_color). The form components should handle this mapping.
+ * 
+ * The UUID owner_id field is not included in this schema as it's handled separately
+ * in the form submission logic and comes from the authenticated user.
  */
 export const restaurantSchema = z.object({
   name: z

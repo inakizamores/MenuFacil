@@ -738,8 +738,47 @@ Current priority is completing the form validation implementation across all rem
 
 ## Recent Updates
 
-### July 10, 2023 - Validation Improvements
-- Added Zod validation for authentication forms (login, register, password reset)
-- Added Zod validation for restaurant forms (create, edit)
-- Improved form validation library with integration for Zod schemas
-- Form validations now include client-side and server-side checks
+### July 10, 2024 - Form Validation Enhancements
+- **Restaurant Form Validation:** Implemented Zod validation for restaurant creation and editing forms
+  - Created comprehensive validation schema with appropriate error messages
+  - Added client-side validation with real-time feedback
+  - Improved user experience with clear validation indicators
+  - Fixed import paths and type issues for better integration
+
+- **Validation System Improvements:**
+  - Enhanced the validation library with better Zod schema integration
+  - Implemented proper type casting for UUID fields
+  - Added consistent error handling patterns
+  - Improved form submission with validation-based blocking
+
+- **Documentation Updates:**
+  - Updated TODO.md to reflect completed validation tasks
+  - Documented next development priorities
+  - Added detailed comments to validation schemas for future developers
+
+## Next Steps for Developers
+
+The next developer should focus on:
+
+1. **Menu Form Validation** (High Priority)
+   - Implement Zod validation schemas for menu creation and editing
+   - Follow the pattern established in restaurant form validation
+   - Ensure proper type integration with Supabase database types
+   - Add appropriate error messages and validation rules
+
+2. **Menu Item Form Validation** (Medium Priority)
+   - After menu forms, extend validation to menu item forms
+   - Create schemas for item properties including prices, descriptions, and images
+   - Address any specific validation needs for menu items (e.g., price format, image dimensions)
+
+3. **QR Code Form Validation** (Low Priority)
+   - Implement validation for QR code generation forms
+   - Add validation rules for customization options
+
+4. **Technical Debt Resolution**
+   - Address the owner_id UUID type casting issue more systematically
+   - Consider creating a utility function for ID type conversion
+   - Review and fix any remaining TypeScript errors
+   - Update any outdated import paths for consistency
+
+All validation implementations should follow the established pattern in `lib/validation/schemas.ts` and use the `createValidationRules` utility from `lib/validation/index.ts` for integration with the custom form hook.

@@ -15,6 +15,16 @@ We've made significant improvements to the project:
 For comprehensive details about the project and development progress, see:
 - [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) - Complete project documentation and current status
 
+## Recent Updates
+
+### Form Validation System Improvements (July 2024)
+- Implemented Zod validation for restaurant forms (creation and editing)
+- Enhanced form validation library with better schema integration
+- Added detailed documentation for validation utilities
+- Fixed type-related issues for UUID fields
+
+For developers continuing work on this project, the next steps should focus on implementing validation for menu-related forms following the patterns established in the restaurant form implementation. See `DEVELOPMENT_PROGRESS.md` for detailed guidance on the next steps.
+
 ## Features
 
 - 🍽️ **Menu Management**: Create and manage digital menus for your restaurant
