@@ -255,8 +255,6 @@ These changes have stabilized the codebase and created a solid foundation for co
 - Restaurants tied to user accounts for access control
 - Restaurant deletion cascades to all related data
 
-### In Progress Features (🔄)
-
 #### Menu Management (100%) - Completed
 - **Menu Listing:** ✅ Complete
   - Grid and list views with sorting
@@ -759,6 +757,17 @@ export async function getMenuItem(id: string): Promise<{ data: MenuItem | null; 
   preview={values.imageUrl}
 />
 ```
+
+## Recently Completed Features
+- Fixed Vercel deployment issues with client-reference-manifest errors
+- Implemented menu publishing workflow with PublishMenu component
+- Added improved error handling and success notifications to the `ItemCategorizer` component
+- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
+- Implemented a visual preview of dragged items using `DragOverlay`
+- Standardized image property naming across menu item forms
+- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
+- Standardized environment variable documentation in `.env.example`
+- Fixed TypeScript errors throughout the codebase
 
 ## Next Steps / Development Roadmap
 

@@ -1,5 +1,12 @@
 /**
- * This middleware handles route redirects and security
+ * Next.js Middleware
+ * 
+ * This middleware handles route redirects and navigation security.
+ * It specifically resolves issues with the Vercel deployment by:
+ * 1. Properly handling marketing routes at the root level
+ * 2. Redirecting problematic routes with naming patterns that caused deployment issues
+ * 3. Using proper TypeScript typing for NextRequest
+ * 
  * @see https://nextjs.org/docs/app/building-your-application/routing/middleware
  */
 
@@ -10,12 +17,14 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
   // Handle marketing routes more specifically to avoid conflicts with static generation
+  // These need special handling to avoid client-reference-manifest errors
   if (pathname === '/' || pathname === '/about' || pathname === '/contact') {
     // These routes should be handled by the marketing pages
     return NextResponse.next()
   }
   
-  // Only redirect problematic routes
+  // Redirect problematic routes that use special naming conventions
+  // This prevents build errors when Vercel tries to generate client reference manifests
   if (pathname.includes('(marketing)') || pathname.includes('(routes)/(marketing)')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -24,7 +33,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Match all routes
+// Match all routes except static files, images, and API routes
 export const config = {
   matcher: [
     /*

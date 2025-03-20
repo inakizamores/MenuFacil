@@ -1,6 +1,15 @@
 import React from 'react';
 
-// Add export config for static generation
+/**
+ * Contact Page
+ * 
+ * This is a static marketing page that replaces the previous nested structure
+ * at app/(routes)/(marketing). Static pages at the root level help prevent
+ * client-reference-manifest errors during Vercel deployment.
+ * 
+ * The 'force-static' directive ensures this page is statically generated
+ * at build time without server-side rendering dependencies.
+ */
 export const dynamic = 'force-static';
 
 export default function ContactPage() {
