@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Add export config for static generation
+export const dynamic = 'force-static';
+export const revalidate = 3600; // Revalidate every hour
+
 export default function MarketingPage() {
   return (
     <div className="flex flex-col min-h-screen">

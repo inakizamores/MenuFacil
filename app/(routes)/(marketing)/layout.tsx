@@ -2,6 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Add export config for static generation
+export const dynamic = 'force-static';
+
 export default function MarketingLayout({
   children,
 }: {
