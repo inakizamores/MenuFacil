@@ -569,10 +569,70 @@ Key files:
 The MenuFácil project is currently in active development. The backend is mostly functional, and we're implementing and refining frontend features. The application now has a functional QR code generation system and analytics dashboard, moving it closer to first usable deployment.
 
 ## Recently Completed Features
-- Implemented comprehensive Analytics Dashboard with visualizations
-- Enhanced QR code batch generation with improved error handling and analytics tracking
-- Added traffic source and device type tracking for QR code scans
-- Fixed BatchQRGenerator component ref handling
+- Implemented comprehensive analytics dashboard with data visualization for restaurants and menus
+- Added real-time tracking of QR code scans, device types, and traffic sources
+- Fixed import path resolution between app/actions and actions directories
 - Updated Supabase authentication to modern @supabase/ssr package
 - Fixed security vulnerabilities in dependencies (jspdf)
 - Added proper Supabase database typing for improved type safety
+- Fixed build errors related to missing browserbase dependencies
+- Implemented menu publishing workflow with PublishMenu component
+- Added improved error handling and success notifications to the `ItemCategorizer` component
+- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
+- Implemented a visual preview of dragged items using `DragOverlay`
+- Standardized image property naming across menu item forms
+- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
+- Standardized environment variable documentation in `.env.example`
+- Fixed TypeScript errors throughout the codebase
+- Implemented comprehensive form validation system with reusable components
+- Created dedicated `FormFeedback` component for consistent validation messages
+- Enhanced `Input` component with validation states and accessibility features
+- Added debounce utilities for optimized form validation performance
+- Upgraded restaurant creation form with improved validation and user feedback
+
+## In Progress
+- Enhancing the public menu viewing experience with better typography and animations
+- Improving error handling for network requests and form submissions
+- Enhancing user interface components for better usability
+- Implementing comprehensive client-side validation for all forms
+- Addressing deprecated dependencies
+
+## Planned Improvements
+
+### Short-term (Next Sprint)
+1. ~~Enhance `ItemCategorizer` with drag-and-drop functionality using `@dnd-kit/core`~~ ✅
+2. ~~Add error handling and success notifications to components~~ ✅ (Started with ItemCategorizer)
+3. ~~Complete the menu publishing workflow~~ ✅
+4. ~~Modernize Supabase authentication with @supabase/ssr~~ ✅
+5. ~~Implement comprehensive client-side validation for all forms~~ ✅ (Started with restaurant forms)
+6. ~~Implement analytics dashboard for customer engagement tracking~~ ✅
+7. Apply enhanced form validation to remaining forms (login, registration, menu creation)
+8. Create form controls for complex data types (arrays, nested objects)
+
+### Medium-term
+1. ~~Refactor authentication to use a single, consistent implementation~~ ✅
+2. Implement image optimization for uploaded menu item images
+3. Add support for multi-language menus
+4. Improve accessibility across all UI components
+5. Replace deprecated node-fetch dependency with modern alternatives
+
+### Long-term
+1. ~~Implement analytics tracking for menu views and interactions~~ ✅
+2. Create a mobile app version using React Native
+3. Add support for online ordering integration
+4. Implement real-time menu updates using WebSockets
+
+## Technical Debt
+- Some components lack proper error handling for edge cases
+- Need for more comprehensive test coverage
+- UI components could benefit from better accessibility features
+- Some dependencies have punycode deprecation warnings that need to be addressed
+
+## Dependencies
+- Next.js 14.0.4
+- React 18
+- Supabase for authentication and data storage (using @supabase/ssr)
+- Tailwind CSS for styling
+- TypeScript for type safety
+- Recharts for data visualization
+- Zod for form validation

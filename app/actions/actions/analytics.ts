@@ -1,6 +1,7 @@
 'use server';
 
 import { createServerClient } from '@/lib/supabase/server';
+import { AnalyticsEvent } from '@/app/types/database';
 
 interface ViewsData {
   date: string;
