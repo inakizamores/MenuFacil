@@ -7,20 +7,21 @@ const patterns = {
   // Phone number with optional country code and spaces/hyphens
   phone: /^(\+?\d{1,3}[-\s]?)?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}$/,
   // URL pattern
-  url: /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/,
+  url: /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&//=]*)$/,
   // Postal/Zip code (supports common formats)
   postalCode: /^[0-9]{5}(-[0-9]{4})?$|^[A-Za-z][0-9][A-Za-z]\s?[0-9][A-Za-z][0-9]$/,
   // Price (currency) validation
   price: /^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(\.[0-9]{1,2})?$/,
 };
 
-type ValidationFunction<T = any> = (value: any, formValues?: T) => string | null;
+type ValidationValue = string | number | boolean | null | undefined | string[] | Record<string, unknown>;
+type ValidationFunction<T = Record<string, ValidationValue>> = (value: ValidationValue, formValues?: T) => string | null;
 
 export const validate = {
   // Makes a field optional - always returns null (no error)
-  optional: (value: any): string | null => null,
+  optional: (_value: ValidationValue): string | null => null,
 
-  required: (value: any): string | null => {
+  required: (value: ValidationValue): string | null => {
     if (value === undefined || value === null) return 'This field is required';
     
     if (typeof value === 'string' && value.trim() === '') {
@@ -63,44 +64,45 @@ export const validate = {
     return patterns.url.test(value) ? null : 'Please enter a valid URL';
   },
   
-  minLength: (min: number): ValidationFunction => (value: string): string | null => {
-    if (!value) return null; // Let required validator handle empty values
+  minLength: (min: number): ValidationFunction => (value: ValidationValue): string | null => {
+    if (!value || typeof value !== 'string') return null; // Let required validator handle empty values
     return value.length >= min 
       ? null 
       : `This field must be at least ${min} characters long`;
   },
   
-  maxLength: (max: number): ValidationFunction => (value: string): string | null => {
-    if (!value) return null; // Let required validator handle empty values
+  maxLength: (max: number): ValidationFunction => (value: ValidationValue): string | null => {
+    if (!value || typeof value !== 'string') return null; // Let required validator handle empty values
     return value.length <= max 
       ? null 
       : `This field must be at most ${max} characters long`;
   },
   
-  min: (min: number): ValidationFunction => (value: number): string | null => {
-    if (value === undefined || value === null) return null;
+  min: (min: number): ValidationFunction => (value: ValidationValue): string | null => {
+    if (value === undefined || value === null || typeof value !== 'number') return null;
     return value >= min 
       ? null 
       : `This value must be at least ${min}`;
   },
   
-  max: (max: number): ValidationFunction => (value: number): string | null => {
-    if (value === undefined || value === null) return null;
+  max: (max: number): ValidationFunction => (value: ValidationValue): string | null => {
+    if (value === undefined || value === null || typeof value !== 'number') return null;
     return value <= max 
       ? null 
       : `This value must be at most ${max}`;
   },
   
-  integer: (value: any): string | null => {
+  integer: (value: ValidationValue): string | null => {
     if (value === undefined || value === null || value === '') return null;
     return Number.isInteger(Number(value)) 
       ? null 
       : 'Please enter an integer value';
   },
   
-  decimal: (value: any): string | null => {
+  decimal: (value: ValidationValue): string | null => {
     if (value === undefined || value === null || value === '') return null;
-    return !isNaN(Number(value)) && Number(value) % 1 !== 0 
+    const num = Number(value);
+    return !isNaN(num) && num % 1 !== 0 
       ? null 
       : 'Please enter a decimal value';
   },
@@ -129,7 +131,7 @@ export const validate = {
   },
 
   match: (fieldName: string, message?: string): ValidationFunction => 
-    (value: any, formValues?: any): string | null => {
+    (value: ValidationValue, formValues?: Record<string, ValidationValue>): string | null => {
       if (!formValues) return null;
       return value === formValues[fieldName] 
         ? null 
@@ -137,7 +139,7 @@ export const validate = {
     },
 
   notMatch: (fieldName: string, message?: string): ValidationFunction => 
-    (value: any, formValues?: any): string | null => {
+    (value: ValidationValue, formValues?: Record<string, ValidationValue>): string | null => {
       if (!formValues) return null;
       return value !== formValues[fieldName] 
         ? null 
@@ -145,20 +147,20 @@ export const validate = {
     },
 
   pattern: (regex: RegExp, message: string): ValidationFunction => 
-    (value: string): string | null => {
-      if (!value) return null;
+    (value: ValidationValue): string | null => {
+      if (!value || typeof value !== 'string') return null;
       return regex.test(value) ? null : message;
     },
 
-  custom: (validationFn: (value: any, formValues?: any) => boolean, message: string): ValidationFunction => 
-    (value: any, formValues?: any): string | null => {
+  custom: (validationFn: (value: ValidationValue, formValues?: Record<string, ValidationValue>) => boolean, message: string): ValidationFunction => 
+    (value: ValidationValue, formValues?: Record<string, ValidationValue>): string | null => {
       return validationFn(value, formValues) ? null : message;
     }
 };
 
 // Combine multiple validators into a single validator function
 export function combineValidators(...validators: ValidationFunction[]): ValidationFunction {
-  return (value: any, formValues?: any): string | null => {
+  return (value: ValidationValue, formValues?: Record<string, ValidationValue>): string | null => {
     for (const validator of validators) {
       const error = validator(value, formValues);
       if (error) {
@@ -171,7 +173,7 @@ export function combineValidators(...validators: ValidationFunction[]): Validati
 
 // Create a validation rule for each field with a custom error message
 export const createValidator = (validatorFn: ValidationFunction, message: string): ValidationFunction => {
-  return (value: any, formValues?: any): string | null => {
+  return (value: ValidationValue, formValues?: Record<string, ValidationValue>): string | null => {
     const error = validatorFn(value, formValues);
     return error ? message : null;
   };
@@ -182,7 +184,7 @@ export function createValidationRules<T>(rules: Record<keyof T, ValidationFuncti
   const validationRules: Record<string, ValidationFunction> = {};
   
   for (const field in rules) {
-    if (rules.hasOwnProperty(field)) {
+    if (Object.prototype.hasOwnProperty.call(rules, field)) {
       validationRules[field] = combineValidators(...rules[field]);
     }
   }
@@ -191,26 +193,34 @@ export function createValidationRules<T>(rules: Record<keyof T, ValidationFuncti
 }
 
 // Create form validation rules from a Zod schema (leaving for backward compatibility)
-export function createValidationRulesFromSchema<T>(schema: any): Record<keyof T, ValidationFunction> {
+export function createValidationRulesFromSchema<T>(schema: unknown): Record<keyof T, ValidationFunction> {
   const rules: Record<string, ValidationFunction> = {};
   
+  if (typeof schema !== 'object' || schema === null || !('shape' in schema)) {
+    return rules as Record<keyof T, ValidationFunction>;
+  }
+  
+  const zodSchema = schema as { shape: Record<string, unknown>; pick: (fields: Record<string, boolean>) => { parse: (data: Record<string, unknown>) => void } };
+  
   // Extract field names from schema
-  const fieldNames = Object.keys(schema.shape || {});
+  const fieldNames = Object.keys(zodSchema.shape || {});
   
   for (const field of fieldNames) {
-    rules[field] = (value: any) => {
+    rules[field] = (value: ValidationValue) => {
       try {
         // Create a partial schema just for this field
-        const fieldSchema = { [field]: schema.shape[field] };
-        const partialSchema = schema.pick({ [field]: true });
+        const partialSchema = zodSchema.pick({ [field]: true });
         
         // Validate just this field
         partialSchema.parse({ [field]: value });
         return null;
-      } catch (error: any) {
+      } catch (error) {
         // Extract error message from Zod validation error
-        if (error.errors && error.errors.length > 0) {
-          return error.errors[0].message;
+        if (error && typeof error === 'object' && 'errors' in error) {
+          const zodError = error as { errors: Array<{ message: string }> };
+          if (zodError.errors && zodError.errors.length > 0) {
+            return zodError.errors[0].message;
+          }
         }
         return 'Invalid value';
       }

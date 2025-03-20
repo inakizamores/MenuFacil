@@ -1,6 +1,6 @@
 import { useState, useCallback, ChangeEvent, FormEvent } from 'react';
 
-type ValidationFunction<T> = (value: any, values: T) => string | null;
+type ValidationFunction<T> = <K extends keyof T>(value: T[K], values: T) => string | null;
 
 type ValidationRules<T> = {
   [K in keyof T]?: ValidationFunction<T>[];
@@ -8,7 +8,7 @@ type ValidationRules<T> = {
 
 // This is the validation schema format used in the menu item pages
 type ValidationSchema<T> = {
-  [K in keyof T]?: (value: any) => string | null;
+  [K in keyof T]?: <V extends T[K]>(value: V) => string | null;
 };
 
 interface UseFormOptions<T> {
@@ -18,7 +18,7 @@ interface UseFormOptions<T> {
   onSubmit?: (values: T) => void | Promise<void>;
 }
 
-export function useForm<T extends Record<string, any>>({
+export function useForm<T extends Record<string, unknown>>({
   initialValues,
   validationRules = {},
   validationSchema = {},
@@ -31,7 +31,7 @@ export function useForm<T extends Record<string, any>>({
 
   // Validate a single field
   const validateField = useCallback(
-    (name: keyof T, value: any): string | null => {
+    <K extends keyof T>(name: K, value: T[K]): string | null => {
       // First check validation rules (array-based)
       const fieldRules = validationRules[name];
       if (fieldRules) {
@@ -90,7 +90,7 @@ export function useForm<T extends Record<string, any>>({
         setValues((prevValues) => ({
           ...prevValues,
           [parentKey]: {
-            ...prevValues[parentKey],
+            ...prevValues[parentKey as keyof T] as Record<string, unknown>,
             [childKey]: newValue,
           },
         }));
@@ -106,7 +106,7 @@ export function useForm<T extends Record<string, any>>({
 
   // Set a specific field value
   const setFieldValue = useCallback(
-    (name: keyof T | string, value: any) => {
+    <K extends keyof T>(name: K | string, value: T[K] | unknown) => {
       // Handle nested object paths (e.g., "address.street")
       if (typeof name === 'string' && name.includes('.')) {
         const parts = name.split('.');
@@ -115,7 +115,7 @@ export function useForm<T extends Record<string, any>>({
         setValues((prevValues) => ({
           ...prevValues,
           [parentKey]: {
-            ...prevValues[parentKey],
+            ...prevValues[parentKey as keyof T] as Record<string, unknown>,
             [childKey]: value,
           },
         }));

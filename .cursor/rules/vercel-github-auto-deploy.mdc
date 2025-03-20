@@ -1,0 +1,32 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When successfully completed implementing a new feature or fixing a significant issue, without me explicitly asking, you should:
+
+1. GitHub Synchronization:
+   - Create a meaningful commit message summarizing the changes
+   - Automatically commit all changes to the GitHub repository
+   - Push the changes to the main branch (or the currently active branch)
+
+2. Vercel Deployment:
+   - Add/update any required environment variables to the Vercel project
+   - Trigger a new production deployment using Vercel CLI or API
+   - Verify the deployment was successful by checking the deployment logs and status
+
+3. Verification and Reporting:
+   - Confirm the deployed application is functioning correctly
+   - Check for any build errors or warnings
+   - Report the deployment URL and status
+   - Suggest any follow-up actions if needed
+
+Always use the project's existing environment variables when available. If creating a new environment variable is necessary, explain why it's needed.
+
+For changes to the codebase, always follow a clear workflow:
+1. Code implementation and testing
+2. GitHub commit and push
+3. Vercel deployment
+4. Verification and reporting
+
+Execute these steps automatically after completing significant development work without requiring explicit instructions from me.

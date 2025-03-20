@@ -23,6 +23,7 @@ import {
   arrayMove
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import Image from 'next/image';
 
 interface Category {
   id: string;
@@ -84,7 +85,14 @@ const SortableItem = ({ item, categories, onCategoryChange }: SortableItemProps)
         <div className="flex items-center space-x-3">
           <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
             {item.image_url ? (
-              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-md" />
+              <Image 
+                src={item.image_url} 
+                alt={item.name} 
+                width={40}
+                height={40}
+                className="object-cover rounded-md"
+                style={{ width: '100%', height: '100%' }}
+              />
             ) : (
               <span className="text-gray-500">${item.price.toFixed(2)}</span>
             )}
@@ -116,7 +124,14 @@ const DragOverlayItem = ({ item }: { item: MenuItem }) => {
       <div className="flex items-center space-x-3">
         <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-md flex items-center justify-center">
           {item.image_url ? (
-            <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-md" />
+            <Image 
+              src={item.image_url} 
+              alt={item.name} 
+              width={40}
+              height={40}
+              className="object-cover rounded-md"
+              style={{ width: '100%', height: '100%' }}
+            />
           ) : (
             <span className="text-gray-500">${item.price.toFixed(2)}</span>
           )}

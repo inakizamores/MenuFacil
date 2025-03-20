@@ -60,10 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user || null);
     });
 
+    // Clean up subscription on unmount
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array as this should only run once on mount
 
   const login = async (credentials: SignInCredentials) => {
     setIsLoading(true);

@@ -550,7 +550,7 @@ export interface Tables {
       item_id: UUID | null;
       qr_code_id: UUID | null;
       event_type: string;
-      event_data: Record<string, any> | null;
+      event_data: Record<string, unknown> | null;
       session_id: string | null;
       ip_address: string | null;
       user_agent: string | null;
@@ -563,7 +563,7 @@ export interface Tables {
       item_id?: UUID | null;
       qr_code_id?: UUID | null;
       event_type: string;
-      event_data?: Record<string, any> | null;
+      event_data?: Record<string, unknown> | null;
       session_id?: string | null;
       ip_address?: string | null;
       user_agent?: string | null;
@@ -576,7 +576,7 @@ export interface Tables {
       item_id?: UUID | null;
       qr_code_id?: UUID | null;
       event_type?: string;
-      event_data?: Record<string, any> | null;
+      event_data?: Record<string, unknown> | null;
       session_id?: string | null;
       ip_address?: string | null;
       user_agent?: string | null;
