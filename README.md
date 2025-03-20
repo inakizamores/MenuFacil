@@ -108,6 +108,20 @@ Claude will use the appropriate MCP server to fulfill these requests.
 
 Welcome to MenuFácil - the easy-to-use digital menu management system for restaurants.
 
+## Recent Updates (June 24, 2024)
+
+We've made significant improvements to the codebase:
+
+- **Code Quality**: Implemented ESLint configuration with best practices for React and TypeScript
+- **Bug Fixes**: Resolved critical issues with React hooks and TypeScript typing
+- **Build Process**: Optimized deployment pipeline to Vercel
+- **Documentation**: Added comprehensive documentation on changes and development progress
+
+For details, see:
+- [CHANGES.md](./CHANGES.md) - Documentation of recent changes
+- [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) - Current project status
+- [TODO.md](./TODO.md) - Tasks for next developers
+
 ## Features
 
 - 🍽️ **Menu Management**: Create and manage digital menus for your restaurant
@@ -155,14 +169,19 @@ Welcome to MenuFácil - the easy-to-use digital menu management system for resta
 
 ## Technologies Used
 
-- Next.js
-- React
+- Next.js 14
+- React 18
 - TypeScript
-- Firebase (Authentication, Firestore, Storage)
+- Supabase (Authentication, Database, Storage)
 - Tailwind CSS
+- ESLint with TypeScript and React rules
 - qrcode.react
 - jsPDF
 - JSZip
+
+## Production URL
+
+The application is deployed at: https://menufacil-nx43dfrv0-inakizamores-projects.vercel.app
 
 ## Learn More
 
