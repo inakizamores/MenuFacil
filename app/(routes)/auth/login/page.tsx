@@ -3,16 +3,12 @@
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
 import { useForm } from '../../../hooks/useForm';
-import { validate, combineValidators } from '../../../utils/validation';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
 import { useState } from 'react';
-
-type LoginFormValues = {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-};
+import { loginSchema } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
+import type { LoginFormValues } from '@/lib/validation/schemas';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -24,10 +20,8 @@ export default function LoginPage() {
     rememberMe: false,
   };
 
-  const validationRules = {
-    email: combineValidators(validate.required, validate.email),
-    password: combineValidators(validate.required),
-  };
+  // Create validation rules from Zod schema
+  const validationRules = createValidationRules(loginSchema);
 
   const handleLogin = async (values: LoginFormValues) => {
     setServerError(null);

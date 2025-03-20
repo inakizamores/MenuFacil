@@ -1,16 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
 import { useAuth } from '../../../context/auth-context';
 import { useForm } from '../../../hooks/useForm';
-import { validate, combineValidators } from '../../../utils/validation';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
-
-type ForgotPasswordFormValues = {
-  email: string;
-};
+import { useState } from 'react';
+import { forgotPasswordSchema } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
+import type { ForgotPasswordFormValues } from '@/lib/validation/schemas';
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
@@ -21,17 +19,17 @@ export default function ForgotPasswordPage() {
     email: '',
   };
 
-  const validationRules = {
-    email: combineValidators(validate.required, validate.email),
-  };
+  // Create validation rules from Zod schema
+  const validationRules = createValidationRules(forgotPasswordSchema);
 
   const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
     setServerError(null);
+    setIsSuccess(false);
     try {
       await forgotPassword(values.email);
       setIsSuccess(true);
     } catch (error: any) {
-      setServerError(error.message || 'Failed to send reset email. Please try again.');
+      setServerError(error.message || 'Failed to send reset link. Please try again.');
     }
   };
 
@@ -45,39 +43,6 @@ export default function ForgotPasswordPage() {
     handleSubmit,
   } = useForm<ForgotPasswordFormValues>(initialValues, validationRules, handleForgotPassword);
 
-  if (isSuccess) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Check your email
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            We've sent a password reset link to your email address.
-          </p>
-        </div>
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-            <div className="flex flex-col space-y-4">
-              <p className="text-sm text-gray-700">
-                Please check your inbox and follow the instructions to reset your password.
-                If you don't see the email, check your spam folder.
-              </p>
-              <div className="pt-4">
-                <Link 
-                  href="/auth/login" 
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Return to login
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -85,10 +50,7 @@ export default function ForgotPasswordPage() {
           Reset your password
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
-            return to login
-          </Link>
+          Enter your email address and we'll send you a link to reset your password.
         </p>
       </div>
 
@@ -97,6 +59,12 @@ export default function ForgotPasswordPage() {
           {serverError && (
             <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
               {serverError}
+            </div>
+          )}
+          
+          {isSuccess && (
+            <div className="mb-4 rounded-md bg-green-50 p-4 text-sm text-green-700">
+              Password reset link sent! Check your email for instructions.
             </div>
           )}
           
@@ -114,14 +82,22 @@ export default function ForgotPasswordPage() {
               touched={touched.email}
             />
 
-            <Button
-              type="submit"
-              fullWidth
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              Send reset link
-            </Button>
+            <div>
+              <Button
+                type="submit"
+                fullWidth
+                isLoading={isSubmitting}
+                disabled={isSubmitting}
+              >
+                Send reset link
+              </Button>
+            </div>
+
+            <div className="text-center text-sm">
+              <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
+                Back to login
+              </Link>
+            </div>
           </form>
         </div>
       </div>

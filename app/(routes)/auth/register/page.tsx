@@ -3,18 +3,12 @@
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
 import { useForm } from '../../../hooks/useForm';
-import { validate, combineValidators } from '../../../utils/validation';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
 import { useState } from 'react';
-
-type RegisterFormValues = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  terms: boolean;
-};
+import { registerSchema } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
+import type { RegisterFormValues } from '@/lib/validation/schemas';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -28,23 +22,8 @@ export default function RegisterPage() {
     terms: false,
   };
 
-  // Custom validator for password matching
-  const validatePasswordMatch = (value: string, formValues: RegisterFormValues): string | null => {
-    return value === formValues.password ? null : 'Passwords must match';
-  };
-
-  // Custom validator for terms acceptance
-  const validateTerms = (value: boolean): string | null => {
-    return value ? null : 'You must accept the terms and conditions';
-  };
-
-  const validationRules = {
-    name: combineValidators(validate.required),
-    email: combineValidators(validate.required, validate.email),
-    password: combineValidators(validate.required, validate.password),
-    confirmPassword: combineValidators(validate.required, validatePasswordMatch),
-    terms: validateTerms,
-  };
+  // Create validation rules from Zod schema
+  const validationRules = createValidationRules(registerSchema);
 
   const handleRegister = async (values: RegisterFormValues) => {
     setServerError(null);
@@ -73,12 +52,12 @@ export default function RegisterPage() {
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Create a new account
+          Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Or{' '}
           <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
-            sign in to your existing account
+            sign in to an existing account
           </Link>
         </p>
       </div>
@@ -149,13 +128,9 @@ export default function RegisterPage() {
                 id="terms"
                 name="terms"
                 type="checkbox"
-                required
                 checked={values.terms}
                 onChange={handleChange}
-                onBlur={handleBlur}
-                className={`h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
-                  errors.terms && touched.terms ? 'border-red-500' : ''
-                }`}
+                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                 I agree to the{' '}
@@ -168,8 +143,8 @@ export default function RegisterPage() {
                 </Link>
               </label>
             </div>
-            {errors.terms && touched.terms && (
-              <p className="mt-1 text-xs text-red-600">{errors.terms}</p>
+            {touched.terms && errors.terms && (
+              <div className="mt-1 text-sm text-red-600">{errors.terms}</div>
             )}
 
             <Button
