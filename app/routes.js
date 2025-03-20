@@ -5,6 +5,8 @@
 
 export const routeMap = {
   '/': { page: '/' },
+  '/about': { page: '/about' },
+  '/contact': { page: '/contact' },
   '/dashboard': { page: '/dashboard' },
   '/auth/login': { page: '/auth/login' },
   '/auth/register': { page: '/auth/register' },
