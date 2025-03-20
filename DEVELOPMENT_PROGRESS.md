@@ -569,33 +569,19 @@ Key files:
 The MenuFácil project is currently in active development. The backend is mostly functional, and we're implementing and refining frontend features. The application now has a functional QR code generation system and analytics dashboard, moving it closer to first usable deployment.
 
 ## Recently Completed Features
-- Implemented comprehensive analytics dashboard with data visualization for restaurants and menus
-- Added real-time tracking of QR code scans, device types, and traffic sources
-- Fixed import path resolution between app/actions and actions directories
-- Updated Supabase authentication to modern @supabase/ssr package
-- Fixed security vulnerabilities in dependencies (jspdf)
-- Added proper Supabase database typing for improved type safety
-- Fixed build errors related to missing browserbase dependencies
-- Implemented menu publishing workflow with PublishMenu component
-- Added improved error handling and success notifications to the `ItemCategorizer` component
-- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
-- Implemented a visual preview of dragged items using `DragOverlay`
-- Standardized image property naming across menu item forms
-- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
-- Standardized environment variable documentation in `.env.example`
-- Fixed TypeScript errors throughout the codebase
-- Implemented comprehensive form validation system with reusable components
-- Created dedicated `FormFeedback` component for consistent validation messages
-- Enhanced `Input` component with validation states and accessibility features
-- Added debounce utilities for optimized form validation performance
-- Upgraded restaurant creation form with improved validation and user feedback
+- **Analytics Dashboard**: Implemented a comprehensive analytics dashboard that displays key metrics such as QR code scans, export statistics, and traffic sources. The dashboard includes multiple chart types using Recharts and responsive design.
+- **Enhanced QR Code System**: Implemented batch QR code generation with customization options and export functionality.
+- **Public Menu Viewing Experience**: Significantly improved the public menu viewing experience with:
+  - Modern UI with animations and transitions using Framer Motion
+  - Multi-language support (English/Spanish) with automatic language detection
+  - Advanced filtering and search capabilities
+  - Enhanced typography and readability
+  - Responsive design optimizations for mobile devices
+  - Skeleton loading states for improved perceived performance
 
 ## In Progress
-- Enhancing the public menu viewing experience with better typography and animations
-- Improving error handling for network requests and form submissions
-- Enhancing user interface components for better usability
-- Implementing comprehensive client-side validation for all forms
-- Addressing deprecated dependencies
+- **Form Validation**: Implementing comprehensive validation for all forms in the application using Zod schema validation.
+- **User Settings Panel**: Building a settings panel to allow restaurant owners to customize their account preferences.
 
 ## Planned Improvements
 
