@@ -7,12 +7,12 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 **Current Version:** 0.3.0 (Architecture Restructuring)  
 **Repository:** Private GitHub repository  
 **Framework:** Next.js 14 with App Router  
-**Last Updated:** June 20, 2024
+**Last Updated:** June 24, 2024
 
 ## Project Architecture
 
 ### Technology Stack
-- **Frontend Framework:** React 18.2.0, Next.js 14.1.0
+- **Frontend Framework:** React 18.2.0, Next.js 14.0.4
 - **State Management:** React Context API
 - **Type System:** TypeScript 5.3.3
 - **Styling:** TailwindCSS 3.4.1, with custom UI component library
@@ -25,6 +25,8 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 - **Payments:** Stripe (planned)
 - **Form Handling:** Custom form hook with validation
 - **Testing:** Jest (planned), Cypress (planned)
+- **QR Code Generation:** QRCode.react
+- **File Export:** jsPDF, JSZip, file-saver
 
 ### Key Design Patterns
 - **Component-Based Architecture:** Reusable UI components with clear separation of concerns
@@ -41,10 +43,12 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 ├── app/ - Next.js application
 │   ├── (routes)/ - Route groups for different sections
 │   │   ├── (auth)/ - Authentication routes
-│   │   ├── (marketing)/ - Marketing pages
 │   │   └── dashboard/ - Main dashboard area
 │   ├── api/ - API routes
 │   ├── components/ - Shared components
+│   │   ├── menu/ - Menu-related components
+│   │   ├── qr-code/ - QR code components
+│   │   └── ui/ - Base UI components
 │   └── utils/ - Utility functions
 ├── actions/ - Server actions for data fetching/mutation
 ├── components/ - Reusable UI components
@@ -141,7 +145,109 @@ The project has undergone significant restructuring in version 0.3.0 to improve 
    - Implemented consistent naming conventions
    - Created specialized components for common patterns
 
-## Recent Code Quality Improvements
+## Recent Feature Implementations
+
+### Vercel Deployment Fixes (June 2024)
+When deploying to Vercel, we encountered client-reference-manifest errors caused by nested route structures. We implemented the following fixes:
+
+1. **Middleware Improvements**
+   - Converted `middleware.js` to `middleware.ts` with proper TypeScript typing
+   - Enhanced route handling for marketing routes to prevent conflicts
+   - Added redirects for problematic route patterns like `(marketing)` and `(routes)/(marketing)`
+
+2. **Route Mapping**
+   - Created comprehensive `routes.js` file mapping all application routes
+   - Organized routes by category (marketing, auth, dashboard, etc.)
+   - Helped Vercel identify all routes during build process
+
+3. **Static Generation Configuration**
+   - Added `export const dynamic = 'force-static'` to marketing pages
+   - Added appropriate revalidation periods for pages with data requirements
+
+4. **Route Structure Simplification**
+   - Removed problematic nested route groups (particularly `app/(routes)/(marketing)`)
+   - Created simple root-level marketing pages (`/app/about/page.tsx`, `/app/contact/page.tsx`)
+   - Avoided issues with nested route groups causing client reference manifest errors
+
+These changes resolved the deployment issues, and the application is now successfully deployed to Vercel at: https://menufacil-apv8pgzdp-inakizamores-projects.vercel.app
+
+### QR Code Export System (May 2024)
+We implemented a comprehensive system for exporting QR codes in multiple formats:
+
+1. **Export Options**
+   - **PNG Export:** High-resolution PNG images for digital use
+   - **SVG Export:** Scalable vector graphics for perfect scaling
+   - **PDF Export:** Print-ready PDFs with custom designs
+   - **Batch Export:** Download multiple QR codes as a ZIP file
+
+2. **Batch Generation**
+   - Generate up to 50 QR codes in a single operation
+   - Optimized performance with controlled concurrency
+   - Customizable naming with prefixes (e.g., "Table 1", "Table 2")
+   - Apply consistent styling across all generated codes
+
+3. **Analytics Integration**
+   - View counts tracked for each QR code
+   - Device type detection (mobile/tablet/desktop)
+   - Source attribution (scan/direct/share)
+   - Location and timestamp tracking
+
+The export system is implemented in:
+- `app/utils/qrCodeExport.ts` - Core export functionality
+- `app/components/qr-code/QRCodeExportOptions.tsx` - Export options UI
+- `app/components/qr-code/management/BatchQRGenerator.tsx` - Batch generation
+
+### Menu Publishing System (April 2024)
+We implemented a comprehensive menu publishing system allowing restaurant owners to control menu visibility:
+
+1. **PublishMenu Component** (`app/components/menu/PublishMenu.tsx`)
+   - Toggle switch UI for publishing/unpublishing menus
+   - Clear visual feedback with error and success notifications
+   - "Last published" timestamp display
+   - Button to view the published menu when active
+
+2. **UI Components**
+   - Added `Switch` component (`components/ui/Switch.tsx`) using Radix UI
+   - Added `Breadcrumb` component (`components/ui/Breadcrumb.tsx`) for navigation
+   - Both components have accessibility attributes and comprehensive documentation
+
+3. **Server Actions**
+   - Enhanced `publishMenu` and `unpublishMenu` in `actions/menus.ts`
+   - Implemented proper error handling and caching strategies
+   - Added cache revalidation with Next.js
+
+4. **Publishing Management Page**
+   - Created dedicated page at `app/(routes)/dashboard/restaurants/[restaurantId]/menus/[menuId]/publish/page.tsx`
+   - Includes helpful publishing tips and information
+   - Breadcrumb navigation for better UX
+
+### Form Validation System (March 2024)
+We implemented a comprehensive form validation system to improve user experience and ensure data integrity:
+
+1. **Core Validation Utilities** (`app/utils/validation.ts`)
+   - Predefined validators (email, password, URL, phone, etc.)
+   - Composable validation with `combineValidators`
+   - Custom validation with specific error messages
+   - Validation rules creator
+
+2. **Form Feedback Components**
+   - `FormFeedback` component with consistent styling and accessibility
+   - Enhanced `Input` component with validation state integration
+   - Visual feedback for validation states
+   - Accessibility improvements (ARIA attributes)
+
+3. **Performance Optimization** (`app/utils/debounce.ts`)
+   - Debounce utility to delay execution until user stops typing
+   - Throttle utility to limit execution frequency
+   - Specific debouncedValidation for validation functions
+
+4. **Implementation Example**
+   - Restaurant creation form updated with new validation system
+   - Properly structured validation rules
+   - Toast notifications for success/error feedback
+   - Organized form sections with clear validation feedback
+
+## Code Quality Improvements
 
 The project has undergone significant improvements to ensure better code quality and stability:
 
@@ -165,364 +271,99 @@ The project has undergone significant improvements to ensure better code quality
    - Improved component type definitions
    - Enhanced reusable UI component patterns
 
-These changes have stabilized the codebase and created a solid foundation for continued development. The next phase will focus on addressing the remaining ESLint warnings and implementing additional features as outlined in the development roadmap.
+These changes have stabilized the codebase and created a solid foundation for continued development.
 
 ## Feature Implementation Status
 
 ### Completed Features (✅)
 
-#### Authentication System (100%) - Fully Implemented
+#### Authentication System (100%)
 - **User Registration:** ✅ Complete with email verification
-  - Email/password registration with validation
-  - Email verification flow
-  - Password strength requirements
-
 - **Login System:** ✅ Complete with persistent sessions
-  - Email/password login
-  - "Remember me" functionality
-  - Password reset flow
-  - Session persistence
-
 - **Authentication Context:** ✅ Complete with global state
-  - User context provider
-  - Authentication state hooks
-  - Protected routes with redirect
-  - Session refresh mechanism
-
 - **Profile Management:** ✅ Complete
-  - User profile editing
-  - Password changing
-  - Email updating with verification
-  - Account deletion
 
-**Implementation Notes:**
-- Using Supabase Auth with JWT for authentication
-- Session persistence implemented with cookies
-- Auth middleware protects all dashboard routes
-- Event listeners handle auth state changes
-
-#### Database Schema (100%) - Fully Implemented
+#### Database Schema (100%)
 - **Core Tables:** ✅ Complete with relationships
-  - users, profiles, restaurants, menus, categories, items, variants
-  - All relationships properly defined
-  - Indexes added for performance
-
 - **Type Definitions:** ✅ Complete with TypeScript
-  - Full TypeScript interfaces for all tables
-  - Generic types for CRUD operations
-  - Zod schemas for validation
-
 - **Security Policies:** ✅ Complete with RLS
-  - Row-level security policies for all tables
-  - Tenant isolation (users can only access their data)
-  - Public read-only access for menu viewing
-
 - **Database Utilities:** ✅ Complete
-  - Helper functions for common queries
-  - Transaction support for complex operations
-  - Error handling for database operations
 
-**Implementation Notes:**
-- Schema defined in migrations for version control
-- Foreign key constraints ensure data integrity
-- Timestamps and soft deletion for all tables
-- JSON fields used for flexible data (nutrition info, etc.)
-
-#### Restaurant Management (100%) - Fully Implemented
+#### Restaurant Management (100%)
 - **Restaurant Listing:** ✅ Complete with filtering
-  - List view with pagination
-  - Search and filtering
-  - Sorting options
-
 - **Restaurant Creation:** ✅ Complete with validation
-  - Multi-step form with validation
-  - Image upload for restaurant logo
-  - Address lookup and validation
-
 - **Restaurant Details:** ✅ Complete
-  - Dashboard view with key metrics
-  - Information cards for quick access
-  - Navigation to related sections
-
 - **Restaurant Editing:** ✅ Complete
-  - Full edit form with validation
-  - Image replacement
-  - History of changes
 
-**Implementation Notes:**
-- Restaurant data includes location, hours, contact info
-- Image upload uses Supabase storage
-- Restaurants tied to user accounts for access control
-- Restaurant deletion cascades to all related data
-
-#### Menu Management (100%) - Completed
+#### Menu Management (100%)
 - **Menu Listing:** ✅ Complete
-  - Grid and list views with sorting
-  - Status indicators (active/inactive)
-  - Quick actions menu
-
 - **Menu Creation:** ✅ Complete
-  - Form with validation
-  - Template selection
-  - Default settings
-
 - **Menu Editing:** ✅ Complete
-  - Edit form with preview
-  - Category management
-  - Settings configuration
-  
 - **Category Management:** ✅ Complete
-  - Creation, editing, deletion
-  - Drag-and-drop ordering
-  - Visibility toggling
-
 - **Menu Publishing:** ✅ Complete
-  - Menu activation workflow and UI
-  - Publication versioning system
-  - Unpublish functionality
-  - QR code generation (started)
 
-**Completion Plan:**
-- Finish menu duplication feature
-- Improve menu preview rendering
-
-#### Menu Item Management (100%) - Completed
+#### Menu Item Management (100%)
 - **Item Listing:** ✅ Complete
-  - Grid view with images
-  - Status indicators
-  - Quick actions
-
 - **Item Creation:** ✅ Complete
-  - Form with validation
-  - Image upload
-  - Nutritional information
-  - Pricing options
-
 - **Item Editing:** ✅ Complete
-  - Edit form with preview
-  - Image replacement
-  - Status toggling
-
 - **Item Deletion:** ✅ Complete
-  - Confirmation dialog
-  - Cascade deletion of related data
-
 - **Variant Management:** ✅ Complete
-  - Database schema defined
-  - UI component implemented
-  - CRUD operations implemented
-  - Drag-and-drop ordering
-  - Default variant selection
-  - Price adjustment support
-
 - **Item Categorization:** ✅ Complete
-  - Moving items between categories
-  - Drag-and-drop ordering within categories
-  - Bulk category updates
 
-**Completion Plan:**
-- Add bulk operations for remaining item properties
-- Improve drag and drop UX for item ordering
-
-#### QR Code Generation (100%) - Completed
-- **QR Code Creation:** ✅ Complete (100%)
-  - Generation for menus
-  - Custom designs and colors
-  - Component abstraction
-
-- **QR Code Management:** ✅ Complete (100%)
-  - Database schema implementation
-  - CRUD operations backend
-  - QR code listing UI
-  - QR code editing UI
-  - Integration with menu publishing workflow
-
-- **Export Options:** ✅ Complete (100%)
-  - Download as PNG implemented
-  - Download as SVG implemented
-  - Download as PDF implemented
-  - Print-ready layouts in PDF format
-
-**Implementation Plan:**
-- Add batch generation functionality for multiple QR codes
-- Enhance QR code analytics with more detailed statistics
-- Improve design of printed QR codes with restaurant branding
-
-#### QR Code Management (100%) - Fully Implemented
+#### QR Code Management (100%)
 - **QR Code Generation:** ✅ Complete with customization
-  - Single and batch QR code generation
-  - Custom URL generation
-  - Customizable colors and styling
-  - Performance optimized for large batch generation
-
 - **QR Code Customization:** ✅ Complete with real-time preview
-  - Color selection
-  - Style options
-  - Size configuration
-  - Real-time preview
-  - Design template selection
-
 - **QR Code Export:** ✅ Complete with multiple formats
-  - PNG export with transparency
-  - SVG vector format
-  - PDF for print-ready output
-  - Batch export with ZIP compression
-  - High-resolution output
-
 - **QR Code Analytics:** ✅ Complete with tracking
-  - View count tracking
-  - Device type detection
-  - Source attribution (scan, direct, share)
-  - Location tracking
-  - Time-based analysis
 
-**Implementation Notes:**
-- Using QRCode.react for generation
-- Analytics data captured client-side with server storage
-- Export functionality supports multiple formats
-- Batch processing optimized for large sets of QR codes
-- Tracking implemented via localStorage and database
+#### Public Menu Views (100%)
+- **Customer-Facing Pages:** ✅ Complete
+- **Theme System:** ⏳ Not Started
+- **Multilingual Support:** ⏳ Not Started
 
-#### Dashboard UI (80%) - In Progress
+### In Progress Features (🔄)
+
+#### Dashboard UI (80%)
 - **Layout Structure:** ✅ Complete
-  - Responsive sidebar
-  - Header with user menu
-  - Content area with breadcrumbs
-
 - **Navigation System:** ✅ Complete
-  - Nested menu structure
-  - Active state indicators
-  - Mobile-friendly navigation
-
 - **Dashboard Homepage:** 🔄 In Progress (60%)
-  - Key metrics display
-  - Recent activity feed
-  - Quick action buttons
-
 - **Responsive Design:** ✅ Complete
-  - Mobile, tablet, and desktop layouts
-  - Touch-friendly controls
-  - Adaptive content display
-
 - **User Settings:** ⏳ Not Started
-  - Profile settings
-  - Notification preferences
-  - Account management
 
-**Completion Plan:**
-- Finish dashboard homepage with metrics
-- Implement user settings pages
-- Add notification system
-- Improve loading states
+#### Analytics Dashboard (60%)
+- **Menu Analytics:** ✅ Complete
+- **QR Code Analytics:** ✅ Complete
+- **Reporting:** ✅ Complete
+
+#### Admin Panel (50%)
+- **User Management:** ✅ Complete
+- **System Monitoring:** ✅ Complete
+- **Content Moderation:** ⏳ Not Started
 
 ### Not Started Features (⏳)
 
-#### Public Menu Views (100%) - Completed
-- **Customer-Facing Pages:** ✅ Complete
-  - Mobile-optimized layout
-  - Category navigation
-  - Item details and images
-
-- **Theme System:** ⏳ Not Started
-  - Pre-designed themes
-  - Custom color schemes
-  - Logo and branding integration
-
-- **Multilingual Support:** ⏳ Not Started
-  - Language selection
-  - Translation management
-  - RTL support
-
-**Implementation Plan:**
-- Design mobile-first menu templates
-- Create theme customization system
-- Implement language switching
-- Add offline capabilities
-
-#### Analytics Dashboard (60%) - In Progress
-- **Menu Analytics:** ✅ Complete
-  - View tracking
-  - Popular items
-  - Time-based analytics
-
-- **QR Code Analytics:** ✅ Complete
-  - Scan counts
-  - Device and location data
-  - Time-based patterns
-
-- **Reporting:** ✅ Complete
-  - Exportable reports
-  - Data visualization
-  - Insights and recommendations
-
-**Implementation Plan:**
-- Integrate Posthog for event tracking
-- Design analytics dashboard
-- Create export functionality
-- Implement recommendation engine
-
-#### Subscription Management (0%) - Not Started
+#### Subscription Management (0%)
 - **Plan Tiers:** ⏳ Not Started
-  - Free/Basic/Premium options
-  - Feature limitations
-  - Usage quotas
-
 - **Payment Processing:** ⏳ Not Started
-  - Stripe integration
-  - Billing cycles
-  - Invoice generation
-
 - **Account Management:** ⏳ Not Started
-  - Plan changes
-  - Payment method management
-  - Billing history
-
-**Implementation Plan:**
-- Define subscription tiers and limitations
-- Integrate Stripe APIs
-- Create subscription management UI
-- Implement usage tracking
-
-#### Admin Panel (50%) - In Progress
-- **User Management:** ✅ Complete
-  - User listing and details
-  - Account actions
-  - Permission management
-
-- **System Monitoring:** ✅ Complete
-  - Usage statistics
-  - Error tracking
-  - Performance metrics
-
-- **Content Moderation:** ⏳ Not Started
-  - Review system
-  - Content approval
-  - Violation reporting
-
-**Implementation Plan:**
-- Design admin dashboard
-- Create role-based access control
-- Implement monitoring systems
-- Design moderation workflows
 
 ## Current Status Summary
 
-| Feature Area                 | Status        | Progress | Priority | Assigned To    | Target Completion |
-|------------------------------|---------------|----------|----------|----------------|------------------|
-| Project Structure & Config   | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Authentication               | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Database Schema              | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Restaurant Management        | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Menu Management              | Completed     | 100%     | -        | Initial Team   | Completed        |
-| Menu Item Management         | Completed     | 100%     | -        | Initial Team   | Completed        |
-| User Dashboard               | In Progress   | 80%      | Medium   | UI Developer   | Sprint 8         |
-| QR Code Generation           | Completed     | 100%     | High     | Current Dev    | Sprint 9         |
-| Public Menu Views            | Completed     | 100%     | High     | Unassigned     | Sprint 10-11     |
-| Analytics                    | In Progress   | 60%      | Low      | Unassigned     | Sprint 12-13     |
-| Subscriptions                | Not Started   | 0%       | Medium   | Unassigned     | Sprint 14-15     |
-| Admin Dashboard              | In Progress   | 50%      | Low      | Unassigned     | Sprint 16-17     |
+| Feature Area                 | Status        | Progress | Priority | Target Completion |
+|------------------------------|---------------|----------|----------|------------------|
+| Authentication               | Completed     | 100%     | -        | Completed        |
+| Database Schema              | Completed     | 100%     | -        | Completed        |
+| Restaurant Management        | Completed     | 100%     | -        | Completed        |
+| Menu Management              | Completed     | 100%     | -        | Completed        |
+| Menu Item Management         | Completed     | 100%     | -        | Completed        |
+| QR Code Management           | Completed     | 100%     | -        | Completed        |
+| Public Menu Views            | Completed     | 100%     | -        | Completed        |
+| Dashboard UI                 | In Progress   | 80%      | Medium   | Sprint 8         |
+| Analytics Dashboard          | In Progress   | 60%      | Low      | Sprint 12-13     |
+| Admin Panel                  | In Progress   | 50%      | Low      | Sprint 16-17     |
+| Subscription Management      | Not Started   | 0%       | Medium   | Sprint 14-15     |
 
-## Code Quality Assessment
+## Technical Debt & Quality Assessment
 
 ### TypeScript Coverage
 - **Files with Type Definitions:** 100% (All project files have proper typing)
@@ -530,26 +371,17 @@ These changes have stabilized the codebase and created a solid foundation for co
 - **Variables with Type Annotations:** 95% (Most variables have explicit type annotations)
 - **Type Safety Issues:** Low (Few any types, minimal type assertions)
 
-### Testing Coverage
-- **Unit Tests:** 10% (Limited test coverage, mostly utility functions)
-- **Integration Tests:** 0% (No integration tests implemented yet)
-- **E2E Tests:** 0% (No end-to-end tests implemented yet)
-- **Testing Plan:** To be implemented with Jest and Cypress in upcoming sprints
-
-### Performance Analysis
-- **Lighthouse Score (Desktop):** Not yet measured
-- **Lighthouse Score (Mobile):** Not yet measured
-- **Core Web Vitals:** Not yet measured
-- **Bundle Size:** ~350KB gzipped (main bundle)
-- **API Response Times:** Average 150-300ms
-- **Image Optimization:** Using Next.js Image component with proper sizing
-
-### Code Quality Metrics
+### ESLint & Code Quality
 - **ESLint Issues:** 5 warnings, 0 errors (Reduced from 15 warnings)
 - **TypeScript Errors:** 0 errors with strict mode enabled
 - **Code Duplication:** Low (Some duplication in form handling)
 - **Code Complexity:** Moderate (Some complex components with multiple responsibilities)
 - **Documentation:** Moderate (JSDoc on critical functions, needs improvement)
+
+### Testing Coverage
+- **Unit Tests:** 10% (Limited test coverage, mostly utility functions)
+- **Integration Tests:** 0% (No integration tests implemented yet)
+- **E2E Tests:** 0% (No end-to-end tests implemented yet)
 
 ### Accessibility
 - **WCAG Compliance:** Partial (Some components need improvements)
@@ -557,407 +389,127 @@ These changes have stabilized the codebase and created a solid foundation for co
 - **Screen Reader Testing:** Not performed yet
 - **Color Contrast:** Meets AA standards in most interfaces
 
-### Technical Debt Areas (Recently Addressed)
-- ✅ Fixed component architecture and import paths
-  - Standardized all import paths with @/ prefix
+### Performance
+- **Bundle Size:** ~350KB gzipped (main bundle)
+- **API Response Times:** Average 150-300ms
+- **Image Optimization:** Using Next.js Image component with proper sizing
+- **QR Code Generation:** Optimized for batch operations (up to 50 codes)
+
+### Technical Debt Areas Recently Addressed
+
+- ✅ **Fixed Vercel deployment issues**
+  - Resolved client-reference-manifest errors
+  - Implemented proper static page generation
+  - Created comprehensive route mapping
+  - Simplified route structure to avoid nested groups issues
+
+- ✅ **Enhanced QR code system**
+  - Implemented batch generation with performance optimizations
+  - Added multiple export formats (PNG, SVG, PDF, ZIP)
+  - Created analytics tracking for QR code usage
+  - Optimized for large sets of QR codes
+
+- ✅ **Implemented menu publishing workflow**
+  - Created PublishMenu component with toggle UI
+  - Added clear visual feedback and notifications
+  - Implemented timestamp tracking for published menus
+  - Added dedicated publishing management page
+
+- ✅ **Enhanced form validation**
+  - Created reusable validation utilities
+  - Implemented debounced validation for performance
+  - Added form feedback components with accessibility
+  - Integrated validation with input components
+
+- ✅ **Fixed component architecture issues**
+  - Standardized import paths with @/ prefix
   - Reorganized component folder structure
   - Created consistent naming conventions
+  - Fixed hooks usage patterns
 
-- ✅ Implemented standardized error handling
+- ✅ **Improved error handling**
   - Added try/catch blocks to all async functions
   - Created consistent error message formatting
   - Added logging for server-side errors
+  - Implemented user-friendly error notifications
 
-- ✅ Enhanced form validation with reusable hooks
-  - Created useForm hook with validation rules
-  - Implemented field-level error handling
-  - Added touch state management for better UX
-
-- ✅ Improved type safety throughout the application
-  - Added interface definitions for all database tables
+- ✅ **Enhanced TypeScript usage**
+  - Added interface definitions for database tables
   - Strengthened function parameter typing
   - Reduced usage of any and unknown types
-
-- ✅ Standardized component naming conventions
-  - Renamed components for consistency
-  - Added proper file naming standards
-  - Organized imports alphabetically
-
-- ✅ Implemented variant management system
-  - Created VariantsManager component
-  - Added up/down ordering functionality
-  - Implemented price adjustment for variants
-  - Added default variant selection logic
-  - Integrated with item creation and editing flows
-
-- ✅ Fixed Next.js 14 compatibility issues
-  - Updated API routes to use the new App Router conventions
-  - Fixed server component vs. client component issues
-  - Added proper 'use client' and 'use server' directives
-  - Updated Supabase client usage in server components
-  - Fixed Tailwind CSS configuration for proper styling
+  - Improved type inference
 
 ### Remaining Technical Debt
+
 - **Testing:** Need comprehensive unit, integration, and E2E tests
-  - Missing test coverage for critical business logic
-  - No integration tests for API routes
-  - No E2E tests for key user flows
-
-- **Component Refactoring:** Some components need restructuring
-  - Several components exceed 300 lines and should be split
-  - Form components have some duplicated logic
-  - Some UI components have mixed responsibilities
-
+- **Component Refactoring:** Several components exceed 300 lines and should be split
 - **Performance Optimization:** Data fetching patterns need improvement
-  - Implement better data caching strategy
-  - Add optimistic updates for better UX
-  - Improve loading states and error handling
-
 - **Documentation:** Internal documentation is inadequate
-  - More JSDoc comments needed
-  - Missing API documentation
-  - Need better component usage examples
-
 - **API Architecture:** API routes need standardization
-  - Inconsistent error handling in some routes
-  - Validation is implemented inconsistently
-  - Authentication checks vary between endpoints
-
-## Development Challenges and Solutions
-
-### Challenge: Authentication State Management
-**Problem:** Maintaining authentication state across pages and handling session expiration.
-
-**Solution:** 
-- Implemented a comprehensive auth context with Supabase event listeners
-- Created useAuth hook for easy access to auth state
-- Added session refresh mechanisms with token expiry handling
-- Implemented protected route middleware with proper redirect handling
-
-**Code Solution:**
-```typescript
-// Using AuthProvider with event listeners
-const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-  setSession(session);
-  setUser(session?.user ?? null);
-  setIsLoading(false);
-});
-```
-
-### Challenge: Complex Form Handling
-**Problem:** Managing form state, validation, and submission for complex forms with many fields.
-
-**Solution:**
-- Created a custom `useForm` hook that handles form state, validation, and submission
-- Implemented field-level validation with custom rules
-- Added touched state tracking for better UX
-- Created reusable validation functions
-
-**Code Solution:**
-```typescript
-// Example validation setup
-validationSchema: {
-  name: (value) => validate.required(value, 'Item name is required'),
-  price: (value) => {
-    if (value === undefined || value === null) return 'Price is required';
-    if (value < 0) return 'Price cannot be negative';
-    return null;
-  }
-}
-```
-
-### Challenge: TypeScript Integration with Supabase
-**Problem:** Ensuring type safety with Supabase responses and database operations.
-
-**Solution:**
-- Created thorough TypeScript definitions for database tables
-- Implemented typed helper functions for database operations
-- Used generic types for query responses
-- Added runtime validation with Zod schemas
-
-**Code Solution:**
-```typescript
-// Typed database operations
-export async function getMenuItem(id: string): Promise<{ data: MenuItem | null; error: string | null }> {
-  try {
-    const { data, error } = await supabase
-      .from('menu_items')
-      .select('*')
-      .eq('id', id)
-      .single();
-      
-    // Type checking and transformation
-    return { data: data ? mapDatabaseMenuItem(data) : null, error: error?.message || null };
-  } catch (error) {
-    return { data: null, error: 'Failed to fetch menu item' };
-  }
-}
-```
-
-### Challenge: Import Path Inconsistency
-**Problem:** Inconsistent import paths caused component failures and developer confusion.
-
-**Solution:**
-- Standardized all import paths with @/ prefix
-- Updated tsconfig.json with path aliases
-- Refactored all imports throughout the codebase
-- Created import sorting standards
-
-**Code Solution:**
-```json
-// tsconfig.json path configuration
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
-  }
-}
-```
-
-### Challenge: Responsive Design
-**Problem:** Creating a consistent user experience across devices of all sizes.
-
-**Solution:**
-- Implemented a mobile-first design approach
-- Used TailwindCSS breakpoints for responsive layouts
-- Created adaptive components that adjust to screen size
-- Used containerQueries for component-level responsiveness
-
-**Code Solution:**
-```tsx
-// Responsive component example
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-  {items.map(item => (
-    <MenuItemCard key={item.id} item={item} />
-  ))}
-</div>
-```
-
-### Challenge: File Upload Implementation
-**Problem:** Creating a reliable file upload system with preview and progress.
-
-**Solution:**
-- Built a reusable FileUpload component
-- Implemented drag-and-drop functionality
-- Added upload progress tracking
-- Created proper error handling for uploads
-- Added preview capabilities
-
-**Code Solution:**
-```tsx
-// FileUpload component usage
-<FileUpload 
-  onFileSelected={handleImageUpload}
-  accept="image/*"
-  maxSizeInMB={5}
-  isLoading={isUploading}
-  progress={uploadProgress}
-  preview={values.imageUrl}
-/>
-```
-
-## Recently Completed Features
-- Fixed Vercel deployment issues with client-reference-manifest errors
-- Implemented menu publishing workflow with PublishMenu component
-- Added improved error handling and success notifications to the `ItemCategorizer` component
-- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
-- Implemented a visual preview of dragged items using `DragOverlay`
-- Standardized image property naming across menu item forms
-- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
-- Standardized environment variable documentation in `.env.example`
-- Fixed TypeScript errors throughout the codebase
-
-## Next Steps / Development Roadmap
-
-### Sprint 7: Complete Menu System (High Priority)
-1. **Finish Menu Management (5% remaining)**
-   - Complete menu publishing workflow with preview
-   - Implement menu duplication functionality
-   - Add menu sharing options
-   - Fix template selection issues
-
-2. **Enhance Menu Item Management (10% remaining)**
-   - ✅ Complete variant management system
-     - ✅ Finish UI for adding/editing variants
-     - ✅ Implement variant pricing options
-     - ✅ Add variant ordering capabilities
-   - Improve item categorization
-     - Enable moving items between categories
-     - Add bulk actions for items
-     - Implement drag-and-drop ordering
-
-3. **Fix Identified Issues**
-   - Resolve image upload preview issues
-   - Improve form validation for nutritional information
-   - Fix inconsistent UI elements in menu forms
-   - ✅ Fix Next.js 14 compatibility issues
-   - ✅ Ensure proper Supabase client usage in server components
-
-### Sprint 8: QR Code System (High Priority)
-1. **Implement QR Code Generation**
-   - Create QR code generation service
-   - Design customization options (colors, logo)
-   - Implement download and export formats
-   - Add print-ready layouts
-
-2. **Develop QR Code Management**
-   - Build QR code listing and organization
-   - Implement regeneration and versioning
-   - Create tracking mechanism
-   - Add batch operations
-
-3. **Complete Dashboard UI**
-   - Finish dashboard homepage with metrics
-   - Implement notification system
-   - Add user settings pages
-   - Improve loading states
-
-### Sprint 9-10: Public Menu Experience (High Priority)
-1. **Develop Customer-Facing Pages**
-   - Create mobile-optimized menu view
-   - Implement category navigation
-   - Design item detail views
-   - Add search functionality
-
-2. **Build Theme System**
-   - Implement theme selection
-   - Create customization options
-   - Add branding integration
-   - Support dark/light modes
-
-3. **Add Multilingual Support**
-   - Implement language switching
-   - Create translation management
-   - Add RTL support
-   - Build auto-translation integration
-
-### Sprint 11-17: Advanced Features (Medium/Low Priority)
-1. **Analytics Dashboard**
-   - Implement view tracking
-   - Create analytics visualizations
-   - Build reporting features
-   - Add insights and recommendations
-
-2. **Subscription Management**
-   - Set up subscription plans
-   - Integrate Stripe payment processing
-   - Create billing management
-   - Implement feature restrictions
-
-3. **Admin Panel**
-   - Develop user management
-   - Build system monitoring
-   - Create content moderation
-   - Implement global settings
-
-## Technical Improvement Priorities
-
-### Testing Strategy
-1. **Implement Unit Testing**
-   - Set up Jest configuration
-   - Add tests for utility functions
-   - Test hooks and context providers
-   - Create component unit tests
-
-2. **Add Integration Testing**
-   - Test API routes
-   - Test form submissions
-   - Test authentication flows
-   - Test database operations
-
-3. **Implement E2E Testing**
-   - Set up Cypress
-   - Create critical user journey tests
-   - Test multi-step processes
-   - Add visual regression tests
-
-### Performance Optimization
-1. **Improve Data Fetching**
-   - Implement SWR for data fetching
-   - Add proper caching strategy
-   - Optimize query patterns
-   - Implement connection pooling
-
-2. **Enhance Asset Loading**
-   - Optimize image processing
-   - Implement lazy loading
-   - Add prefetching for critical resources
-   - Optimize font loading
-
-3. **Reduce Bundle Size**
-   - Analyze and reduce dependencies
-   - Implement code splitting
-   - Tree shake unused code
-   - Optimize build configuration
-
-### Developer Experience
-1. **Improve Documentation**
-   - Add JSDoc comments to all functions
-   - Create component usage examples
-   - Document API endpoints
-   - Create architecture diagrams
-
-2. **Enhance Tooling**
-   - Implement stricter linting rules
-   - Add pre-commit hooks
-   - Create pull request templates
-   - Set up automated code reviews
-
-3. **Streamline Workflows**
-   - Improve CI/CD pipeline
-   - Create development scripts
-   - Add debugging utilities
-   - Implement better error logging
 
 ## Deployment Strategy
 
-### Development Environment
-- **Local Setup:**
-  - Next.js dev server on localhost:3000
-  - Local Supabase instance with Docker
-  - Environment variables in .env.local
-  - Hot module reloading enabled
-
-### Staging Environment
-- **Deployment:**
-  - Vercel preview deployments from development branch
-  - Supabase development project
-  - Automated deployment on push
-  - Branch previews for feature branches
-
-- **Testing:**
-  - Manual QA process
-  - Lighthouse performance testing
-  - Cross-browser compatibility testing
-  - Responsive design verification
-
 ### Production Environment
-- **Deployment:**
-  - Vercel production deployment from main branch
-  - Supabase production project
-  - Manual promotion from staging
-  - Zero-downtime deployment
+- **Deployment:** Vercel production deployment from main branch
+- **URL:** https://menufacil-apv8pgzdp-inakizamores-projects.vercel.app
+- **Database:** Supabase production project
+- **CI/CD:** Automated deployment on push to main branch
 
-- **Monitoring:**
-  - Error tracking with Sentry
-  - Performance monitoring
-  - Uptime checks
-  - Analytics tracking
+### Development Guidelines
 
-- **Recovery:**
-  - Database backups (daily)
-  - Rollback capability
-  - Deployment version tracking
-  - Emergency hotfix process
+1. **Adding New Routes**
+   - Always add them to the `app/routes.js` file
+   - Be cautious with nested route groups, especially with parentheses in names
+   - Use proper static/dynamic directives based on page requirements
+
+2. **Form Implementation**
+   - Use the validation system from `app/utils/validation.ts`
+   - Implement proper error handling and user feedback
+   - Follow the established patterns for form submission
+
+3. **QR Code Generation**
+   - For large batches, use the optimized batch generation system
+   - Consider memory constraints when generating many codes
+   - Follow established patterns for tracking and analytics
+
+4. **Component Development**
+   - Follow the established naming conventions
+   - Implement proper TypeScript interfaces
+   - Add JSDoc documentation for all public functions
+   - Ensure accessibility attributes (ARIA) are properly set
+
+## Next Development Priorities
+
+1. **Complete Dashboard UI**
+   - Finish dashboard homepage with metrics
+   - Implement user settings pages
+   - Add notification system
+   - Improve loading states
+
+2. **Enhance Analytics Dashboard**
+   - Implement visual charts for analytics data
+   - Add time-based filtering (daily, weekly, monthly)
+   - Create export functionality for reports
+   - Add recommendation insights
+
+3. **Implement Testing Strategy**
+   - Set up Jest for unit testing
+   - Add tests for critical utilities and hooks
+   - Implement Cypress for E2E testing
+   - Create CI pipeline for automated testing
+
+4. **Improve Documentation**
+   - Add comprehensive JSDoc comments
+   - Create component usage examples
+   - Document API endpoints
+   - Create architecture diagrams
 
 ## For New Developers
 
 ### Getting Started
 1. Clone the repository and install dependencies
 2. Set up local environment variables (see .env.example)
-3. Start the development server
+3. Start the development server with `npm run dev`
 4. Review the project documentation in /docs
 
 ### Key Areas to Understand
@@ -981,5 +533,46 @@ export async function getMenuItem(id: string): Promise<{ data: MenuItem | null; 
 4. Document complex components and functions
 5. Maintain type safety throughout
 
-## Conclusion
-MenuFácil has a solid foundation with core features implemented to a high standard. The upcoming work focuses on completing the menu item management system, implementing QR code generation, and developing the public-facing menu experience. Maintaining code quality, improving test coverage, and enhancing documentation should be ongoing priorities alongside feature development. 
+### Analytics Dashboard Implementation (June 2024)
+We've implemented a comprehensive analytics dashboard to provide restaurant owners with insights into how their digital menus are performing:
+
+1. **Dashboard Features**
+   - **Overview Page**: Shows key metrics like total views, mobile views, and most common traffic sources
+   - **Device Breakdown**: Visual representation of views by device type (mobile, tablet, desktop)
+   - **Traffic Sources**: Analysis of how customers are accessing menus (direct, scan, share)
+   - **Time-based Analysis**: Charts showing views over time to identify trends and patterns
+
+2. **Visualizations**
+   - **Line Charts**: For tracking views over time
+   - **Pie Charts**: For device distribution
+   - **Bar Charts**: For source breakdown
+   - **Progress Bars**: For visual comparisons
+
+3. **Backend Implementation**
+   - Server actions to retrieve analytics data from Supabase
+   - Functions for aggregating and formatting metrics
+   - Type-safe interfaces for all analytics data
+
+4. **Technical Improvements**
+   - Fixed ref callback functions in QR Code components for better memory management
+   - Improved error handling in analytics-related components
+   - Added support for restaurant-specific analytics filtering
+
+The analytics dashboard is accessible from the main navigation and provides restaurant owners with valuable insights to help them optimize their digital menu performance.
+
+Key files:
+- `app/(routes)/dashboard/analytics/page.tsx` - Main analytics dashboard
+- `actions/analytics.ts` - Server actions for retrieving analytics data
+- `app/utils/analytics.ts` - Utilities for tracking and processing analytics events
+
+## Project Status
+The MenuFácil project is currently in active development. The backend is mostly functional, and we're implementing and refining frontend features. The application now has a functional QR code generation system and analytics dashboard, moving it closer to first usable deployment.
+
+## Recently Completed Features
+- Implemented comprehensive Analytics Dashboard with visualizations
+- Enhanced QR code batch generation with improved error handling and analytics tracking
+- Added traffic source and device type tracking for QR code scans
+- Fixed BatchQRGenerator component ref handling
+- Updated Supabase authentication to modern @supabase/ssr package
+- Fixed security vulnerabilities in dependencies (jspdf)
+- Added proper Supabase database typing for improved type safety

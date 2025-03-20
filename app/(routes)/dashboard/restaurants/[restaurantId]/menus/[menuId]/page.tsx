@@ -410,21 +410,23 @@ interface MenuPageProps {
 
 export default function MenuPage({ params }: MenuPageProps) {
   const { restaurantId, menuId } = params;
-  const [menu, setMenu] = useState<any>(null);
-  const [categories, setCategories] = useState<MenuCategory[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAddCategory, setShowAddCategory] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
-
+  
+  const [menu, setMenu] = useState<Menu | null>(null);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const fetchData = async () => {
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
+    setIsLoading(true);
+    setError(null);
     
     try {
+      // Fetch menu details
       const menuData = await getMenu(menuId);
       
       if (!menuData) {
@@ -435,11 +437,12 @@ export default function MenuPage({ params }: MenuPageProps) {
       
       setMenu(menuData);
       
+      // Fetch menu categories
       const categoriesData = await getMenuCategories(menuId);
-      setCategories(categoriesData);
+      setCategories(categoriesData || []);
     } catch (err: any) {
-      console.error('Error fetching data:', err);
-      setError(err.message || 'Failed to load data');
+      console.error('Error fetching menu data:', err);
+      setError(err.message || 'Failed to load menu data');
     } finally {
       setIsLoading(false);
     }
@@ -486,11 +489,23 @@ export default function MenuPage({ params }: MenuPageProps) {
   };
 
   const refreshMenu = async () => {
+    setIsRefreshing(true);
+    
     try {
+      // Fetch menu details
       const menuData = await getMenu(menuId);
-      setMenu(menuData);
-    } catch (err) {
-      console.error('Error refreshing menu:', err);
+      
+      if (menuData) {
+        setMenu(menuData);
+      }
+      
+      // Fetch menu categories
+      const categoriesData = await getMenuCategories(menuId);
+      setCategories(categoriesData || []);
+    } catch (err: any) {
+      console.error('Error refreshing menu data:', err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -498,21 +513,24 @@ export default function MenuPage({ params }: MenuPageProps) {
     return <LoadingState />;
   }
 
-  if (error || !menu) {
+  if (!menu) {
     return (
-      <div className="rounded-md bg-red-50 p-4">
-        <div className="flex">
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="mt-2 text-sm text-red-700">
-              <p>{error || 'Failed to load menu'}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
-              >
-                Back to menus
-              </Button>
+      <div className="pt-6 px-4 sm:px-6 lg:px-8">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error || "Menu not found"}</p>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
+                  className="inline-flex items-center rounded-md border border-transparent bg-red-100 px-3 py-2 text-sm font-medium leading-4 text-red-700 hover:bg-red-200"
+                >
+                  Go back to menus
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -521,11 +539,11 @@ export default function MenuPage({ params }: MenuPageProps) {
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 px-4 pt-8 pb-20 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <div className="flex items-center">
-            <button
+            <button 
               onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
               className="mr-2 text-gray-500 hover:text-gray-700"
             >
@@ -533,44 +551,32 @@ export default function MenuPage({ params }: MenuPageProps) {
                 <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
             </button>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              {menu.name}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">{menu.name}</h1>
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            {menu.is_active ? (
-              <span className="text-green-600">Active</span>
-            ) : (
-              <span className="text-red-600">Inactive</span>
-            )}{' '}
-            {menu.is_default && (
-              <span className="ml-2 text-blue-600">Default Menu</span>
-            )}
+            {menu.description || "No description provided"}
           </p>
         </div>
-        <div className="flex space-x-3">
+        <div className="mt-4 md:mt-0 space-x-3 flex">
           <Button
-            variant="outline"
-            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/edit`)}
+            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/qr-codes`)}
+            className="bg-primary-500 hover:bg-primary-600 flex items-center"
           >
-            Edit Menu
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+            </svg>
+            QR Codes
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/preview`)}
+          <Button 
+            onClick={() => setShowAddCategory(true)}
+            className="bg-primary-500 hover:bg-primary-600"
           >
-            Preview
+            Add Category
           </Button>
         </div>
       </div>
-
-      {menu.description && (
-        <div className="mb-6">
-          <h2 className="text-sm font-medium text-gray-500">Description</h2>
-          <p className="text-gray-700">{menu.description}</p>
-        </div>
-      )}
-
+      
+      {/* Menu settings panel */}
       <MenuPublishPanel 
         menu={menu} 
         onUpdate={refreshMenu} 

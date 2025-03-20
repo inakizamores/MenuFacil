@@ -46,8 +46,13 @@ export default function DashboardPage() {
                     </a>
                   </li>
                   <li>
-                    <a href="/analytics" className="text-primary-600 hover:text-primary-800">
+                    <a href="/dashboard/analytics" className="text-primary-600 hover:text-primary-800">
                       View Analytics
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/dashboard/restaurants" className="text-primary-600 hover:text-primary-800">
+                      Manage QR Codes
                     </a>
                   </li>
                 </ul>

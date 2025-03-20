@@ -1,126 +1,19 @@
-# MenuFacil MCP Servers
-
-This repository contains Model Context Protocol (MCP) servers for integration with GitHub, Vercel, and Supabase.
-
-## Model Context Protocol (MCP)
-
-Model Context Protocol allows AI models like Claude to interact with external services in a standardized way. The MCP servers in this repository enable Claude to access and manipulate data from GitHub, Vercel, and Supabase.
-
-## Configuration
-
-### Environment Variables
-
-To use these MCP servers, you need to set the following environment variables:
-
-- For GitHub MCP server:
-  - `GITHUB_TOKEN`: Your GitHub personal access token
-
-- For Vercel MCP server:
-  - `VERCEL_TOKEN`: Your Vercel API token
-
-- For Supabase MCP server:
-  - `SUPABASE_URL`: Your Supabase project URL (defaults to https://iawspochdngompqmxyhf.supabase.co)
-  - `SUPABASE_KEY`: Your Supabase API key
-
-### Claude Desktop Configuration
-
-Add the following configuration to your Claude Desktop config file:
-
-```json
-{
-  "mcpServers": {
-    "github": {
-      "command": "node",
-      "args": ["mcp-servers/github/index.js"],
-      "env": {
-        "GITHUB_TOKEN": "your_github_token"
-      }
-    },
-    "vercel": {
-      "command": "node",
-      "args": ["mcp-servers/vercel/index.js"],
-      "env": {
-        "VERCEL_TOKEN": "your_vercel_token"
-      }
-    },
-    "supabase": {
-      "command": "node",
-      "args": ["mcp-servers/supabase/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://iawspochdngompqmxyhf.supabase.co",
-        "SUPABASE_KEY": "your_supabase_key"
-      }
-    }
-  }
-}
-```
-
-## Available MCP Servers
-
-### GitHub MCP Server
-
-The GitHub MCP server allows Claude to interact with GitHub repositories, issues, and pull requests.
-
-**Resources:**
-- `github://repos/{owner}/{repo}`: Get repository information
-- `github://repos/{owner}/{repo}/issues`: List repository issues
-- `github://repos/{owner}/{repo}/contents/{path*}`: Get file/directory contents
-
-**Tools:**
-- `create-issue`: Create a new issue in a repository
-- `create-pull-request`: Create a new pull request
-
-### Vercel MCP Server
-
-The Vercel MCP server allows Claude to interact with Vercel projects and deployments.
-
-**Resources:**
-- `vercel://projects/{projectId}`: Get project information
-- `vercel://projects/{projectId}/deployments`: List project deployments
-
-**Tools:**
-- `create-deployment`: Create a new deployment
-
-### Supabase MCP Server
-
-The Supabase MCP server allows Claude to interact with Supabase database tables.
-
-**Resources:**
-- `supabase://tables/{tableName}/schema`: Get table schema
-- `supabase://tables/{tableName}`: Query table data
-
-**Tools:**
-- `execute-sql`: Execute SQL queries
-- `insert-data`: Insert data into a table
-- `update-data`: Update data in a table
-
-## Usage
-
-To use these MCP servers with Claude, simply install them in your Claude Desktop configuration and then ask Claude to interact with GitHub, Vercel, or Supabase. For example:
-
-- "Can you check the issues in my GitHub repository?"
-- "Please deploy my project to Vercel."
-- "Show me the data in my Supabase table."
-
-Claude will use the appropriate MCP server to fulfill these requests.
-
-# MenuFácil
+# MenuFacil
 
 Welcome to MenuFácil - the easy-to-use digital menu management system for restaurants.
 
 ## Recent Updates (June 24, 2024)
 
-We've made significant improvements to the codebase:
+We've made significant improvements to the project:
 
-- **Code Quality**: Implemented ESLint configuration with best practices for React and TypeScript
-- **Bug Fixes**: Resolved critical issues with React hooks and TypeScript typing
-- **Build Process**: Optimized deployment pipeline to Vercel
-- **Documentation**: Added comprehensive documentation on changes and development progress
+- **Vercel Deployment**: Fixed client-reference-manifest errors by implementing comprehensive route mapping and middleware improvements
+- **QR Code System**: Enhanced the QR code export system with multiple formats (PNG, SVG, PDF, ZIP) and batch generation capabilities
+- **Menu Publishing**: Implemented a complete publishing workflow with toggle UI and visual feedback
+- **Form Validation**: Created a robust form validation system with reusable components and performance optimization
+- **Code Quality**: Fixed ESLint issues and improved TypeScript implementation across the codebase
 
-For details, see:
-- [CHANGES.md](./CHANGES.md) - Documentation of recent changes
-- [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) - Current project status
-- [TODO.md](./TODO.md) - Tasks for next developers
+For comprehensive details about the project and development progress, see:
+- [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) - Complete project documentation and current status
 
 ## Features
 
@@ -164,24 +57,27 @@ For details, see:
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Run the development server with `npm run dev`
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+3. Set up environment variables (see .env.example)
+4. Run the development server with `npm run dev`
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Technologies Used
 
-- Next.js 14
-- React 18
-- TypeScript
-- Supabase (Authentication, Database, Storage)
-- Tailwind CSS
-- ESLint with TypeScript and React rules
-- qrcode.react
-- jsPDF
-- JSZip
+- **Frontend Framework:** React 18.2.0, Next.js 14.0.4
+- **State Management:** React Context API
+- **Type System:** TypeScript 5.3.3
+- **Styling:** TailwindCSS 3.4.1, with custom UI component library
+- **API Architecture:** Serverless with Next.js API Routes
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth with JWT
+- **Storage:** Supabase Storage for images and assets
+- **Deployment:** Vercel (Production/Preview)
+- **QR Code Generation:** QRCode.react
+- **File Export:** jsPDF, JSZip, file-saver
 
 ## Production URL
 
-The application is deployed at: https://menufacil-nx43dfrv0-inakizamores-projects.vercel.app
+The application is deployed at: https://menufacil-apv8pgzdp-inakizamores-projects.vercel.app
 
 ## Learn More
 
