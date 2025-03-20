@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../context/auth-context';
 import { useForm } from '../../../hooks/useForm';
 import { validate, combineValidators } from '../../../utils/validation';
@@ -16,55 +16,33 @@ type ResetPasswordFormValues = {
 
 export default function ResetPasswordPage() {
   const { resetUserPassword } = useAuth();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  
-  // Get token from URL
-  const token = searchParams.get('token');
-  
-  if (!token) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Invalid reset link
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            The password reset link is invalid or has expired.
-          </p>
-          <div className="mt-4 text-center">
-            <Link href="/auth/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
-              Request a new password reset link
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const [token, setToken] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
+  // Define initial values
   const initialValues: ResetPasswordFormValues = {
     password: '',
     confirmPassword: '',
   };
 
-  // Custom validator for password matching
+  // Define password match validation function
   const validatePasswordMatch = (value: string, formValues: ResetPasswordFormValues): string | null => {
-    return value === formValues.password ? null : 'Passwords must match';
+    if (value !== formValues.password) {
+      return 'Passwords do not match';
+    }
+    return null;
   };
 
-  const validationRules = {
-    password: combineValidators(validate.required, validate.password),
-    confirmPassword: combineValidators(validate.required, validatePasswordMatch),
-  };
-
+  // Define reset password handler
   const handleResetPassword = async (values: ResetPasswordFormValues) => {
+    if (!token) return;
+
     setServerError(null);
     try {
       await resetUserPassword(values.password);
       setIsSuccess(true);
-      // Redirect to login after 3 seconds
       setTimeout(() => {
         router.push('/auth/login');
       }, 3000);
@@ -73,6 +51,13 @@ export default function ResetPasswordPage() {
     }
   };
 
+  // Define validation rules
+  const validationRules = {
+    password: combineValidators(validate.required, validate.password),
+    confirmPassword: combineValidators(validate.required, validatePasswordMatch),
+  };
+
+  // Initialize form
   const {
     values,
     errors,
@@ -82,6 +67,18 @@ export default function ResetPasswordPage() {
     handleBlur,
     handleSubmit,
   } = useForm<ResetPasswordFormValues>(initialValues, validationRules, handleResetPassword);
+
+  useEffect(() => {
+    // Extract token from URL on client side
+    const searchParams = new URLSearchParams(window.location.search);
+    const urlToken = searchParams.get('token');
+    if (urlToken) {
+      setToken(urlToken);
+    } else {
+      // Redirect if no token is provided
+      router.push('/auth/login');
+    }
+  }, [router]);
 
   if (isSuccess) {
     return (
