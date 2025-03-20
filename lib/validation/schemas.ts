@@ -93,4 +93,73 @@ export const resetPasswordSchema = z.object({
 /**
  * Type definition derived from reset password schema
  */
-export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>; 
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
+/**
+ * Zod schema for restaurant form validation
+ */
+export const restaurantSchema = z.object({
+  name: z
+    .string({ required_error: 'Restaurant name is required' })
+    .trim()
+    .min(2, 'Name must be at least 2 characters'),
+  description: z
+    .string()
+    .trim()
+    .optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Please enter a valid hex color code')
+    .default('#4F46E5'),
+  secondaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Please enter a valid hex color code')
+    .default('#818CF8'),
+  address: z
+    .string()
+    .trim()
+    .optional(),
+  city: z
+    .string()
+    .trim()
+    .optional(),
+  state: z
+    .string()
+    .trim()
+    .optional(),
+  postalCode: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      val => !val || /^[0-9]{5}(-[0-9]{4})?$|^[A-Za-z][0-9][A-Za-z]\s?[0-9][A-Za-z][0-9]$/.test(val),
+      { message: 'Please enter a valid postal/zip code' }
+    ),
+  country: z
+    .string()
+    .trim()
+    .optional(),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      val => !val || /^(\+?\d{1,3}[-\s]?)?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}$/.test(val),
+      { message: 'Please enter a valid phone number' }
+    ),
+  email: z
+    .string()
+    .trim()
+    .email('Please enter a valid email address')
+    .optional(),
+  website: z
+    .string()
+    .trim()
+    .url('Please enter a valid URL')
+    .optional(),
+});
+
+/**
+ * Type definition derived from restaurant schema
+ */
+export type RestaurantFormValues = z.infer<typeof restaurantSchema>; 

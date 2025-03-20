@@ -735,3 +735,11 @@ The MenuFácil project is currently in active development. The backend is mostly
 The application is progressing well with all core features implemented. Focus is now shifting to enhancing the user experience, improving code quality, and preparing for production deployment.
 
 Current priority is completing the form validation implementation across all remaining forms in the application and addressing technical debt to ensure a stable foundation for future development.
+
+## Recent Updates
+
+### July 10, 2023 - Validation Improvements
+- Added Zod validation for authentication forms (login, register, password reset)
+- Added Zod validation for restaurant forms (create, edit)
+- Improved form validation library with integration for Zod schemas
+- Form validations now include client-side and server-side checks

@@ -2,28 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../context/auth-context';
-import { useForm } from '../../../../hooks/useForm';
-import { validate, combineValidators } from '../../../../utils/validation';
-import { createRestaurant } from '../../../../utils/db';
-import Input from '../../../../components/ui/input';
-import Button from '../../../../components/ui/button';
+import { useAuth } from '@/app/context/auth-context';
+import { useForm } from '@/app/hooks/useForm';
+import { createRestaurant } from '@/app/utils/db';
+import Input from '@/app/components/ui/input';
+import Button from '@/app/components/ui/button';
 import { useToast } from '@/components/ui/useToast';
-
-type RestaurantFormValues = {
-  name: string;
-  description: string;
-  primaryColor: string;
-  secondaryColor: string;
-  address: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  phone: string;
-  email: string;
-  website: string;
-};
+import { restaurantSchema } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
+import type { RestaurantFormValues } from '@/lib/validation/schemas';
+import type { UUID } from 'crypto';
 
 export default function CreateRestaurantPage() {
   const { user } = useAuth();
@@ -47,13 +35,8 @@ export default function CreateRestaurantPage() {
     website: '',
   };
 
-  const validationRules = {
-    name: combineValidators(validate.required),
-    email: combineValidators(validate.email),
-    phone: combineValidators(validate.phone),
-    website: combineValidators(validate.url),
-    postalCode: combineValidators(validate.postalCode),
-  };
+  // Create validation rules from Zod schema
+  const validationRules = createValidationRules(restaurantSchema);
 
   const handleCreateRestaurant = async (values: RestaurantFormValues) => {
     if (!user?.id) {
@@ -78,7 +61,7 @@ export default function CreateRestaurantPage() {
         phone: values.phone || null,
         email: values.email || null,
         website: values.website || null,
-        owner_id: user.id as `${string}-${string}-${string}-${string}-${string}`,
+        owner_id: user.id as unknown as UUID,
         logo_url: null,
         social_media: null,
         business_hours: null,
@@ -177,6 +160,8 @@ export default function CreateRestaurantPage() {
                   value={values.primaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.primaryColor}
+                  touched={touched.primaryColor}
                   id="primary-color"
                 />
 
@@ -187,6 +172,8 @@ export default function CreateRestaurantPage() {
                   value={values.secondaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.secondaryColor}
+                  touched={touched.secondaryColor}
                   id="secondary-color"
                 />
               </div>
@@ -246,10 +233,12 @@ export default function CreateRestaurantPage() {
                 value={values.address}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                error={errors.address}
+                touched={touched.address}
                 id="address"
               />
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <Input
                   label="City"
                   name="city"
@@ -257,21 +246,23 @@ export default function CreateRestaurantPage() {
                   value={values.city}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.city}
+                  touched={touched.city}
                   id="city"
                 />
 
                 <Input
-                  label="State/Province"
+                  label="State / Province"
                   name="state"
                   type="text"
                   value={values.state}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.state}
+                  touched={touched.state}
                   id="state"
                 />
-              </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
                   label="Postal Code"
                   name="postalCode"
@@ -283,6 +274,7 @@ export default function CreateRestaurantPage() {
                   touched={touched.postalCode}
                   id="postal-code"
                 />
+              </div>
 
                 <Input
                   label="Country"
@@ -291,29 +283,30 @@ export default function CreateRestaurantPage() {
                   value={values.country}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.country}
+                  touched={touched.country}
                   id="country"
                 />
-              </div>
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.back()}
-              className="mr-3"
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              Create Restaurant
-            </Button>
+          <div className="pt-5">
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/dashboard/restaurants')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                isLoading={isSubmitting}
+                disabled={isSubmitting}
+              >
+                Create Restaurant
+              </Button>
+            </div>
           </div>
         </form>
       </div>

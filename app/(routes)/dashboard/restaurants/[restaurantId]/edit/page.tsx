@@ -4,26 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
 import { useForm } from '@/app/hooks/useForm';
-import { validate, combineValidators } from '@/app/utils/validation';
 import { getRestaurant, updateRestaurant } from '@/app/utils/db';
 import Input from '@/app/components/ui/input';
 import Button from '@/app/components/ui/button';
-
-type RestaurantFormValues = {
-  name: string;
-  description: string;
-  primaryColor: string;
-  secondaryColor: string;
-  address: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  phone: string;
-  email: string;
-  website: string;
-  isActive: boolean;
-};
+import { useToast } from '@/components/ui/useToast';
+import { restaurantSchema } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
+import type { RestaurantFormValues } from '@/lib/validation/schemas';
 
 interface EditRestaurantPageProps {
   params: {
@@ -40,6 +27,7 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Default values that will be updated after fetching restaurant data
   const initialValues: RestaurantFormValues = {
@@ -55,15 +43,9 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
     phone: '',
     email: '',
     website: '',
-    isActive: true,
   };
 
-  const validationRules = {
-    name: combineValidators(validate.required),
-    email: combineValidators(validate.email),
-    phone: combineValidators(validate.phone),
-    website: combineValidators(validate.url),
-  };
+  const validationRules = createValidationRules(restaurantSchema);
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -93,7 +75,6 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
           setFieldValue('phone', restaurantData.phone || '');
           setFieldValue('email', restaurantData.email || '');
           setFieldValue('website', restaurantData.website || '');
-          setFieldValue('isActive', restaurantData.is_active);
         }
       } catch (err: any) {
         console.error('Error fetching restaurant:', err);
@@ -129,17 +110,32 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
         phone: values.phone || null,
         email: values.email || null,
         website: values.website || null,
-        is_active: values.isActive
+        is_active: restaurant.is_active
       });
 
       if (updatedRestaurant) {
+        toast({
+          title: 'Success',
+          description: 'Restaurant updated successfully',
+          type: 'success'
+        });
         router.push(`/dashboard/restaurants/${restaurantId}`);
       } else {
         setServerError('Failed to update restaurant. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Failed to update restaurant',
+          type: 'error'
+        });
       }
     } catch (error: any) {
       console.error('Error updating restaurant:', error);
       setServerError(error.message || 'An unexpected error occurred');
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred',
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -235,6 +231,8 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
                   value={values.primaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.primaryColor}
+                  touched={touched.primaryColor}
                 />
 
                 <Input
@@ -244,51 +242,37 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
                   value={values.secondaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.secondaryColor}
+                  touched={touched.secondaryColor}
                 />
-              </div>
-              
-              <div className="flex items-center">
-                <input
-                  id="isActive"
-                  name="isActive"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  checked={values.isActive}
-                  onChange={handleChange}
-                />
-                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-                  Active
-                </label>
-              </div>
+              </div>              
             </div>
 
             {/* Contact Information */}
             <div className="space-y-6 md:col-span-2">
               <h2 className="text-lg font-medium text-gray-900">Contact Information</h2>
               
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Input
-                  label="Phone Number"
-                  name="phone"
-                  type="tel"
-                  value={values.phone}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={errors.phone}
-                  touched={touched.phone}
-                />
+              <Input
+                label="Email"
+                name="email"
+                type="email"
+                value={values.email}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={errors.email}
+                touched={touched.email}
+              />
 
-                <Input
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={errors.email}
-                  touched={touched.email}
-                />
-              </div>
+              <Input
+                label="Phone"
+                name="phone"
+                type="tel"
+                value={values.phone}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                error={errors.phone}
+                touched={touched.phone}
+              />
 
               <Input
                 label="Website"
@@ -307,12 +291,14 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
               <h2 className="text-lg font-medium text-gray-900">Location</h2>
               
               <Input
-                label="Street Address"
+                label="Address"
                 name="address"
                 type="text"
                 value={values.address}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                error={errors.address}
+                touched={touched.address}
               />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -323,6 +309,8 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
                   value={values.city}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.city}
+                  touched={touched.city}
                 />
 
                 <Input
@@ -332,17 +320,21 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
                   value={values.state}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.state}
+                  touched={touched.state}
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Input
-                  label="Postal Code"
+                  label="Postal/ZIP Code"
                   name="postalCode"
                   type="text"
                   value={values.postalCode}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.postalCode}
+                  touched={touched.postalCode}
                 />
 
                 <Input
@@ -352,26 +344,29 @@ export default function EditRestaurantPage({ params }: EditRestaurantPageProps) 
                   value={values.country}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.country}
+                  touched={touched.country}
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/dashboard/restaurants/${restaurantId}`)}
-              type="button"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              Update Restaurant
-            </Button>
+          <div className="pt-5">
+            <div className="flex justify-end space-x-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push(`/dashboard/restaurants/${restaurantId}`)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
