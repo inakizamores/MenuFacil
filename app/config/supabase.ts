@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/database';
+import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/types/supabase.types';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
 
 // Set up auth API helpers
 export const getSession = async () => {
@@ -29,6 +29,6 @@ export const getUser = async () => {
 };
 
 export const getServiceSupabase = () => {
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
-  return createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  return createBrowserClient<Database>(supabaseUrl, supabaseServiceKey);
 }; 

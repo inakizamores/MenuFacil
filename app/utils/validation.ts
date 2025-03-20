@@ -8,11 +8,18 @@ const patterns = {
   phone: /^(\+?\d{1,3}[-\s]?)?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}$/,
   // URL pattern
   url: /^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$/,
+  // Postal/Zip code (supports common formats)
+  postalCode: /^[0-9]{5}(-[0-9]{4})?$|^[A-Za-z][0-9][A-Za-z]\s?[0-9][A-Za-z][0-9]$/,
+  // Price (currency) validation
+  price: /^\$?([0-9]{1,3},([0-9]{3},)*[0-9]{3}|[0-9]+)(\.[0-9]{1,2})?$/,
 };
 
 type ValidationFunction<T = any> = (value: any, formValues?: T) => string | null;
 
 export const validate = {
+  // Makes a field optional - always returns null (no error)
+  optional: (value: any): string | null => null,
+
   required: (value: any): string | null => {
     if (value === undefined || value === null) return 'This field is required';
     
@@ -97,6 +104,56 @@ export const validate = {
       ? null 
       : 'Please enter a decimal value';
   },
+
+  // New validators
+  postalCode: (value: string): string | null => {
+    if (!value) return null;
+    return patterns.postalCode.test(value) ? null : 'Please enter a valid postal/zip code';
+  },
+
+  price: (value: string | number): string | null => {
+    if (value === undefined || value === null || value === '') return null;
+    
+    // Convert to string if it's a number
+    const stringValue = typeof value === 'number' ? value.toString() : value;
+    
+    // Remove currency symbol and commas for validation
+    const normalizedValue = stringValue.replace(/[$,]/g, '');
+    
+    // Check if it's a valid number with up to 2 decimal places
+    if (!/^\d+(\.\d{1,2})?$/.test(normalizedValue)) {
+      return 'Please enter a valid price';
+    }
+    
+    return null;
+  },
+
+  match: (fieldName: string, message?: string): ValidationFunction => 
+    (value: any, formValues?: any): string | null => {
+      if (!formValues) return null;
+      return value === formValues[fieldName] 
+        ? null 
+        : message || `This field must match ${fieldName}`;
+    },
+
+  notMatch: (fieldName: string, message?: string): ValidationFunction => 
+    (value: any, formValues?: any): string | null => {
+      if (!formValues) return null;
+      return value !== formValues[fieldName] 
+        ? null 
+        : message || `This field cannot be the same as ${fieldName}`;
+    },
+
+  pattern: (regex: RegExp, message: string): ValidationFunction => 
+    (value: string): string | null => {
+      if (!value) return null;
+      return regex.test(value) ? null : message;
+    },
+
+  custom: (validationFn: (value: any, formValues?: any) => boolean, message: string): ValidationFunction => 
+    (value: any, formValues?: any): string | null => {
+      return validationFn(value, formValues) ? null : message;
+    }
 };
 
 // Combine multiple validators into a single validator function
@@ -110,4 +167,55 @@ export function combineValidators(...validators: ValidationFunction[]): Validati
     }
     return null;
   };
+}
+
+// Create a validation rule for each field with a custom error message
+export const createValidator = (validatorFn: ValidationFunction, message: string): ValidationFunction => {
+  return (value: any, formValues?: any): string | null => {
+    const error = validatorFn(value, formValues);
+    return error ? message : null;
+  };
+};
+
+// Create form validation rules from a map of validator arrays
+export function createValidationRules<T>(rules: Record<keyof T, ValidationFunction[]>): Record<keyof T, ValidationFunction> {
+  const validationRules: Record<string, ValidationFunction> = {};
+  
+  for (const field in rules) {
+    if (rules.hasOwnProperty(field)) {
+      validationRules[field] = combineValidators(...rules[field]);
+    }
+  }
+  
+  return validationRules as Record<keyof T, ValidationFunction>;
+}
+
+// Create form validation rules from a Zod schema (leaving for backward compatibility)
+export function createValidationRulesFromSchema<T>(schema: any): Record<keyof T, ValidationFunction> {
+  const rules: Record<string, ValidationFunction> = {};
+  
+  // Extract field names from schema
+  const fieldNames = Object.keys(schema.shape || {});
+  
+  for (const field of fieldNames) {
+    rules[field] = (value: any) => {
+      try {
+        // Create a partial schema just for this field
+        const fieldSchema = { [field]: schema.shape[field] };
+        const partialSchema = schema.pick({ [field]: true });
+        
+        // Validate just this field
+        partialSchema.parse({ [field]: value });
+        return null;
+      } catch (error: any) {
+        // Extract error message from Zod validation error
+        if (error.errors && error.errors.length > 0) {
+          return error.errors[0].message;
+        }
+        return 'Invalid value';
+      }
+    };
+  }
+  
+  return rules as Record<keyof T, ValidationFunction>;
 } 

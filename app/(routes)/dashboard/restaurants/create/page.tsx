@@ -8,6 +8,7 @@ import { validate, combineValidators } from '../../../../utils/validation';
 import { createRestaurant } from '../../../../utils/db';
 import Input from '../../../../components/ui/input';
 import Button from '../../../../components/ui/button';
+import { useToast } from '@/components/ui/useToast';
 
 type RestaurantFormValues = {
   name: string;
@@ -27,6 +28,7 @@ type RestaurantFormValues = {
 export default function CreateRestaurantPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,6 +52,7 @@ export default function CreateRestaurantPage() {
     email: combineValidators(validate.email),
     phone: combineValidators(validate.phone),
     website: combineValidators(validate.url),
+    postalCode: combineValidators(validate.postalCode),
   };
 
   const handleCreateRestaurant = async (values: RestaurantFormValues) => {
@@ -83,6 +86,11 @@ export default function CreateRestaurantPage() {
       });
 
       if (newRestaurant) {
+        toast({
+          title: "Success!",
+          description: "Restaurant created successfully.",
+          type: "success",
+        });
         router.push(`/dashboard/restaurants/${newRestaurant.id}`);
       } else {
         setServerError('Failed to create restaurant. Please try again.');
@@ -90,6 +98,11 @@ export default function CreateRestaurantPage() {
     } catch (error: any) {
       console.error('Error creating restaurant:', error);
       setServerError(error.message || 'An unexpected error occurred');
+      toast({
+        title: "Error",
+        description: error.message || 'An unexpected error occurred',
+        type: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -136,6 +149,7 @@ export default function CreateRestaurantPage() {
                 onBlur={handleBlur}
                 error={errors.name}
                 touched={touched.name}
+                id="restaurant-name"
               />
 
               <div>
@@ -163,6 +177,7 @@ export default function CreateRestaurantPage() {
                   value={values.primaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  id="primary-color"
                 />
 
                 <Input
@@ -172,6 +187,7 @@ export default function CreateRestaurantPage() {
                   value={values.secondaryColor}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  id="secondary-color"
                 />
               </div>
             </div>
@@ -190,6 +206,7 @@ export default function CreateRestaurantPage() {
                   onBlur={handleBlur}
                   error={errors.phone}
                   touched={touched.phone}
+                  id="phone"
                 />
 
                 <Input
@@ -201,6 +218,7 @@ export default function CreateRestaurantPage() {
                   onBlur={handleBlur}
                   error={errors.email}
                   touched={touched.email}
+                  id="email"
                 />
               </div>
 
@@ -213,6 +231,7 @@ export default function CreateRestaurantPage() {
                 onBlur={handleBlur}
                 error={errors.website}
                 touched={touched.website}
+                id="website"
               />
             </div>
 
@@ -227,6 +246,7 @@ export default function CreateRestaurantPage() {
                 value={values.address}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                id="address"
               />
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -237,6 +257,7 @@ export default function CreateRestaurantPage() {
                   value={values.city}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  id="city"
                 />
 
                 <Input
@@ -246,6 +267,7 @@ export default function CreateRestaurantPage() {
                   value={values.state}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  id="state"
                 />
               </div>
 
@@ -257,6 +279,9 @@ export default function CreateRestaurantPage() {
                   value={values.postalCode}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  error={errors.postalCode}
+                  touched={touched.postalCode}
+                  id="postal-code"
                 />
 
                 <Input
@@ -266,16 +291,19 @@ export default function CreateRestaurantPage() {
                   value={values.country}
                   onChange={handleChange}
                   onBlur={handleBlur}
+                  id="country"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex justify-end">
             <Button
-              variant="outline"
-              onClick={() => router.push('/dashboard/restaurants')}
               type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="mr-3"
+              disabled={isSubmitting}
             >
               Cancel
             </Button>

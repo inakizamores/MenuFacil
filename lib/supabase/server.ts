@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient as createClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function createServerClient() {
@@ -13,10 +13,21 @@ export async function createServerClient() {
     throw new Error('Missing Supabase environment variables');
   }
   
-  return createClient(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: false,
-      detectSessionInUrl: false
+  return createClient(
+    supabaseUrl,
+    supabaseKey,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: any) {
+          cookieStore.set({ name, value: '', ...options });
+        },
+      },
     }
-  });
+  );
 } 
