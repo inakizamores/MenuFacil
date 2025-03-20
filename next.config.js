@@ -8,9 +8,6 @@ const nextConfig = {
     locales: ['en', 'es'],
     defaultLocale: 'es',
   },
-  experimental: {
-    serverActions: true,
-  },
   eslint: {
     // Warning instead of error during builds
     ignoreDuringBuilds: true,
