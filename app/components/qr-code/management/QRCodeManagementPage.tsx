@@ -54,7 +54,7 @@ const QRCodeManagementPage = ({
       toast({
         title: 'Error',
         description: 'Failed to load QR codes',
-        variant: 'destructive',
+        type: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -71,6 +71,7 @@ const QRCodeManagementPage = ({
         toast({
           title: 'Success',
           description: 'QR code deleted successfully',
+          type: 'success',
         });
       } else {
         throw new Error(result.error || 'Failed to delete QR code');
@@ -80,7 +81,7 @@ const QRCodeManagementPage = ({
       toast({
         title: 'Error',
         description: 'Failed to delete QR code',
-        variant: 'destructive',
+        type: 'error',
       });
     }
   };
@@ -90,7 +91,8 @@ const QRCodeManagementPage = ({
     setActiveTab('existing');
     toast({
       title: 'Success',
-      description: 'QR code created successfully',
+      description: 'New QR code created successfully',
+      type: 'success',
     });
   };
   
@@ -110,14 +112,15 @@ const QRCodeManagementPage = ({
       
       toast({
         title: 'Success',
-        description: `QR code exported as ${format.toUpperCase()} successfully`,
+        description: `QR code exported as ${format.toUpperCase()}`,
+        type: 'success',
       });
     } catch (error) {
       console.error(`Error exporting QR code as ${format}:`, error);
       toast({
         title: 'Error',
-        description: `Failed to export QR code as ${format.toUpperCase()}`,
-        variant: 'destructive',
+        description: 'Failed to export QR code',
+        type: 'error',
       });
     }
   };
@@ -125,8 +128,9 @@ const QRCodeManagementPage = ({
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
     toast({
-      title: 'Copied',
-      description: 'URL copied to clipboard',
+      title: 'URL Copied',
+      description: 'QR code URL copied to clipboard',
+      type: 'info',
     });
   };
   

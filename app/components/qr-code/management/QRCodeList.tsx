@@ -131,7 +131,7 @@ const QRCodeList = ({ menuId, onCreateNew, onEdit }: QRCodeListProps) => {
                       Edit
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="danger"
                       size="sm"
                       onClick={() => handleDelete(qrCode.id as string)}
                       disabled={isDeleting === qrCode.id}

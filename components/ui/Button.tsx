@@ -3,8 +3,8 @@ import cn from 'classnames';
 import { Spinner } from './Spinner';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'default' | 'primary' | 'outline' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'primary' | 'outline' | 'danger' | 'ghost' | 'link';
+  size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }
 
@@ -15,13 +15,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       primary: 'bg-primary-500 text-white hover:bg-primary-600',
       outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
       danger: 'bg-red-500 text-white hover:bg-red-600',
-      ghost: 'hover:bg-accent hover:text-accent-foreground'
+      ghost: 'hover:bg-accent hover:text-accent-foreground',
+      link: 'text-primary-500 underline-offset-4 hover:underline'
     };
 
     const sizeClasses = {
       sm: 'h-8 px-3 text-xs',
       md: 'h-10 px-4 py-2',
-      lg: 'h-12 px-6 py-3 text-lg'
+      lg: 'h-12 px-6 py-3 text-lg',
+      icon: 'h-9 w-9 p-0'
     };
 
     return (

@@ -77,14 +77,27 @@ const PublishMenuWithQR = ({
       setQRSaveError('An unexpected error occurred');
     }
   };
+
+  // Mock publish/unpublish functions
+  const handlePublish = async (id: string) => {
+    // Implementation would go here
+    return { success: true };
+  };
+
+  const handleUnpublish = async (id: string) => {
+    // Implementation would go here
+    return { success: true };
+  };
   
   return (
     <div className="space-y-8">
       <PublishMenu
         menuId={menuId}
-        isActive={isActive}
-        menuName={menuName}
-        onSuccess={handlePublishSuccess}
+        restaurantId={restaurantId}
+        isPublished={isActive}
+        lastPublishedAt={null}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
       />
       
       {isActive && (
