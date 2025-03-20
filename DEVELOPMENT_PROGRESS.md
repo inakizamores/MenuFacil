@@ -398,10 +398,21 @@ These changes have stabilized the codebase and created a solid foundation for co
 ### Technical Debt Areas Recently Addressed
 
 - ✅ **Fixed Vercel deployment issues**
-  - Resolved client-reference-manifest errors
+  - Resolved client-reference-manifest errors with specific fixes:
+    - Fixed ENOENT errors related to missing manifest files
+    - Converted `middleware.js` to `middleware.ts` with proper TypeScript typing
+    - Enhanced route handling for marketing routes to avoid conflicts with static generation
+    - Added redirects for problematic route patterns like `(marketing)` and `(routes)/(marketing)`
   - Implemented proper static page generation
+    - Added `export const dynamic = 'force-static'` to marketing pages
+    - Added appropriate revalidation periods for pages with data requirements
   - Created comprehensive route mapping
+    - Developed a centralized `routes.js` file that maps all application routes
+    - Organized routes by category for better maintainability
   - Simplified route structure to avoid nested groups issues
+    - Removed problematic nested route patterns, particularly `app/(routes)/(marketing)`
+    - Created simple root-level marketing pages (e.g., `/app/about/page.tsx`)
+  - Successful deployment to: https://menufacil-apv8pgzdp-inakizamores-projects.vercel.app
 
 - ✅ **Enhanced QR code system**
   - Implemented batch generation with performance optimizations
@@ -461,6 +472,10 @@ These changes have stabilized the codebase and created a solid foundation for co
    - Always add them to the `app/routes.js` file
    - Be cautious with nested route groups, especially with parentheses in names
    - Use proper static/dynamic directives based on page requirements
+   - For marketing or content-focused pages, use `export const dynamic = 'force-static'` to improve build reliability
+   - Test route changes thoroughly in development before deploying to production
+   - Watch for client-reference-manifest errors in Vercel deployments when using complex route structures
+   - If encountering route-related deployment errors, consider simplifying to root-level routes
 
 2. **Form Implementation**
    - Use the validation system from `app/utils/validation.ts`
