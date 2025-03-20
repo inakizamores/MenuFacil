@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
 /**
  * This middleware handles route redirects and security
  */
-export function middleware(request: NextRequest) {
+export function middleware(request) {
   // Get the pathname from the URL
   const { pathname } = request.nextUrl;
 
-  // If the request is for a non-existent (marketing) route, redirect to the dashboard
-  if (pathname.includes('(marketing)')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Handle marketing routes more specifically to avoid conflicts with static generation
+  if (pathname === '/' || pathname === '/about' || pathname === '/contact') {
+    // These routes should be handled by the marketing pages
+    return NextResponse.next();
   }
 
-  // For root path, redirect to dashboard
-  if (pathname === '/') {
+  // Only redirect problematic routes
+  if (pathname.includes('(marketing)') || pathname.includes('(routes)/(marketing)')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
