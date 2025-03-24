@@ -1,3 +1,15 @@
+/**
+ * User Settings Page Component
+ * 
+ * This component provides a comprehensive user settings interface with the following features:
+ * - Profile information management (name, profile picture)
+ * - User preferences (language, theme)
+ * - Notification settings
+ * - Password management
+ * 
+ * The page uses a tabbed interface to organize settings into logical sections
+ * and implements comprehensive form validation using Zod schemas.
+ */
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -10,7 +22,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 
-// Define form schemas using Zod
+// Define form schemas using Zod for validation
+// Settings form includes profile info, language, theme and notification preferences
 const settingsFormSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
@@ -22,6 +35,8 @@ const settingsFormSchema = z.object({
   }),
 });
 
+// Password form includes current password, new password and confirmation
+// with a custom refinement to ensure passwords match
 const passwordFormSchema = z.object({
   currentPassword: z.string().min(8, "Password must be at least 8 characters"),
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
@@ -31,19 +46,25 @@ const passwordFormSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Infer TypeScript types from Zod schemas for type safety
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function SettingsPage() {
+  // Get user data and loading state from auth context
   const { user, isLoading } = useAuth();
+  
+  // State for UI management
   const [activeTab, setActiveTab] = useState<string>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPwdSubmitting, setIsPwdSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  
+  // Reference for the hidden file input (profile picture upload)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // Form values and errors
+  // Form values and errors - main settings form
   const [formValues, setFormValues] = useState<SettingsFormValues>({
     full_name: '',
     email: '',
@@ -55,15 +76,18 @@ export default function SettingsPage() {
     },
   });
   
+  // Form values and errors - password change form
   const [passwordValues, setPasswordValues] = useState<PasswordFormValues>({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
   
+  // Error storage for form validation
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
+  // Populate form values when user data is available
   useEffect(() => {
     if (user) {
       setFormValues({
@@ -77,15 +101,20 @@ export default function SettingsPage() {
         },
       });
       
-      // Set avatar URL if it exists
+      // Set avatar URL if it exists in user metadata
       setAvatarUrl(user.user_metadata?.avatar_url || null);
     }
   }, [user]);
 
+  /**
+   * Handle input changes for the settings form
+   * Special handling for checkbox inputs (notifications)
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     
     if (type === 'checkbox') {
+      // Handle checkbox inputs for nested objects (notifications)
       const checked = (e.target as HTMLInputElement).checked;
       const [parent, child] = name.split('.');
       
@@ -99,21 +128,32 @@ export default function SettingsPage() {
         });
       }
     } else {
+      // Handle regular text/select inputs
       setFormValues({ ...formValues, [name]: value });
     }
   };
   
+  /**
+   * Handle input changes for the password form
+   */
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPasswordValues({ ...passwordValues, [name]: value });
   };
 
+  /**
+   * Validate the settings form using Zod schema
+   * Returns true if valid, false if invalid
+   */
   const validateSettingsForm = () => {
     try {
+      // Attempt to parse form values with the schema
       settingsFormSchema.parse(formValues);
+      // Clear any previous errors if valid
       setFormErrors({});
       return true;
     } catch (error) {
+      // Handle Zod validation errors by mapping them to form fields
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
@@ -126,12 +166,19 @@ export default function SettingsPage() {
     }
   };
   
+  /**
+   * Validate the password form using Zod schema
+   * Returns true if valid, false if invalid
+   */
   const validatePasswordForm = () => {
     try {
+      // Attempt to parse password values with the schema
       passwordFormSchema.parse(passwordValues);
+      // Clear any previous errors if valid
       setPasswordErrors({});
       return true;
     } catch (error) {
+      // Handle Zod validation errors by mapping them to form fields
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
         error.errors.forEach((err) => {
@@ -144,16 +191,23 @@ export default function SettingsPage() {
     }
   };
 
+  /**
+   * Handle settings form submission
+   * Validates form and sends data to server action
+   */
   const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form before submission
     if (!validateSettingsForm()) return;
     
+    // Set loading state while submitting
     setIsSubmitting(true);
     
     try {
       if (!user) throw new Error("User not authenticated");
       
+      // Extract form values and call server action
       const { language, notifications, full_name, theme } = formValues;
       const result = await updateUserSettings(user.id, {
         full_name,
@@ -162,32 +216,44 @@ export default function SettingsPage() {
         theme,
       });
       
+      // Handle success or error response
       if (result.success) {
         toast.success("Settings updated successfully");
       } else {
         toast.error(result.error || "Failed to update settings");
       }
     } catch (error) {
+      // Handle unexpected errors
       toast.error("Failed to update settings");
       console.error("Settings update error:", error);
     } finally {
+      // Reset loading state
       setIsSubmitting(false);
     }
   };
   
+  /**
+   * Handle password form submission
+   * Validates form and sends data to server action
+   */
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form before submission
     if (!validatePasswordForm()) return;
     
+    // Set loading state while submitting
     setIsPwdSubmitting(true);
     
     try {
+      // Extract password values and call server action
       const { currentPassword, newPassword } = passwordValues;
       const result = await updateUserPassword(currentPassword, newPassword);
       
+      // Handle success or error response
       if (result.success) {
         toast.success("Password updated successfully");
+        // Reset form after successful password change
         setPasswordValues({
           currentPassword: '',
           newPassword: '',
@@ -197,19 +263,28 @@ export default function SettingsPage() {
         toast.error(result.error || "Failed to update password");
       }
     } catch (error) {
+      // Handle unexpected errors
       toast.error("Failed to update password");
       console.error("Password update error:", error);
     } finally {
+      // Reset loading state
       setIsPwdSubmitting(false);
     }
   };
   
+  /**
+   * Handle avatar click to trigger file upload dialog
+   */
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
   
+  /**
+   * Handle file selection for profile picture upload
+   * Validates file type and size before uploading
+   */
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -228,11 +303,14 @@ export default function SettingsPage() {
       return;
     }
     
+    // Set loading state while uploading
     setIsUploading(true);
     
     try {
+      // Upload file using server action
       const result = await uploadProfilePicture(user.id, file);
       
+      // Handle success or error response
       if (result.success) {
         setAvatarUrl(result.url || null);
         toast.success("Profile picture updated successfully");
@@ -240,18 +318,21 @@ export default function SettingsPage() {
         toast.error(result.error || "Failed to upload profile picture");
       }
     } catch (error) {
+      // Handle unexpected errors
       toast.error("Failed to upload profile picture");
       console.error("Upload error:", error);
     } finally {
+      // Reset loading state and file input
       setIsUploading(false);
       
-      // Reset the file input
+      // Reset the file input for future uploads
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
+  // Show loading spinner while auth state is loading
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -260,8 +341,10 @@ export default function SettingsPage() {
     );
   }
 
+  // Main settings page UI with tabbed interface
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Page header */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Account Settings</h1>
@@ -269,12 +352,14 @@ export default function SettingsPage() {
       </header>
       <main>
         <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+          {/* Tabbed interface for settings organization */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
             </TabsList>
             
+            {/* General Settings Tab (profile, preferences, notifications) */}
             <TabsContent value="general">
               <Card className="p-6">
                 <form onSubmit={handleSettingsSubmit} className="space-y-6">
@@ -282,9 +367,10 @@ export default function SettingsPage() {
                   <div>
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Profile Information</h2>
                     
-                    {/* Profile Picture */}
+                    {/* Profile Picture Upload Section */}
                     <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
                       <div className="relative">
+                        {/* Avatar display with click handler for upload */}
                         <div 
                           className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer border-2 border-primary-100 hover:border-primary-300 transition-colors"
                           onClick={handleAvatarClick}
@@ -301,12 +387,14 @@ export default function SettingsPage() {
                             </span>
                           )}
                           
+                          {/* Loading overlay while uploading */}
                           {isUploading && (
                             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                               <Spinner className="h-8 w-8 text-white" />
                             </div>
                           )}
                         </div>
+                        {/* Hidden file input triggered by avatar click */}
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -327,7 +415,9 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     
+                    {/* Profile Information Form Fields */}
                     <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      {/* Full Name Field */}
                       <div className="sm:col-span-4">
                         <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
                           Full Name
@@ -343,12 +433,14 @@ export default function SettingsPage() {
                               formErrors.full_name ? 'border-red-300' : 'border-gray-300'
                             } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
                           />
+                          {/* Error message display */}
                           {formErrors.full_name && (
                             <p className="mt-1 text-sm text-red-600">{formErrors.full_name}</p>
                           )}
                         </div>
                       </div>
 
+                      {/* Email Field (read-only) */}
                       <div className="sm:col-span-4">
                         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                           Email Address
@@ -373,6 +465,7 @@ export default function SettingsPage() {
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Preferences</h2>
                     
                     <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      {/* Language Preference */}
                       <div className="sm:col-span-3">
                         <label htmlFor="language" className="block text-sm font-medium text-gray-700">
                           Language
@@ -391,6 +484,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
                       
+                      {/* Theme Preference */}
                       <div className="sm:col-span-3">
                         <label htmlFor="theme" className="block text-sm font-medium text-gray-700">
                           Theme
@@ -419,6 +513,7 @@ export default function SettingsPage() {
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Notifications</h2>
                     
                     <div className="space-y-4">
+                      {/* Email Notifications Toggle */}
                       <div className="relative flex items-start">
                         <div className="flex h-5 items-center">
                           <input
@@ -438,6 +533,7 @@ export default function SettingsPage() {
                         </div>
                       </div>
 
+                      {/* Push Notifications Toggle */}
                       <div className="relative flex items-start">
                         <div className="flex h-5 items-center">
                           <input
@@ -480,11 +576,13 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
             
+            {/* Security Tab (password management) */}
             <TabsContent value="security">
               <Card className="p-6">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
                 <form onSubmit={handlePasswordSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    {/* Current Password Field */}
                     <div className="sm:col-span-4">
                       <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
                         Current Password
@@ -500,12 +598,14 @@ export default function SettingsPage() {
                             passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
                           } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
                         />
+                        {/* Error message display */}
                         {passwordErrors.currentPassword && (
                           <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
                         )}
                       </div>
                     </div>
                     
+                    {/* New Password Field */}
                     <div className="sm:col-span-4">
                       <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
                         New Password
@@ -521,12 +621,14 @@ export default function SettingsPage() {
                             passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
                           } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
                         />
+                        {/* Error message display */}
                         {passwordErrors.newPassword && (
                           <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
                         )}
                       </div>
                     </div>
                     
+                    {/* Confirm Password Field */}
                     <div className="sm:col-span-4">
                       <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
                         Confirm New Password
@@ -542,6 +644,7 @@ export default function SettingsPage() {
                             passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                           } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
                         />
+                        {/* Error message display */}
                         {passwordErrors.confirmPassword && (
                           <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
                         )}
@@ -549,6 +652,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   
+                  {/* Form Actions */}
                   <div className="flex justify-end">
                     <Button
                       type="submit"
@@ -567,6 +671,7 @@ export default function SettingsPage() {
                   </div>
                 </form>
                 
+                {/* Security Information Section */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <h2 className="text-lg font-medium text-gray-900 mb-4">Account Security</h2>
                   
