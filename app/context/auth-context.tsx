@@ -152,9 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signOut();
       setUser(null);
       setSession(null);
-      router.push('/');
+      setUserRole(null);
+      // The redirect is now handled in the signOut function itself
     } catch (error: any) {
       setError(error.message || 'Failed to sign out');
+      // Fallback - force a redirect to home
+      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);

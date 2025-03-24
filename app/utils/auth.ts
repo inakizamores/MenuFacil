@@ -12,6 +12,10 @@ export type SignUpCredentials = {
 };
 
 export const signIn = async ({ email, password }: SignInCredentials) => {
+  // First clear any potential conflicting sessions
+  await supabase.auth.signOut({ scope: 'local' });
+  
+  // Then attempt to sign in
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -43,14 +47,6 @@ export const signUp = async ({ email, password, name }: SignUpCredentials) => {
 };
 
 export const signOut = async () => {
-  // Clear all browser cookies related to the session
-  document.cookie.split(';').forEach(cookie => {
-    const [name] = cookie.split('=');
-    if (name.trim().startsWith('sb-')) {
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
-    }
-  });
-  
   // Call Supabase signOut
   const { error } = await supabase.auth.signOut({
     scope: 'global' // This will remove all Supabase session information
@@ -60,7 +56,8 @@ export const signOut = async () => {
     throw new Error(error.message);
   }
   
-  // Force page reload to clear any cached auth state
+  // For a cleaner approach than manually clearing cookies, reload the page
+  // This allows the browser and Supabase client to handle cookie cleanup properly
   window.location.href = '/';
 };
 
