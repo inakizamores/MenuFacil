@@ -3,6 +3,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+import { ensureUUID, safeUUID } from '@/lib/utils';
 
 interface CreateRestaurantParams {
   name: string;
@@ -34,7 +35,7 @@ export async function getUserRestaurants(userId: string) {
     const { data, error } = await supabase
       .from('restaurants')
       .select('*')
-      .eq('owner_id', userId)
+      .eq('owner_id', ensureUUID(userId))
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -59,7 +60,7 @@ export async function getRestaurant(restaurantId: string) {
     const { data, error } = await supabase
       .from('restaurants')
       .select('*')
-      .eq('id', restaurantId)
+      .eq('id', ensureUUID(restaurantId))
       .single();
 
     if (error) {
@@ -81,8 +82,14 @@ export async function createRestaurant(data: CreateRestaurantParams) {
   try {
     const supabase = await createServerClient();
     
+    // Generate a new UUID for the restaurant
+    const restaurantId = uuidv4();
+    
+    // Ensure the owner_id is a valid UUID
+    const ownerId = ensureUUID(data.owner_id);
+    
     const restaurant = {
-      id: uuidv4(),
+      id: restaurantId,
       name: data.name,
       description: data.description || null,
       primary_color: data.primary_color || '#4F46E5',
@@ -95,7 +102,7 @@ export async function createRestaurant(data: CreateRestaurantParams) {
       phone: data.phone || null,
       email: data.email || null,
       website: data.website || null,
-      owner_id: data.owner_id,
+      owner_id: ownerId,
       logo_url: data.logo_url || null,
       social_media: data.social_media || null,
       business_hours: data.business_hours || null,
@@ -141,7 +148,7 @@ export async function updateRestaurant(
     const { error } = await supabase
       .from('restaurants')
       .update(updateData)
-      .eq('id', restaurantId);
+      .eq('id', ensureUUID(restaurantId));
 
     if (error) {
       console.error('Error updating restaurant:', error);
@@ -167,7 +174,7 @@ export async function deleteRestaurant(restaurantId: string) {
     const { error } = await supabase
       .from('restaurants')
       .delete()
-      .eq('id', restaurantId);
+      .eq('id', ensureUUID(restaurantId));
 
     if (error) {
       console.error('Error deleting restaurant:', error);

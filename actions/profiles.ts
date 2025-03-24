@@ -3,6 +3,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '../types/supabase.types';
+// TODO: Import and use ensureUUID from @/lib/utils after fixing type compatibility issues
 
 // Create a Supabase client configured to use cookies
 const createClient = () => {
@@ -39,6 +40,8 @@ export async function updateUserProfile(
 ) {
   try {
     const supabase = createClient();
+    
+    // TODO: Add UUID validation for userId using ensureUUID(userId)
     
     // First, check if the profile exists
     const { data: existingProfile, error: fetchError } = await supabase
@@ -123,6 +126,8 @@ export async function updateUserSettings(
 ) {
   try {
     const supabase = createClient();
+    
+    // TODO: Add UUID validation for userId using ensureUUID(userId)
     
     // First, check if the profile exists
     const { data: existingProfile, error: fetchError } = await supabase

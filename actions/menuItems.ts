@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { createServerClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
+import { ensureUUID, safeUUID } from '@/lib/utils';
 
 // Types
 export interface MenuItem {
@@ -64,7 +65,7 @@ export async function getMenuItem(id: string) {
     const { data, error } = await supabase
       .from('menu_items')
       .select('*')
-      .eq('id', id)
+      .eq('id', ensureUUID(id))
       .single();
     
     if (error) {
@@ -89,7 +90,7 @@ export async function getCategoryItems(categoryId: string) {
     const { data, error } = await supabase
       .from('menu_items')
       .select('*')
-      .eq('categoryId', categoryId)
+      .eq('category_id', ensureUUID(categoryId))
       .order('name');
     
     if (error) {
@@ -111,13 +112,18 @@ export async function createMenuItem(params: CreateMenuItemParams) {
   try {
     const supabase = await createServerClient();
     
+    // Generate a new UUID for the menu item
+    const itemId = uuidv4();
+    
     // Map from form field names to database field names if needed
     const categoryId = params.category_id || params.categoryId;
+    // Ensure the category ID is a valid UUID
+    const safeCategoryId = ensureUUID(categoryId);
     const isAvailable = params.is_available !== undefined ? params.is_available : params.isAvailable;
     
     // Prepare the menu item data
     const menuItemData: any = {
-      id: uuidv4(),
+      id: itemId,
       name: params.name,
       description: params.description,
       price: params.price,
@@ -125,7 +131,7 @@ export async function createMenuItem(params: CreateMenuItemParams) {
       is_popular: params.is_popular || false,
       preparation_time: params.preparation_time,
       nutrition_info: params.nutrition_info,
-      category_id: categoryId,
+      category_id: safeCategoryId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -142,7 +148,7 @@ export async function createMenuItem(params: CreateMenuItemParams) {
       // Generate a unique filename
       const fileExt = params.image.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `menu-items/${menuItemData.id}/${fileName}`;
+      const filePath = `menu-items/${itemId}/${fileName}`;
       
       // Upload the image
       const { error: uploadError } = await supabase.storage
@@ -169,14 +175,14 @@ export async function createMenuItem(params: CreateMenuItemParams) {
     // Insert the menu item into the database
     const { error } = await supabase
       .from('menu_items')
-      .insert([menuItemData]);
+      .insert(menuItemData);
     
     if (error) {
       console.error('Error creating menu item:', error);
       return { error: error.message };
     }
     
-    return { id: menuItemData.id, error: null };
+    return { id: itemId, error: null };
   } catch (error) {
     console.error('Error in createMenuItem:', error);
     return { error: 'Failed to create menu item' };
@@ -190,8 +196,13 @@ export async function updateMenuItem(params: UpdateMenuItemParams) {
   try {
     const supabase = await createServerClient();
     
+    // Ensure the item ID is a valid UUID
+    const itemId = ensureUUID(params.id);
+    
     // Map from form field names to database field names if needed
     const categoryId = params.category_id;
+    // If category ID is provided, ensure it's a valid UUID
+    const safeCategoryId = categoryId ? ensureUUID(categoryId) : undefined;
     const isAvailable = params.is_available !== undefined ? params.is_available : params.isAvailable;
     
     // Prepare the menu item data
@@ -200,65 +211,67 @@ export async function updateMenuItem(params: UpdateMenuItemParams) {
       description: params.description,
       price: params.price,
       is_available: isAvailable,
-      is_popular: params.is_popular || false,
-      preparation_time: params.preparation_time,
-      nutrition_info: params.nutrition_info,
       updated_at: new Date().toISOString()
     };
     
-    // Only set category_id if it was provided
-    if (categoryId) {
-      menuItemData.category_id = categoryId;
-    }
+    // Only include optional fields if they're provided
+    if (params.is_popular !== undefined) menuItemData.is_popular = params.is_popular;
+    if (params.preparation_time !== undefined) menuItemData.preparation_time = params.preparation_time;
+    if (params.nutrition_info !== undefined) menuItemData.nutrition_info = params.nutrition_info;
+    if (safeCategoryId) menuItemData.category_id = safeCategoryId;
     
-    // If image_url is provided directly, use it
-    if (params.image_url) {
-      menuItemData.image_url = params.image_url;
-    }
-    // Otherwise upload new image if provided and requested
-    else if (params.shouldUpdateImage && params.image) {
-      // Convert File to ArrayBuffer for the Supabase storage API
-      const arrayBuffer = await params.image.arrayBuffer();
-      
-      // Generate a unique filename
-      const fileExt = params.image.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `menu-items/${params.id}/${fileName}`;
-      
-      // Upload the image
-      const { error: uploadError } = await supabase.storage
-        .from('menu-images')
-        .upload(filePath, arrayBuffer, {
-          contentType: params.image.type,
-          upsert: true
-        });
-      
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        return { error: 'Failed to upload image' };
+    // Handle image updates if needed
+    if (params.shouldUpdateImage) {
+      if (params.image_url) {
+        // If direct image URL is provided, use it
+        menuItemData.image_url = params.image_url;
+      } else if (params.image) {
+        // Upload new image if provided
+        const arrayBuffer = await params.image.arrayBuffer();
+        
+        // Generate a unique filename
+        const fileExt = params.image.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `menu-items/${itemId}/${fileName}`;
+        
+        // Upload the image
+        const { error: uploadError } = await supabase.storage
+          .from('menu-images')
+          .upload(filePath, arrayBuffer, {
+            contentType: params.image.type,
+            upsert: true
+          });
+        
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          return { error: 'Failed to upload image' };
+        }
+        
+        // Get the public URL for the uploaded image
+        const { data: { publicUrl } } = supabase.storage
+          .from('menu-images')
+          .getPublicUrl(filePath);
+        
+        // Add the image URL to the menu item data
+        menuItemData.image_url = publicUrl;
+      } else {
+        // If shouldUpdateImage is true but no image is provided, set to null (remove image)
+        menuItemData.image_url = null;
       }
-      
-      // Get the public URL for the uploaded image
-      const { data: { publicUrl } } = supabase.storage
-        .from('menu-images')
-        .getPublicUrl(filePath);
-      
-      // Add the image URL to the menu item data
-      menuItemData.image_url = publicUrl;
     }
     
     // Update the menu item in the database
     const { error } = await supabase
       .from('menu_items')
       .update(menuItemData)
-      .eq('id', params.id);
+      .eq('id', itemId);
     
     if (error) {
       console.error('Error updating menu item:', error);
       return { error: error.message };
     }
     
-    return { id: params.id, error: null };
+    return { id: itemId, error: null };
   } catch (error) {
     console.error('Error in updateMenuItem:', error);
     return { error: 'Failed to update menu item' };
@@ -272,35 +285,36 @@ export async function deleteMenuItem(id: string) {
   try {
     const supabase = await createServerClient();
     
-    // First, delete any associated images from storage
-    // Get the menu item to check if it has an image
-    const { data: menuItem } = await supabase
-      .from('menu_items')
-      .select('image_url')
-      .eq('id', id)
-      .single();
-    
-    if (menuItem?.image_url) {
-      // Extract the path from the URL
-      const storageUrl = new URL(menuItem.image_url);
-      const pathParts = storageUrl.pathname.split('/');
-      const storagePath = pathParts.slice(2).join('/'); // Remove the first two parts
-      
-      // Delete the image from storage
-      await supabase.storage
-        .from('menu-images')
-        .remove([storagePath]);
-    }
+    // Ensure the item ID is a valid UUID
+    const itemId = ensureUUID(id);
     
     // Delete the menu item from the database
     const { error } = await supabase
       .from('menu_items')
       .delete()
-      .eq('id', id);
+      .eq('id', itemId);
     
     if (error) {
       console.error('Error deleting menu item:', error);
       return { error: error.message };
+    }
+    
+    // Clean up associated images
+    try {
+      const { data: files, error: listError } = await supabase.storage
+        .from('menu-images')
+        .list(`menu-items/${itemId}`);
+      
+      if (!listError && files && files.length > 0) {
+        // Delete all files in the item's directory
+        const filePaths = files.map(file => `menu-items/${itemId}/${file.name}`);
+        await supabase.storage
+          .from('menu-images')
+          .remove(filePaths);
+      }
+    } catch (storageError) {
+      console.error('Error cleaning up item images:', storageError);
+      // Continue even if image cleanup fails
     }
     
     return { success: true, error: null };
@@ -311,36 +325,44 @@ export async function deleteMenuItem(id: string) {
 }
 
 /**
- * Update the category of multiple items
+ * Update the category for multiple menu items
  */
 export async function updateItemCategories(itemUpdates: { itemId: string; categoryId: string }[]) {
   try {
     const supabase = await createServerClient();
     
-    // Use a transaction to update all items at once
-    const updates = [];
+    // Convert updates to use valid UUIDs
+    const safeUpdates = itemUpdates.map(update => ({
+      itemId: ensureUUID(update.itemId),
+      categoryId: ensureUUID(update.categoryId)
+    }));
     
-    for (const update of itemUpdates) {
-      updates.push({
-        id: update.itemId,
-        category_id: update.categoryId,
-        updated_at: new Date().toISOString()
-      });
-    }
+    // Process each update
+    const results = await Promise.all(
+      safeUpdates.map(async ({ itemId, categoryId }) => {
+        const { error } = await supabase
+          .from('menu_items')
+          .update({ category_id: categoryId, updated_at: new Date().toISOString() })
+          .eq('id', itemId);
+        
+        return { itemId, success: !error, error: error?.message };
+      })
+    );
     
-    const { error } = await supabase
-      .from('menu_items')
-      .upsert(updates);
-    
-    if (error) {
-      console.error('Error updating item categories:', error);
-      return { success: false, error: error.message };
+    // Check if any updates failed
+    const failures = results.filter(r => !r.success);
+    if (failures.length > 0) {
+      return { 
+        success: false, 
+        error: `Failed to update ${failures.length} items`,
+        failureDetails: failures
+      };
     }
     
     return { success: true, error: null };
   } catch (error) {
     console.error('Error in updateItemCategories:', error);
-    return { success: false, error: 'Failed to update item categories' };
+    return { success: false, error: 'Failed to update menu item categories' };
   }
 }
 
@@ -351,13 +373,20 @@ export async function updateItemSortOrder(categoryId: string, itemIds: string[])
   try {
     const supabase = await createServerClient();
     
-    // Use a transaction to update all items at once
-    const updates = itemIds.map((id, index) => ({
-      id,
-      sort_order: index * 10, // Space out the sort order for future insertions
+    // Ensure the category ID is a valid UUID
+    const safeCategoryId = ensureUUID(categoryId);
+    
+    // Convert item IDs to safe UUIDs
+    const safeItemIds = itemIds.map(id => ensureUUID(id));
+    
+    // Create updates with the new sort order
+    const updates = safeItemIds.map((itemId, index) => ({
+      id: itemId,
+      sort_order: index * 10,
       updated_at: new Date().toISOString()
     }));
     
+    // Update all items at once
     const { error } = await supabase
       .from('menu_items')
       .upsert(updates);
@@ -370,6 +399,6 @@ export async function updateItemSortOrder(categoryId: string, itemIds: string[])
     return { success: true, error: null };
   } catch (error) {
     console.error('Error in updateItemSortOrder:', error);
-    return { success: false, error: 'Failed to update item sort order' };
+    return { success: false, error: 'Failed to update menu item sort order' };
   }
 } 

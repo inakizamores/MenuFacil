@@ -3,6 +3,8 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { Menu } from '@/app/types/database';
 import { revalidatePath } from 'next/cache';
+import { ensureUUID, safeUUID } from '@/lib/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateMenuParams {
   restaurantId: string;
@@ -34,7 +36,7 @@ export async function getMenu(id: string) {
     const { data, error } = await supabase
       .from('menus')
       .select('*')
-      .eq('id', id)
+      .eq('id', ensureUUID(id))
       .single();
     
     if (error) {
@@ -59,18 +61,18 @@ export async function getRestaurantMenus(restaurantId: string) {
     const { data, error } = await supabase
       .from('menus')
       .select('*')
-      .eq('restaurant_id', restaurantId)
-      .order('name');
+      .eq('restaurant_id', ensureUUID(restaurantId))
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching restaurant menus:', error);
-      return { menus: [], error: error.message };
+      return { data: null, error: error.message };
     }
     
-    return { menus: data, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error('Error in getRestaurantMenus:', error);
-    return { menus: [], error: 'Failed to load menus' };
+    return { data: null, error: 'Failed to fetch restaurant menus' };
   }
 }
 
@@ -81,21 +83,33 @@ export async function createMenu(params: CreateMenuParams) {
   try {
     const supabase = await createServerClient();
     
+    // Generate menu ID
+    const menuId = uuidv4();
+    
+    // Ensure restaurant ID is a valid UUID
+    const restaurantId = ensureUUID(params.restaurantId);
+    
+    // Generate a unique slug for the menu
+    const slug = `${params.name.toLowerCase().replace(/\s+/g, '-')}-${menuId.slice(0, 8)}`;
+    
     const menuData = {
-      restaurant_id: params.restaurantId,
+      id: menuId,
+      restaurant_id: restaurantId,
       name: params.name,
-      description: params.description,
-      is_active: params.isActive ?? true,
-      is_default: params.isDefault ?? false,
-      template_id: params.templateId,
-      custom_css: params.customCss,
+      description: params.description || null,
+      is_active: params.isActive !== undefined ? params.isActive : true,
+      is_default: params.isDefault !== undefined ? params.isDefault : false,
+      is_published: false,
+      template_id: params.templateId || null,
+      custom_css: params.customCss || null,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      slug: slug
     };
     
     const { data, error } = await supabase
       .from('menus')
-      .insert([menuData])
+      .insert(menuData)
       .select()
       .single();
     
@@ -104,9 +118,7 @@ export async function createMenu(params: CreateMenuParams) {
       return { data: null, error: error.message };
     }
     
-    // Revalidate the restaurant menus page
-    revalidatePath(`/dashboard/restaurants/${params.restaurantId}/menus`);
-    
+    revalidatePath(`/dashboard/restaurants/${restaurantId}/menus`);
     return { data, error: null };
   } catch (error) {
     console.error('Error in createMenu:', error);
@@ -121,39 +133,51 @@ export async function updateMenu(params: UpdateMenuParams) {
   try {
     const supabase = await createServerClient();
     
-    const { id, ...updates } = params;
+    // Ensure menu ID is a valid UUID
+    const menuId = ensureUUID(params.id);
     
-    // Convert camelCase to snake_case for database fields
-    const menuData: Record<string, any> = {
+    // Get the current menu to access its restaurant_id
+    const { data: currentMenu } = await supabase
+      .from('menus')
+      .select('restaurant_id')
+      .eq('id', menuId)
+      .single();
+    
+    if (!currentMenu) {
+      return { success: false, error: 'Menu not found' };
+    }
+    
+    const restaurantId = currentMenu.restaurant_id;
+    
+    // Prepare update data
+    const updateData: any = {
       updated_at: new Date().toISOString()
     };
     
-    if (updates.name !== undefined) menuData.name = updates.name;
-    if (updates.description !== undefined) menuData.description = updates.description;
-    if (updates.isActive !== undefined) menuData.is_active = updates.isActive;
-    if (updates.isDefault !== undefined) menuData.is_default = updates.isDefault;
-    if (updates.templateId !== undefined) menuData.template_id = updates.templateId;
-    if (updates.customCss !== undefined) menuData.custom_css = updates.customCss;
+    if (params.name !== undefined) updateData.name = params.name;
+    if (params.description !== undefined) updateData.description = params.description;
+    if (params.isActive !== undefined) updateData.is_active = params.isActive;
+    if (params.isDefault !== undefined) updateData.is_default = params.isDefault;
+    if (params.templateId !== undefined) updateData.template_id = params.templateId;
+    if (params.customCss !== undefined) updateData.custom_css = params.customCss;
     
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('menus')
-      .update(menuData)
-      .eq('id', id)
-      .select()
-      .single();
+      .update(updateData)
+      .eq('id', menuId);
     
     if (error) {
       console.error('Error updating menu:', error);
-      return { data: null, error: error.message };
+      return { success: false, error: error.message };
     }
     
-    // Revalidate the menu page
-    revalidatePath(`/dashboard/restaurants/[restaurantId]/menus/${id}`);
+    revalidatePath(`/dashboard/restaurants/${restaurantId}/menus/${menuId}`);
+    revalidatePath(`/dashboard/restaurants/${restaurantId}/menus`);
     
-    return { data, error: null };
+    return { success: true, error: null };
   } catch (error) {
     console.error('Error in updateMenu:', error);
-    return { data: null, error: 'Failed to update menu' };
+    return { success: false, error: 'Failed to update menu' };
   }
 }
 
@@ -164,37 +188,34 @@ export async function deleteMenu(id: string) {
   try {
     const supabase = await createServerClient();
     
-    // First check if the menu exists
-    const { data: menu, error: fetchError } = await supabase
-      .from('menus')
-      .select('id, restaurant_id')
-      .eq('id', id)
-      .single();
+    // Ensure menu ID is a valid UUID
+    const menuId = ensureUUID(id);
     
-    if (fetchError) {
-      console.error('Error fetching menu:', fetchError);
-      return { success: false, error: fetchError.message };
-    }
+    // Get the menu's restaurant_id before deleting
+    const { data: menu } = await supabase
+      .from('menus')
+      .select('restaurant_id')
+      .eq('id', menuId)
+      .single();
     
     if (!menu) {
       return { success: false, error: 'Menu not found' };
     }
     
+    const restaurantId = menu.restaurant_id;
+    
     // Delete the menu
     const { error } = await supabase
       .from('menus')
       .delete()
-      .eq('id', id);
+      .eq('id', menuId);
     
     if (error) {
       console.error('Error deleting menu:', error);
       return { success: false, error: error.message };
     }
     
-    // Revalidate the restaurant menus page
-    if (menu.restaurant_id) {
-      revalidatePath(`/dashboard/restaurants/${menu.restaurant_id}/menus`);
-    }
+    revalidatePath(`/dashboard/restaurants/${restaurantId}/menus`);
     
     return { success: true, error: null };
   } catch (error) {

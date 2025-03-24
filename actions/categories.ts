@@ -2,6 +2,7 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
+import { ensureUUID, safeUUID } from '@/lib/utils';
 
 // Types
 export interface MenuCategory {
@@ -38,7 +39,7 @@ export async function getCategory(id: string) {
     const { data, error } = await supabase
       .from('menu_categories')
       .select('*')
-      .eq('id', id)
+      .eq('id', ensureUUID(id))
       .single();
     
     if (error) {
@@ -63,7 +64,7 @@ export async function getMenuCategories(menuId: string) {
     const { data, error } = await supabase
       .from('menu_categories')
       .select('*')
-      .eq('menu_id', menuId)
+      .eq('menu_id', ensureUUID(menuId))
       .order('sort_order');
     
     if (error) {
@@ -90,39 +91,44 @@ export async function createCategory({
   try {
     const supabase = await createServerClient();
     
+    // Ensure menuId is a valid UUID
+    const safeMenuId = ensureUUID(menuId);
+    
     // If order not provided, get the highest order value and increment by 10
     let categoryOrder = order;
     if (categoryOrder === undefined) {
       const { data } = await supabase
         .from('menu_categories')
         .select('order')
-        .eq('menuId', menuId)
+        .eq('menu_id', safeMenuId)
         .order('order', { ascending: false })
         .limit(1);
       
       categoryOrder = data && data.length > 0 ? data[0].order + 10 : 0;
     }
     
+    const categoryId = uuidv4();
+    
     const categoryData = {
-      id: uuidv4(),
+      id: categoryId,
       name,
       description,
-      menuId,
-      order: categoryOrder,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      menu_id: safeMenuId,
+      sort_order: categoryOrder,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
     const { error } = await supabase
       .from('menu_categories')
-      .insert([categoryData]);
+      .insert(categoryData);
     
     if (error) {
       console.error('Error creating category:', error);
       return { error: error.message };
     }
     
-    return { id: categoryData.id, error: null };
+    return { id: categoryId, error: null };
   } catch (error) {
     console.error('Error in createCategory:', error);
     return { error: 'Failed to create category' };
@@ -141,27 +147,30 @@ export async function updateCategory({
   try {
     const supabase = await createServerClient();
     
+    // Ensure category ID is a valid UUID
+    const safeCategoryId = ensureUUID(id);
+    
     const categoryData: any = {
       name,
       description,
-      updatedAt: new Date().toISOString()
+      updated_at: new Date().toISOString()
     };
     
     if (order !== undefined) {
-      categoryData.order = order;
+      categoryData.sort_order = order;
     }
     
     const { error } = await supabase
       .from('menu_categories')
       .update(categoryData)
-      .eq('id', id);
+      .eq('id', safeCategoryId);
     
     if (error) {
       console.error('Error updating category:', error);
       return { error: error.message };
     }
     
-    return { id, error: null };
+    return { id: safeCategoryId, error: null };
   } catch (error) {
     console.error('Error in updateCategory:', error);
     return { error: 'Failed to update category' };
@@ -175,11 +184,14 @@ export async function deleteCategory(id: string) {
   try {
     const supabase = await createServerClient();
     
+    // Ensure category ID is a valid UUID
+    const safeCategoryId = ensureUUID(id);
+    
     // First, check if the category has any menu items
     const { data: itemCount, error: countError } = await supabase
       .from('menu_items')
       .select('id', { count: 'exact' })
-      .eq('categoryId', id);
+      .eq('category_id', safeCategoryId);
     
     if (countError) {
       console.error('Error checking menu items:', countError);
@@ -194,7 +206,7 @@ export async function deleteCategory(id: string) {
     const { error } = await supabase
       .from('menu_categories')
       .delete()
-      .eq('id', id);
+      .eq('id', safeCategoryId);
     
     if (error) {
       console.error('Error deleting category:', error);
@@ -217,9 +229,9 @@ export async function reorderCategories(categories: { id: string, order: number 
     
     // Use a transaction to update all categories at once
     const updates = categories.map(cat => ({
-      id: cat.id,
-      order: cat.order,
-      updatedAt: new Date().toISOString()
+      id: ensureUUID(cat.id),
+      sort_order: cat.order,
+      updated_at: new Date().toISOString()
     }));
     
     const { error } = await supabase
