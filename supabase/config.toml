@@ -3,10 +3,7 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
 project_id = "MenuFacil"
-# Remote project reference
-remote_api_url = "https://iawspochdngompqmxyhf.supabase.co"
-remote_api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhd3Nwb2NoZG5nb21wcW14eWhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE5Nzg5NDEsImV4cCI6MjA1NzU1NDk0MX0.-HRwbkfWKV8U34gOIpk5OqlwFoPyQbWqT-aQImfQ324"
-remote_project_ref = "iawspochdngompqmxyhf"
+project_ref = "iawspochdngompqmxyhf"
 
 [api]
 enabled = true
