@@ -67,7 +67,7 @@ export default function DashboardPage() {
                     </a>
                   </li>
                   <li>
-                    <a href="/settings" className="text-gray-600 hover:text-gray-900">
+                    <a href="/dashboard/settings" className="text-gray-600 hover:text-gray-900">
                       Settings
                     </a>
                   </li>
