@@ -175,7 +175,7 @@ We've improved the QR code management functionality with the following enhanceme
 1. ✅ Fixed TypeScript errors in profiles.ts related to Supabase API compatibility
 2. ✅ Updated cookie handling in Supabase client creation to match current API
 3. ✅ Enhanced public menu viewing experience with mobile optimization and improved UI
-4. Complete restaurant statistics dashboard
+4. ✅ Completed restaurant statistics dashboard with detailed analytics
 5. Implement user settings panel
 
 ## Future Enhancement Ideas
@@ -225,6 +225,10 @@ We've improved the QR code management functionality with the following enhanceme
 - Some dependencies have punycode deprecation warnings that need to be addressed
 
 ## Recently Completed Tasks
+- ✅ Completed restaurant statistics dashboard with time-based filtering and detailed analytics
+- ✅ Added menu item and category popularity metrics to restaurant analytics
+- ✅ Implemented data export functionality for analytics
+- ✅ Enhanced restaurant analytics view with improved charts and visualizations
 - ✅ Enhanced public menu viewing experience with responsive design for mobile devices
 - ✅ Added item detail modal for better menu item presentation
 - ✅ Improved loading states with better skeleton UI
@@ -274,6 +278,12 @@ We've improved the QR code management functionality with the following enhanceme
     - ✅ Improve loading states with better skeleton UI
     - ✅ Add dedicated mobile navigation
     - ✅ Implement view mode toggle for desktop/mobile simulation
+12. ✅ Complete restaurant statistics dashboard:
+    - ✅ Add time-based filtering (7 days, 30 days, 1 year)
+    - ✅ Implement menu item popularity metrics
+    - ✅ Add category popularity visualization
+    - ✅ Create export functionality for analytics data
+    - ✅ Enhance device and source breakdown charts
 
 ## Next Steps for Developers
 
@@ -293,14 +303,20 @@ We've improved the QR code management functionality with the following enhanceme
    - ✅ Add dedicated mobile navigation for categories
    - ✅ Implement view mode toggle for desktop/mobile simulation
 
-3. **Next Priorities**
-   - Complete restaurant statistics dashboard
+3. ✅ Restaurant Statistics Dashboard
+   - ✅ Add time-based filtering for analytics data
+   - ✅ Implement menu item popularity tracking
+   - ✅ Create category popularity visualization
+   - ✅ Add data export functionality in JSON format
+   - ✅ Enhance chart visualizations with better colors and tooltips
+
+4. **Next Priorities**
    - Implement user settings panel
    - Add more interactive features to the public menu (favorites, sharing)
    - Implement table-specific ordering integration
    - Optimize performance for large menus
 
-4. **Production Deployment Preparation**
+5. **Production Deployment Preparation**
    - Optimize build process
    - Implement error boundaries and fallbacks
    - Set up proper logging and monitoring
@@ -309,53 +325,54 @@ We've improved the QR code management functionality with the following enhanceme
 ## Development Session Summary (July 21, 2024)
 
 ### What Was Accomplished
-1. **Public Menu Viewing Experience Enhancement**
-   - Implemented a fully responsive design for mobile devices with dedicated mobile navigation
-   - Added a detailed item modal view for better menu item presentation
-   - Improved loading states with more advanced skeleton UI
-   - Created a mobile/desktop view toggle for easier testing
-   - Enhanced the overall user experience with smooth animations and transitions
-   - Fixed missing FormDescription component causing build warnings
+1. **Restaurant Statistics Dashboard Enhancement**
+   - Added comprehensive time-based filtering with 7-day, 30-day, and 1-year views
+   - Implemented menu item popularity tracking and visualization
+   - Added category popularity metrics with interactive charts
+   - Created data export functionality for analytics
+   - Enhanced the overall dashboard with better visualizations and layout
+   - Implemented real-data processing from analytics_events table
+   - Fixed date formatting with date-fns library
 
 2. **Code Quality Improvements**
-   - Added proper handling of mobile vs desktop viewports
-   - Improved component organization with separate modal component
-   - Enhanced user experience with better loading states and animations
-   - Implemented mobile-first responsive design principles
-   - Used motion.div components for smooth animation effects
+   - Added proper TypeScript types for all analytics data structures
+   - Improved error handling with graceful fallbacks to placeholder data
+   - Enhanced user interface with better time frame controls
+   - Implemented data export functionality with proper file download
+   - Used date-fns for consistent date handling across the application
 
 3. **Implementation Details**
-   - Added item detail modal for comprehensive item information display
-   - Created a mobile slide-in menu panel for category navigation
-   - Implemented responsive layout adjustments based on device size
-   - Added new translations for enhanced UI elements
-   - Fixed FormDescription component to resolve build warnings
+   - Enhanced analytics.ts server actions to support time-based filtering
+   - Added popularItems and popularCategories data to analytics summaries
+   - Created exportRestaurantAnalytics and exportMenuAnalytics functions
+   - Added detailed timeFrameStats (today, week, month, year) metrics
+   - Fixed TypeScript linting errors with proper optional chaining
    - Updated DEVELOPMENT_PROGRESS.md to reflect changes
 
 ### Code Changes
 1. **Files Modified:**
-   - `app/(routes)/menus/[menuId]/page.tsx`: Enhanced with responsive design and improved UX
-   - `app/components/ui/form.tsx`: Added missing FormDescription component
+   - `actions/analytics.ts`: Enhanced with comprehensive analytics functionality
+   - `app/(routes)/dashboard/analytics/page.tsx`: Updated with new UI and features
    - `DEVELOPMENT_PROGRESS.md`: Updated progress tracking and marked tasks as completed
 
 2. **Key Code Improvements:**
-   - Added mobile detection and responsive UI adjustments
-   - Implemented dedicated mobile navigation for better UX on small screens
-   - Created detailed item modal for better information display
-   - Improved skeleton loading UI for better perceived performance
-   - Added view mode toggle for testing different viewport sizes
-   - Fixed FormDescription component to resolve build warnings
+   - Added time-based filtering controls for flexible date ranges
+   - Implemented menu item popularity tracking and visualization
+   - Created category popularity metrics with interactive charts
+   - Added data export functionality with proper file download
+   - Enhanced error handling with graceful fallbacks
+   - Used date-fns for consistent date handling
 
 ### Remaining Issues
 1. **Performance Optimization:**
-   - Large menus with many images could benefit from lazy loading
-   - Consider implementing virtualized lists for very large menus
-   - Some animations might need performance optimization
+   - Large datasets could benefit from pagination or virtualized lists
+   - Consider implementing caching for frequently accessed analytics data
+   - Some database queries could be optimized for better performance
 
 2. **Feature Extensions:**
-   - The "Add to Order" button is currently non-functional
-   - Table-specific ordering integration could be added
-   - Order tracking functionality needs to be implemented
+   - Analytics could be expanded with more detailed customer behavior metrics
+   - Consider adding PDF export format in addition to JSON
+   - Implement custom date range selection for more granular filtering
 
 ## Handover Documentation
 
@@ -400,6 +417,13 @@ All components follow these organization principles:
    - Improved loading states with skeleton UI
    - View mode toggle for desktop/mobile testing
 
+4. **Restaurant Statistics Dashboard**
+   - Comprehensive analytics with time-based filtering (7 days, 30 days, 1 year)
+   - Menu item popularity tracking with detailed metrics
+   - Category popularity visualization with interactive charts
+   - Data export functionality in JSON format
+   - Enhanced device and source breakdown charts
+
 ### Known Issues
 1. **Type Compatibility**
    - ✅ Some TypeScript errors still exist in QR code form validation implementation
@@ -412,6 +436,7 @@ All components follow these organization principles:
    - Large batches of QR codes may cause performance issues
    - Some form validations could benefit from debouncing for a smoother experience
    - Large menus with many images could be optimized for faster loading
+   - Analytics queries with large datasets might need optimization
 
 ### Pending Tasks
 1. **Technical Debt Resolution**
@@ -427,10 +452,12 @@ All components follow these organization principles:
    - Should include profile management, notification settings, and theme preferences
    - Requires integration with Supabase auth for user profile updates
 
-3. **Restaurant Statistics Dashboard**
-   - Complete the analytics dashboard with more interactive visualizations
-   - Add export functionality for analytics data
-   - Implement time-based filtering for better analysis capabilities
+3. **Analytics Enhancements**
+   - ✅ Complete the analytics dashboard with interactive visualizations
+   - ✅ Add export functionality for analytics data
+   - ✅ Implement time-based filtering for better analysis
+   - Consider adding more advanced metrics like conversion rates and engagement scores
+   - Implement custom date range selection for more granular filtering
 
 ### Instructions for Next Developer
 1. **Setup**
@@ -439,11 +466,10 @@ All components follow these organization principles:
    - Run `npm run dev` to start the development server
 
 2. **Recommended Next Steps**
-   - Focus on completing the restaurant statistics dashboard
-   - Implement the user settings panel
+   - Implement the user settings panel as the next priority
    - Add more interactive features to the public menu (favorites, sharing)
    - Implement table-specific ordering integration
-   - Optimize performance for large menus
+   - Optimize performance for large menus and analytics datasets
 
 3. **Useful Resources**
    - Refer to `lib/validation/schemas.ts` for examples of Zod validation schemas
@@ -451,5 +477,6 @@ All components follow these organization principles:
    - See `app/components/qr-code/management/QRCodeEditor.tsx` for form validation integration examples
    - Review `lib/utils.ts` for UUID utility functions that resolve type casting issues
    - Consult Supabase documentation for the latest API: https://supabase.com/docs/reference/javascript/introduction
+   - See `actions/analytics.ts` for examples of data retrieval and processing patterns
 
 This handover document should provide a clear understanding of the current state of the project and what needs to be addressed next. All future updates should be documented in this DEVELOPMENT_PROGRESS.md file to maintain a centralized record of development progress.
