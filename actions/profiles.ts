@@ -1,6 +1,6 @@
 'use server';
 
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '../types/supabase.types';
 import { toUUID } from '@/lib/utils';
@@ -100,21 +100,21 @@ export async function updateUserProfile(
     }
     
     return {
-      status: 'success',
+      success: true,
       message: existingProfile ? 'Profile updated successfully' : 'Profile created successfully',
     };
   } catch (error: any) {
     console.error('Profile update error:', error);
     
     return {
-      status: 'error',
-      message: error.message || 'Failed to update profile',
+      success: false,
+      error: error.message || 'Failed to update profile',
     };
   }
 }
 
 /**
- * Updates a user's settings in the database
+ * Updates a user's settings in the database and Supabase Auth metadata
  * 
  * @param userId - The ID of the user to update settings for
  * @param settings - The settings data to update
@@ -129,6 +129,7 @@ export async function updateUserSettings(
       email?: boolean;
       push?: boolean;
     };
+    theme?: 'light' | 'system';
   }
 ) {
   try {
@@ -178,16 +179,117 @@ export async function updateUserSettings(
       if (error) throw new Error(`Error creating profile: ${error.message}`);
     }
     
+    // Update user metadata
+    const { error: metadataError } = await supabase.auth.updateUser({
+      data: {
+        full_name: fullName,
+        language: settings.language,
+        notifications: settings.notifications,
+        theme: settings.theme || 'light',
+      }
+    });
+    
+    if (metadataError) throw new Error(`Error updating user metadata: ${metadataError.message}`);
+    
     return {
-      status: 'success',
+      success: true,
       message: 'Settings updated successfully',
     };
   } catch (error: any) {
     console.error('Settings update error:', error);
     
     return {
-      status: 'error',
-      message: error.message || 'Failed to update settings',
+      success: false,
+      error: error.message || 'Failed to update settings',
+    };
+  }
+}
+
+/**
+ * Updates a user's password
+ * 
+ * @param currentPassword - The user's current password
+ * @param newPassword - The new password to set
+ * @returns An object indicating success or failure with a message
+ */
+export async function updateUserPassword(
+  currentPassword: string,
+  newPassword: string
+) {
+  try {
+    const supabase = createClient();
+    
+    // Update user password
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+    
+    if (error) throw new Error(`Error updating password: ${error.message}`);
+    
+    return {
+      success: true,
+      message: 'Password updated successfully',
+    };
+  } catch (error: any) {
+    console.error('Password update error:', error);
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to update password',
+    };
+  }
+}
+
+/**
+ * Upload a profile picture to Supabase Storage
+ * 
+ * @param userId - The ID of the user
+ * @param file - The file to upload
+ * @returns An object with the URL of the uploaded image or an error
+ */
+export async function uploadProfilePicture(
+  userId: string,
+  file: File
+) {
+  try {
+    const supabase = createClient();
+    
+    // Generate a unique file name
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `profile-pictures/${fileName}`;
+    
+    // Upload file to Supabase Storage
+    const { error: uploadError, data } = await supabase.storage
+      .from('public')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+    
+    if (uploadError) throw new Error(`Error uploading file: ${uploadError.message}`);
+    
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('public')
+      .getPublicUrl(filePath);
+    
+    // Update the user's profile with the new avatar URL
+    await updateUserProfile(userId, {
+      avatar_url: publicUrl
+    });
+    
+    return {
+      success: true,
+      url: publicUrl,
+      message: 'Profile picture uploaded successfully',
+    };
+  } catch (error: any) {
+    console.error('Profile picture upload error:', error);
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to upload profile picture',
     };
   }
 } 

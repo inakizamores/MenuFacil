@@ -1,37 +1,68 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../context/auth-context';
 import { z } from 'zod';
 import { toast } from 'react-hot-toast';
-import { updateUserSettings } from '../../../../actions/profiles';
+import { updateUserSettings, updateUserPassword, uploadProfilePicture } from '@/actions/profiles';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
 
-// Define form schema using Zod
+// Define form schemas using Zod
 const settingsFormSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   language: z.enum(["en", "es"]),
+  theme: z.enum(["light", "system"]),
   notifications: z.object({
     email: z.boolean(),
     push: z.boolean(),
   }),
 });
 
+const passwordFormSchema = z.object({
+  currentPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(8, "Password must be at least 8 characters"),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
 type SettingsFormValues = z.infer<typeof settingsFormSchema>;
+type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
 export default function SettingsPage() {
   const { user, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<string>("general");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPwdSubmitting, setIsPwdSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Form values and errors
   const [formValues, setFormValues] = useState<SettingsFormValues>({
     full_name: '',
     email: '',
     language: 'en',
+    theme: 'light',
     notifications: {
       email: true,
       push: true,
     },
   });
+  
+  const [passwordValues, setPasswordValues] = useState<PasswordFormValues>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user) {
@@ -39,11 +70,15 @@ export default function SettingsPage() {
         full_name: user.user_metadata?.full_name || '',
         email: user.email || '',
         language: user.user_metadata?.language || 'en',
+        theme: user.user_metadata?.theme || 'light',
         notifications: {
           email: user.user_metadata?.notifications?.email !== false,
           push: user.user_metadata?.notifications?.push !== false,
         },
       });
+      
+      // Set avatar URL if it exists
+      setAvatarUrl(user.user_metadata?.avatar_url || null);
     }
   }, [user]);
 
@@ -67,8 +102,13 @@ export default function SettingsPage() {
       setFormValues({ ...formValues, [name]: value });
     }
   };
+  
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordValues({ ...passwordValues, [name]: value });
+  };
 
-  const validateForm = () => {
+  const validateSettingsForm = () => {
     try {
       settingsFormSchema.parse(formValues);
       setFormErrors({});
@@ -85,23 +125,41 @@ export default function SettingsPage() {
       return false;
     }
   };
+  
+  const validatePasswordForm = () => {
+    try {
+      passwordFormSchema.parse(passwordValues);
+      setPasswordErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          const path = err.path.join('.');
+          errors[path] = err.message;
+        });
+        setPasswordErrors(errors);
+      }
+      return false;
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateSettingsForm()) return;
     
     setIsSubmitting(true);
     
     try {
       if (!user) throw new Error("User not authenticated");
       
-      // Use the new server action to update user settings
-      const { language, notifications, full_name } = formValues;
+      const { language, notifications, full_name, theme } = formValues;
       const result = await updateUserSettings(user.id, {
         full_name,
         language,
         notifications,
+        theme,
       });
       
       if (result.success) {
@@ -116,11 +174,88 @@ export default function SettingsPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePasswordForm()) return;
+    
+    setIsPwdSubmitting(true);
+    
+    try {
+      const { currentPassword, newPassword } = passwordValues;
+      const result = await updateUserPassword(currentPassword, newPassword);
+      
+      if (result.success) {
+        toast.success("Password updated successfully");
+        setPasswordValues({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        });
+      } else {
+        toast.error(result.error || "Failed to update password");
+      }
+    } catch (error) {
+      toast.error("Failed to update password");
+      console.error("Password update error:", error);
+    } finally {
+      setIsPwdSubmitting(false);
+    }
+  };
+  
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    // Validate file type and size
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPEG, PNG, or GIF)");
+      return;
+    }
+    
+    if (file.size > maxSize) {
+      toast.error("File is too large. Maximum size is 2MB");
+      return;
+    }
+    
+    setIsUploading(true);
+    
+    try {
+      const result = await uploadProfilePicture(user.id, file);
+      
+      if (result.success) {
+        setAvatarUrl(result.url || null);
+        toast.success("Profile picture updated successfully");
+      } else {
+        toast.error(result.error || "Failed to upload profile picture");
+      }
+    } catch (error) {
+      toast.error("Failed to upload profile picture");
+      console.error("Upload error:", error);
+    } finally {
+      setIsUploading(false);
+      
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-        <p>Loading...</p>
+        <Spinner />
       </div>
     );
   }
@@ -134,133 +269,334 @@ export default function SettingsPage() {
       </header>
       <main>
         <div className="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Section */}
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Profile Information</h2>
-                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                  <div className="sm:col-span-4">
-                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
-                      Full Name
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        type="text"
-                        name="full_name"
-                        id="full_name"
-                        value={formValues.full_name}
-                        onChange={handleInputChange}
-                        className={`block w-full rounded-md border ${
-                          formErrors.full_name ? 'border-red-300' : 'border-gray-300'
-                        } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
-                      />
-                      {formErrors.full_name && (
-                        <p className="mt-1 text-sm text-red-600">{formErrors.full_name}</p>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="general">General</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="general">
+              <Card className="p-6">
+                <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                  {/* Profile Section */}
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Profile Information</h2>
+                    
+                    {/* Profile Picture */}
+                    <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
+                      <div className="relative">
+                        <div 
+                          className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden cursor-pointer border-2 border-primary-100 hover:border-primary-300 transition-colors"
+                          onClick={handleAvatarClick}
+                        >
+                          {avatarUrl ? (
+                            <img 
+                              src={avatarUrl} 
+                              alt="Profile" 
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-2xl text-gray-400">
+                              {formValues.full_name.charAt(0).toUpperCase() || 'U'}
+                            </span>
+                          )}
+                          
+                          {isUploading && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                              <Spinner className="h-8 w-8 text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/jpeg,image/png,image/gif"
+                          onChange={handleFileChange}
+                          disabled={isUploading}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-700 mb-1">Profile Picture</h3>
+                        <p className="text-sm text-gray-500 mb-2">
+                          Click on the avatar to upload a new image.
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          JPG, PNG or GIF. Max size 2MB.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      <div className="sm:col-span-4">
+                        <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
+                          Full Name
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="text"
+                            name="full_name"
+                            id="full_name"
+                            value={formValues.full_name}
+                            onChange={handleInputChange}
+                            className={`block w-full rounded-md border ${
+                              formErrors.full_name ? 'border-red-300' : 'border-gray-300'
+                            } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
+                          />
+                          {formErrors.full_name && (
+                            <p className="mt-1 text-sm text-red-600">{formErrors.full_name}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="sm:col-span-4">
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                          Email Address
+                        </label>
+                        <div className="mt-1">
+                          <input
+                            type="email"
+                            name="email"
+                            id="email"
+                            value={formValues.email}
+                            disabled
+                            className="block w-full rounded-md border border-gray-300 bg-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preferences Section */}
+                  <div className="pt-6 border-t border-gray-200">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Preferences</h2>
+                    
+                    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                      <div className="sm:col-span-3">
+                        <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+                          Language
+                        </label>
+                        <div className="mt-1">
+                          <select
+                            id="language"
+                            name="language"
+                            value={formValues.language}
+                            onChange={handleInputChange}
+                            className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
+                          >
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="sm:col-span-3">
+                        <label htmlFor="theme" className="block text-sm font-medium text-gray-700">
+                          Theme
+                        </label>
+                        <div className="mt-1">
+                          <select
+                            id="theme"
+                            name="theme"
+                            value={formValues.theme}
+                            onChange={handleInputChange}
+                            className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
+                          >
+                            <option value="light">Light</option>
+                            <option value="system">System Default</option>
+                          </select>
+                          <p className="mt-1 text-xs text-gray-500">
+                            MenuFácil currently only supports a light theme
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notifications Section */}
+                  <div className="pt-6 border-t border-gray-200">
+                    <h2 className="text-lg font-medium text-gray-900 mb-4">Notifications</h2>
+                    
+                    <div className="space-y-4">
+                      <div className="relative flex items-start">
+                        <div className="flex h-5 items-center">
+                          <input
+                            id="notifications.email"
+                            name="notifications.email"
+                            type="checkbox"
+                            checked={formValues.notifications.email}
+                            onChange={handleInputChange}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label htmlFor="notifications.email" className="font-medium text-gray-700">
+                            Email notifications
+                          </label>
+                          <p className="text-gray-500">Get notified about menu views and updates via email</p>
+                        </div>
+                      </div>
+
+                      <div className="relative flex items-start">
+                        <div className="flex h-5 items-center">
+                          <input
+                            id="notifications.push"
+                            name="notifications.push"
+                            type="checkbox"
+                            checked={formValues.notifications.push}
+                            onChange={handleInputChange}
+                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label htmlFor="notifications.push" className="font-medium text-gray-700">
+                            Push notifications
+                          </label>
+                          <p className="text-gray-500">Receive push notifications on your device</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Form Actions */}
+                  <div className="pt-6 border-t border-gray-200 flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Spinner className="mr-2 h-4 w-4" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Save Changes'
                       )}
-                    </div>
+                    </Button>
                   </div>
-
-                  <div className="sm:col-span-4">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      Email Address
-                    </label>
-                    <div className="mt-1">
-                      <input
-                        type="email"
-                        name="email"
-                        id="email"
-                        value={formValues.email}
-                        disabled
-                        className="block w-full rounded-md border border-gray-300 bg-gray-100 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
-                      />
-                      <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Preferences Section */}
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Preferences</h2>
-                
-                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                  <div className="sm:col-span-3">
-                    <label htmlFor="language" className="block text-sm font-medium text-gray-700">
-                      Language
-                    </label>
-                    <div className="mt-1">
-                      <select
-                        id="language"
-                        name="language"
-                        value={formValues.language}
-                        onChange={handleInputChange}
-                        className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
-                      >
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notifications Section */}
-              <div className="pt-6 border-t border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">Notifications</h2>
-                
-                <div className="space-y-4">
-                  <div className="relative flex items-start">
-                    <div className="flex h-5 items-center">
-                      <input
-                        id="notifications.email"
-                        name="notifications.email"
-                        type="checkbox"
-                        checked={formValues.notifications.email}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="notifications.email" className="font-medium text-gray-700">
-                        Email notifications
+                </form>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="security">
+              <Card className="p-6">
+                <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+                <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div className="sm:col-span-4">
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+                        Current Password
                       </label>
-                      <p className="text-gray-500">Get notified about menu views and updates via email</p>
+                      <div className="mt-1">
+                        <input
+                          type="password"
+                          name="currentPassword"
+                          id="currentPassword"
+                          value={passwordValues.currentPassword}
+                          onChange={handlePasswordChange}
+                          className={`block w-full rounded-md border ${
+                            passwordErrors.currentPassword ? 'border-red-300' : 'border-gray-300'
+                          } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
+                        />
+                        {passwordErrors.currentPassword && (
+                          <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="sm:col-span-4">
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+                        New Password
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="password"
+                          name="newPassword"
+                          id="newPassword"
+                          value={passwordValues.newPassword}
+                          onChange={handlePasswordChange}
+                          className={`block w-full rounded-md border ${
+                            passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
+                          } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
+                        />
+                        {passwordErrors.newPassword && (
+                          <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="sm:col-span-4">
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                        Confirm New Password
+                      </label>
+                      <div className="mt-1">
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          id="confirmPassword"
+                          value={passwordValues.confirmPassword}
+                          onChange={handlePasswordChange}
+                          className={`block w-full rounded-md border ${
+                            passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                          } shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2`}
+                        />
+                        {passwordErrors.confirmPassword && (
+                          <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  <div className="relative flex items-start">
-                    <div className="flex h-5 items-center">
-                      <input
-                        id="notifications.push"
-                        name="notifications.push"
-                        type="checkbox"
-                        checked={formValues.notifications.push}
-                        onChange={handleInputChange}
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="notifications.push" className="font-medium text-gray-700">
-                        Push notifications
-                      </label>
-                      <p className="text-gray-500">Receive push notifications on your device</p>
+                  
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={isPwdSubmitting}
+                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    >
+                      {isPwdSubmitting ? (
+                        <>
+                          <Spinner className="mr-2 h-4 w-4" />
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Password'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+                
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">Account Security</h2>
+                  
+                  <div className="bg-yellow-50 p-4 rounded-md">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M8.485 3.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 3.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-yellow-800">Security Notice</h3>
+                        <div className="mt-2 text-sm text-yellow-700">
+                          <p>
+                            For your security, make sure your password:
+                          </p>
+                          <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li>Is at least 8 characters long</li>
+                            <li>Includes a mix of upper and lower case letters</li>
+                            <li>Contains at least one number or special character</li>
+                            <li>Is not a password you use on other sites</li>
+                          </ul>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="pt-6 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-primary-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
