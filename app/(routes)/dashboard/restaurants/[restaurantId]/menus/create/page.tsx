@@ -4,17 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
 import { useForm } from '@/app/hooks/useForm';
-import { validate, combineValidators } from '@/app/utils/validation';
 import { getRestaurant, createMenu } from '@/app/utils/db';
 import Input from '@/app/components/ui/input';
 import Button from '@/app/components/ui/button';
-
-type MenuFormValues = {
-  name: string;
-  description: string;
-  isActive: boolean;
-  isDefault: boolean;
-};
+import { menuSchema, MenuFormValues } from '@/lib/validation/schemas';
+import { createValidationRules } from '@/lib/validation/index';
 
 interface CreateMenuPageProps {
   params: {
@@ -63,11 +57,11 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
     description: '',
     isActive: true,
     isDefault: false,
+    customCss: '',
+    currency: 'USD',
   };
 
-  const validationRules = {
-    name: combineValidators(validate.required),
-  };
+  const validationRules = createValidationRules(menuSchema);
 
   const handleCreateMenu = async (values: MenuFormValues) => {
     if (!user?.id || !restaurant) {
@@ -86,7 +80,7 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
         is_active: values.isActive,
         is_default: values.isDefault,
         template_id: null,
-        custom_css: null
+        custom_css: values.customCss || null
       });
 
       if (newMenu) {
@@ -200,6 +194,34 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
               </div>
             </div>
 
+            <div>
+              <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+                Currency
+              </label>
+              <select
+                id="currency"
+                name="currency"
+                className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                value={values.currency}
+                onChange={handleChange}
+                onBlur={handleBlur}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="MXN">MXN ($)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="JPY">JPY (¥)</option>
+              </select>
+              {touched.currency && errors.currency && (
+                <p className="mt-2 text-sm text-red-600">{errors.currency}</p>
+              )}
+              <p className="mt-1 text-xs text-gray-500">
+                This setting affects how prices are displayed to customers.
+              </p>
+            </div>
+
             <div className="flex items-center">
               <input
                 id="isActive"
@@ -229,6 +251,30 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
               <span className="ml-2 text-xs text-gray-500">
                 (Default menu will be shown to customers when they visit your restaurant page)
               </span>
+            </div>
+
+            <div>
+              <label htmlFor="customCss" className="block text-sm font-medium text-gray-700">
+                Custom CSS (Optional)
+              </label>
+              <div className="mt-1">
+                <textarea
+                  id="customCss"
+                  name="customCss"
+                  rows={5}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm font-mono"
+                  value={values.customCss}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder=".menu-title { color: blue; }"
+                />
+                {touched.customCss && errors.customCss && (
+                  <p className="mt-2 text-sm text-red-600">{errors.customCss}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Add custom CSS to style your menu. This is advanced functionality and optional.
+                </p>
+              </div>
             </div>
           </div>
 

@@ -179,4 +179,51 @@ export const restaurantSchema = z.object({
 /**
  * Type definition derived from restaurant schema
  */
-export type RestaurantFormValues = z.infer<typeof restaurantSchema>; 
+export type RestaurantFormValues = z.infer<typeof restaurantSchema>;
+
+/**
+ * Zod schema for menu form validation
+ * 
+ * This schema validates menu creation and editing forms with the following features:
+ * - Required name field with minimum length validation
+ * - Optional description field with appropriate trimming
+ * - Boolean fields for menu status (isActive, isDefault)
+ * - Optional custom CSS validation
+ * 
+ * Note: When using this schema with the database, remember that the field names
+ * in the schema use camelCase (e.g., isActive) while the database uses
+ * snake_case (e.g., is_active). The form components should handle this mapping.
+ * 
+ * The restaurant_id and template_id fields are not included in this schema as they're
+ * handled separately in the form submission logic.
+ */
+export const menuSchema = z.object({
+  name: z
+    .string({ required_error: 'Menu name is required' })
+    .trim()
+    .min(2, 'Name must be at least 2 characters'),
+  description: z
+    .string()
+    .trim()
+    .optional(),
+  isActive: z
+    .boolean()
+    .default(true),
+  isDefault: z
+    .boolean()
+    .default(false),
+  customCss: z
+    .string()
+    .trim()
+    .optional(),
+  currency: z
+    .string()
+    .trim()
+    .optional()
+    .default('USD'),
+});
+
+/**
+ * Type definition derived from menu schema
+ */
+export type MenuFormValues = z.infer<typeof menuSchema>; 
