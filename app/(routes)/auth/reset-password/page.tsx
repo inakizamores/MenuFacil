@@ -4,15 +4,12 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../context/auth-context';
-import { useForm } from '../../../hooks/useForm';
-import { validate, combineValidators } from '../../../utils/validation';
+import { useZodForm } from '../../../hooks/useZodForm';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
-
-type ResetPasswordFormValues = {
-  password: string;
-  confirmPassword: string;
-};
+import { resetPasswordSchema } from '@/lib/validation/schemas';
+import type { ResetPasswordFormValues } from '@/lib/validation/schemas';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/app/components/ui/form';
 
 export default function ResetPasswordPage() {
   const { resetUserPassword } = useAuth();
@@ -21,19 +18,14 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Define initial values
-  const initialValues: ResetPasswordFormValues = {
-    password: '',
-    confirmPassword: '',
-  };
-
-  // Define password match validation function
-  const validatePasswordMatch = (value: string, formValues: ResetPasswordFormValues): string | null => {
-    if (value !== formValues.password) {
-      return 'Passwords do not match';
-    }
-    return null;
-  };
+  // Use Zod form with schema validation
+  const form = useZodForm({
+    schema: resetPasswordSchema,
+    defaultValues: {
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
   // Define reset password handler
   const handleResetPassword = async (values: ResetPasswordFormValues) => {
@@ -50,23 +42,6 @@ export default function ResetPasswordPage() {
       setServerError(error.message || 'Failed to reset password. Please try again.');
     }
   };
-
-  // Define validation rules
-  const validationRules = {
-    password: combineValidators(validate.required, validate.password),
-    confirmPassword: combineValidators(validate.required, validatePasswordMatch),
-  };
-
-  // Initialize form
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm<ResetPasswordFormValues>(initialValues, validationRules, handleResetPassword);
 
   useEffect(() => {
     // Extract token from URL on client side
@@ -119,42 +94,57 @@ export default function ResetPasswordPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <Input
-              label="New password"
+          <Form form={form} onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-6">
+            <FormField
+              control={form.control}
               name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={values.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.password}
-              touched={touched.password}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="password"
+                      type="password" 
+                      autoComplete="new-password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
-            <Input
-              label="Confirm new password"
+            <FormField
+              control={form.control}
               name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={values.confirmPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.confirmPassword}
-              touched={touched.confirmPassword}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm new password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="confirmPassword"
+                      type="password" 
+                      autoComplete="new-password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <Button
               type="submit"
               fullWidth
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
+              isLoading={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting}
             >
               Reset password
             </Button>
-          </form>
+          </Form>
         </div>
       </div>
     </div>

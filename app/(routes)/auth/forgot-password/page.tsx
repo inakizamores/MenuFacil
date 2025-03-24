@@ -2,25 +2,26 @@
 
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
-import { useForm } from '../../../hooks/useForm';
+import { useZodForm } from '../../../hooks/useZodForm';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
 import { useState } from 'react';
 import { forgotPasswordSchema } from '@/lib/validation/schemas';
-import { createValidationRules } from '@/lib/validation/index';
 import type { ForgotPasswordFormValues } from '@/lib/validation/schemas';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const initialValues: ForgotPasswordFormValues = {
-    email: '',
-  };
-
-  // Create validation rules from Zod schema
-  const validationRules = createValidationRules(forgotPasswordSchema);
+  // Use Zod form with schema validation
+  const form = useZodForm({
+    schema: forgotPasswordSchema,
+    defaultValues: {
+      email: '',
+    },
+  });
 
   const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
     setServerError(null);
@@ -32,16 +33,6 @@ export default function ForgotPasswordPage() {
       setServerError(error.message || 'Failed to send reset link. Please try again.');
     }
   };
-
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm<ForgotPasswordFormValues>(initialValues, validationRules, handleForgotPassword);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -68,37 +59,42 @@ export default function ForgotPasswordPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <Input
-              label="Email address"
+          <Form form={form} onSubmit={form.handleSubmit(handleForgotPassword)} className="space-y-6">
+            <FormField
+              control={form.control}
               name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={values.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.email}
-              touched={touched.email}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="email"
+                      type="email" 
+                      autoComplete="email"
+                      placeholder="your@email.com"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
-            <div>
-              <Button
-                type="submit"
-                fullWidth
-                isLoading={isSubmitting}
-                disabled={isSubmitting}
-              >
-                Send reset link
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              fullWidth
+              isLoading={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting}
+            >
+              Send reset link
+            </Button>
 
             <div className="text-center text-sm">
               <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
                 Back to login
               </Link>
             </div>
-          </form>
+          </Form>
         </div>
       </div>
     </div>

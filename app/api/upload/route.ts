@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
-
-export const runtime = 'edge';
+import { createServerClient } from '@supabase/ssr';
+import { Database } from '@/types/database.types';
 
 export async function POST(request: NextRequest) {
   try {
     // Create a Supabase client
-    const supabase = await createServerClient();
+    const cookieStore = cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
     
     // Get the file from the request
     const formData = await request.formData();

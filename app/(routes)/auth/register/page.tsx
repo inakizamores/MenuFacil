@@ -4,21 +4,18 @@ import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
 import { useZodForm } from '../../../hooks/useZodForm';
 import Button from '../../../components/ui/button';
+import Input from '../../../components/ui/input';
 import { useState } from 'react';
 import { registerSchema } from '@/lib/validation/schemas';
 import type { RegisterFormValues } from '@/lib/validation/schemas';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
   // Use Zod form with schema validation
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-  } = useZodForm({
+  const form = useZodForm({
     schema: registerSchema,
     defaultValues: {
       name: '',
@@ -64,118 +61,128 @@ export default function RegisterPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit(handleRegister)}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  type="text"
-                  autoComplete="name"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.name ? 'border-red-500' : ''
-                  }`}
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
-                )}
-              </div>
-            </div>
+          <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="name"
+                      type="text"
+                      autoComplete="name"
+                      placeholder="John Doe"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.email ? 'border-red-500' : ''
-                  }`}
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="email"
+                      type="email" 
+                      autoComplete="email"
+                      placeholder="your@email.com"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="new-password"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.password ? 'border-red-500' : ''
-                  }`}
-                  {...register('password')}
-                />
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="password"
+                      type="password" 
+                      autoComplete="new-password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.confirmPassword ? 'border-red-500' : ''
-                  }`}
-                  {...register('confirmPassword')}
-                />
-                {errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword.message}</p>
-                )}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="confirmPassword"
+                      type="password" 
+                      autoComplete="new-password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div className="flex items-center">
-              <input
-                id="terms"
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                {...register('terms')}
-              />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
-                I agree to the{' '}
-                <Link href="/terms" className="font-medium text-primary-600 hover:text-primary-500">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="font-medium text-primary-600 hover:text-primary-500">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
-            {errors.terms && (
-              <div className="mt-1 text-sm text-red-600">{errors.terms.message}</div>
-            )}
+            <FormField
+              control={form.control}
+              name="terms"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-y-0 space-x-2">
+                  <FormControl>
+                    <input
+                      type="checkbox"
+                      id="terms" 
+                      className="h-4 w-4 mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      checked={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="m-0">
+                      I agree to the{' '}
+                      <Link href="/terms" className="font-medium text-primary-600 hover:text-primary-500">
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" className="font-medium text-primary-600 hover:text-primary-500">
+                        Privacy Policy
+                      </Link>
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
 
             <Button
               type="submit"
               fullWidth
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
+              isLoading={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting}
             >
               Create account
             </Button>
-          </form>
+          </Form>
         </div>
       </div>
     </div>

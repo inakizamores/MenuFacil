@@ -1,13 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { Database } from '@/types/database.types';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = await createServerClient();
+    // Create a supabase client
+    const cookieStore = cookies();
+    const supabase = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
     
     // Get the user making the request
     const { data: { session } } = await supabase.auth.getSession();

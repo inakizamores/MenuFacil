@@ -8,18 +8,14 @@ import Button from '../../../components/ui/button';
 import { useState } from 'react';
 import { loginSchema } from '@/lib/validation/schemas';
 import type { LoginFormValues } from '@/lib/validation/schemas';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
   // Use Zod form with schema validation
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    watch,
-  } = useZodForm({
+  const form = useZodForm({
     schema: loginSchema,
     defaultValues: {
       email: '',
@@ -62,59 +58,65 @@ export default function LoginPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit(handleLogin)}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.email ? 'border-red-500' : ''
-                  }`}
-                  {...register('email')}
-                />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
-                )}
-              </div>
-            </div>
+          <Form form={form} onSubmit={form.handleSubmit(handleLogin)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email address</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="email"
+                      type="email" 
+                      autoComplete="email"
+                      placeholder="your@email.com"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
-                    errors.password ? 'border-red-500' : ''
-                  }`}
-                  {...register('password')}
-                />
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
-                )}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input 
+                      id="password"
+                      type="password" 
+                      autoComplete="current-password"
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="rememberMe"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  {...register('rememberMe')}
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-y-0 space-x-2">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        id="rememberMe" 
+                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        checked={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="m-0">Remember me</FormLabel>
+                  </FormItem>
+                )}
+              />
 
               <div className="text-sm">
                 <Link href="/auth/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
@@ -126,12 +128,12 @@ export default function LoginPage() {
             <Button
               type="submit"
               fullWidth
-              isLoading={isSubmitting}
-              disabled={isSubmitting}
+              isLoading={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitting}
             >
               Sign in
             </Button>
-          </form>
+          </Form>
         </div>
       </div>
     </div>
