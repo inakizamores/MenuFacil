@@ -20,6 +20,9 @@ import { QRCode, QRCodeDesign } from '@/types/qrCode';
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { v4 as uuidv4 } from 'uuid';
+// Import the QRCodeFormValues but don't use it in the function signature for now
+// to avoid TypeScript errors during deployment
+import { QRCodeFormValues } from '@/lib/validation/schemas';
 
 // Interface for Firebase/legacy params
 interface CreateQRCodeParams {
@@ -49,18 +52,22 @@ interface QRCodeData {
 
 /**
  * Creates a new QR code in the database
+ * Note: We've temporarily simplified this function to only handle the legacy parameter format
+ * to resolve deployment issues with TypeScript. Form validation with Zod will be added back
+ * in a future update once type compatibility issues are resolved.
  */
-export async function createQRCode({ menuId, name, url, design, restaurantId }: CreateQRCodeParams) {
+export async function createQRCode(params: CreateQRCodeParams) {
   try {
     const supabase = await createServerClient();
     
-    const qrCode = {
+    // Only handle the legacy format to avoid TypeScript errors
+    const qrCodeData = {
       id: uuidv4(),
-      menu_id: menuId,
-      restaurant_id: restaurantId,
-      name,
-      url,
-      design: design || {
+      menu_id: params.menuId,
+      restaurant_id: params.restaurantId,
+      name: params.name,
+      url: params.url,
+      design: params.design || {
         foregroundColor: '#000000',
         backgroundColor: '#FFFFFF',
         margin: 1
@@ -72,7 +79,7 @@ export async function createQRCode({ menuId, name, url, design, restaurantId }: 
 
     const { data, error } = await supabase
       .from('qr_codes')
-      .insert(qrCode)
+      .insert(qrCodeData)
       .select()
       .single();
 
@@ -81,7 +88,8 @@ export async function createQRCode({ menuId, name, url, design, restaurantId }: 
       throw new Error(`Failed to create QR code: ${error.message}`);
     }
 
-    revalidatePath(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/qr-codes`);
+    revalidatePath(`/dashboard/restaurants/${params.restaurantId}/menus/${params.menuId}/qr-codes`);
+    
     return data;
   } catch (error: any) {
     console.error('Error in createQRCode:', error);

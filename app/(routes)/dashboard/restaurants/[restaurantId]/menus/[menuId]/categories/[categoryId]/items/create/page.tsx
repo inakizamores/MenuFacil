@@ -4,7 +4,6 @@ import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useForm } from '@/hooks/useForm';
-import { validate, combineValidators } from '@/lib/validation';
 import { getCategory } from '@/actions/categories';
 import { createMenuItem } from '@/actions/menuItems';
 import { saveItemVariants } from '@/actions/menuItemVariants';
@@ -17,14 +16,9 @@ import { PriceInput } from '@/components/ui/PriceInput';
 import { Spinner } from '@/components/ui/Spinner';
 import VariantsManager from '@/app/components/menu/VariantsManager';
 import { MenuItemVariant } from '@/app/types/database';
-
-interface MenuItemFormValues {
-  name: string;
-  description: string;
-  price: number;
-  isAvailable: boolean;
-  image?: File | null;
-}
+import { menuItemSchema, type MenuItemFormValues } from '@/lib/validation/schemas';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useZodForm } from '@/app/hooks/useZodForm';
 
 const CreateMenuItemPage: FC = () => {
   const router = useRouter();
@@ -52,26 +46,40 @@ const CreateMenuItemPage: FC = () => {
   const menuId = pathParts[menuIdIndex];
   const categoryId = pathParts[categoryIdIndex];
   
-  // Validation rules
-  const validationRules = {
-    name: [validate.required('Item name is required')],
-    price: [validate.required('Price is required')]
-  };
-
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldValue } = 
-    useForm<MenuItemFormValues>({
-      initialValues: {
-        name: '',
-        description: '',
-        price: 0,
-        image: undefined,
-        isAvailable: true,
+  // Use Zod form with schema validation
+  const {
+    formState: { errors, touchedFields, isSubmitting: formSubmitting },
+    handleSubmit,
+    setValue,
+    register,
+    watch,
+  } = useZodForm({
+    schema: menuItemSchema,
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      image: null,
+      isAvailable: true,
+      isPopular: false,
+      preparationTime: undefined,
+      ingredients: [],
+      allergens: [],
+      dietaryOptions: [],
+      nutritionalInfo: {
+        calories: undefined,
+        protein: undefined,
+        carbs: undefined,
+        fat: undefined,
+        sugar: undefined,
+        fiber: undefined,
+        sodium: undefined,
       },
-      validationRules,
-      onSubmit: async (formValues) => {
-        await handleCreateMenuItem(formValues);
-      }
-    });
+    },
+  });
+
+  // Watch form values
+  const formValues = watch();
 
   // Fetch category details
   useEffect(() => {
@@ -136,6 +144,9 @@ const CreateMenuItemPage: FC = () => {
     setUploadProgress(0);
     
     try {
+      // Set image in form
+      setValue('image', file);
+      
       // Create a unique file name
       const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-').toLowerCase()}`;
       
@@ -168,7 +179,6 @@ const CreateMenuItemPage: FC = () => {
       }
       
       const data = await response.json();
-      setFieldValue('image', file);
       setUploadProgress(100);
       
       // Reset upload state after a delay
@@ -186,7 +196,7 @@ const CreateMenuItemPage: FC = () => {
   };
 
   // Handle menu item creation
-  const handleCreateMenuItem = async (values: MenuItemFormValues) => {
+  const onSubmit = async (values: MenuItemFormValues) => {
     try {
       setIsSubmitting(true);
       
@@ -198,11 +208,15 @@ const CreateMenuItemPage: FC = () => {
       // Create the menu item
       const result = await createMenuItem({
         name: values.name,
-        description: values.description,
+        description: values.description || '',
         price: values.price,
         isAvailable: values.isAvailable,
+        is_popular: values.isPopular,
+        preparation_time: values.preparationTime,
         categoryId,
         image: values.image,
+        // Optional fields that might be added later
+        nutrition_info: values.nutritionalInfo ? JSON.stringify(values.nutritionalInfo) : null,
       });
 
       if (result.error) {
@@ -279,7 +293,7 @@ const CreateMenuItemPage: FC = () => {
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Basic Information */}
           <div className="space-y-4">
@@ -291,12 +305,9 @@ const CreateMenuItemPage: FC = () => {
               </label>
               <Input
                 id="name"
-                name="name"
-                value={values.name}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                {...register('name')}
                 placeholder="e.g., Margherita Pizza"
-                error={touched.name && errors.name ? errors.name : undefined}
+                error={errors.name?.message}
               />
             </div>
             
@@ -306,10 +317,7 @@ const CreateMenuItemPage: FC = () => {
               </label>
               <Textarea
                 id="description"
-                name="description"
-                value={values.description}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                {...register('description')}
                 placeholder="Describe the menu item..."
                 rows={3}
               />
@@ -322,25 +330,49 @@ const CreateMenuItemPage: FC = () => {
               <PriceInput
                 id="price"
                 name="price"
-                value={values.price}
-                onChange={(value) => setFieldValue('price', value)}
-                onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
-                error={touched.price && errors.price ? errors.price : undefined}
+                value={formValues.price}
+                onChange={(value) => setValue('price', value)}
+                error={errors.price?.message}
               />
             </div>
             
-            <div className="flex space-x-4">
+            <div className="flex flex-col space-y-2">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="isAvailable"
                   name="isAvailable"
-                  checked={values.isAvailable}
-                  onChange={(e) => setFieldValue('isAvailable', e.target.checked)}
+                  checked={formValues.isAvailable}
+                  onChange={(e) => setValue('isAvailable', e.target.checked)}
                 />
                 <label htmlFor="isAvailable" className="text-sm font-medium">
                   Item is available for ordering
                 </label>
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isPopular"
+                  name="isPopular"
+                  checked={formValues.isPopular}
+                  onChange={(e) => setValue('isPopular', e.target.checked)}
+                />
+                <label htmlFor="isPopular" className="text-sm font-medium">
+                  Mark as popular item
+                </label>
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="preparationTime" className="block text-sm font-medium mb-1">
+                Preparation Time (minutes)
+              </label>
+              <Input
+                id="preparationTime"
+                type="number"
+                {...register('preparationTime', { valueAsNumber: true })}
+                placeholder="e.g., 15"
+                error={errors.preparationTime?.message}
+              />
             </div>
           </div>
           
@@ -359,9 +391,14 @@ const CreateMenuItemPage: FC = () => {
                 isLoading={isUploading}
                 progress={uploadProgress}
               />
-              {values.image && (
+              {formValues.image && (
                 <p className="mt-1 text-xs text-gray-500">
                   Image uploaded successfully!
+                </p>
+              )}
+              {errors.image && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.image.message}
                 </p>
               )}
             </div>

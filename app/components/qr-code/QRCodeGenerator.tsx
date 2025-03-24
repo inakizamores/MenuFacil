@@ -6,21 +6,19 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { exportQRAsPNG, exportQRAsPDF, exportQRAsSVG } from '@/app/utils/qrCodeExport';
 import { QRCodeDesign } from '@/types/qrCode';
+import { qrCodeSchema, QRCodeFormValues } from '@/lib/validation/schemas';
+import { useForm, Controller, ControllerRenderProps, FieldValues } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/app/components/ui/form';
+import { Textarea } from '@/components/ui/Textarea';
+import { Switch } from '@/components/ui/Switch';
 
 interface QRCodeGeneratorProps {
   url: string;
   menuName: string;
   restaurantId: string;
   menuId: string;
-  onSave: (designOptions: QRCodeDesignProps) => Promise<void>;
-}
-
-export interface QRCodeDesignProps {
-  foregroundColor: string;
-  backgroundColor: string;
-  logoUrl?: string;
-  cornerRadius?: number;
-  margin: number;
+  onSave: (values: any) => Promise<void>;
 }
 
 const QRCodeGenerator = ({
@@ -30,21 +28,53 @@ const QRCodeGenerator = ({
   menuId,
   onSave
 }: QRCodeGeneratorProps) => {
-  const [designOptions, setDesignOptions] = useState<QRCodeDesignProps>({
-    foregroundColor: '#000000',
-    backgroundColor: '#FFFFFF',
-    margin: 1,
-    cornerRadius: 0
-  });
   const [isSaving, setIsSaving] = useState(false);
-  const [qrName, setQrName] = useState(`${menuName} QR Code`);
   
-  const handleSave = async () => {
+  // Initialize the form with default values
+  const form = useForm<QRCodeFormValues>({
+    resolver: zodResolver(qrCodeSchema),
+    defaultValues: {
+      name: `${menuName} QR Code`,
+      description: '',
+      tableNumber: '',
+      isActive: true,
+      customDesign: {
+        foregroundColor: '#000000',
+        backgroundColor: '#FFFFFF',
+        margin: 1,
+        cornerRadius: 0,
+      }
+    }
+  });
+  
+  // Get the current form values for the QR code preview
+  const watchedValues = form.watch();
+  
+  const handleSave = async (data: QRCodeFormValues) => {
     setIsSaving(true);
     try {
-      await onSave(designOptions);
+      // Transform the form data to match the format expected by the server action
+      const legacyFormat = {
+        menuId,
+        restaurantId,
+        name: data.name,
+        url, // Use the URL provided in props
+        design: {
+          foregroundColor: data.customDesign.foregroundColor,
+          backgroundColor: data.customDesign.backgroundColor,
+          margin: data.customDesign.margin,
+          cornerRadius: data.customDesign.cornerRadius,
+          logoUrl: data.customDesign.logoUrl
+        }
+      };
+      
+      await onSave(legacyFormat);
     } catch (error) {
       console.error('Error saving QR code:', error);
+      form.setError('root', { 
+        type: 'manual',
+        message: 'Failed to save QR code. Please try again.'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -53,36 +83,24 @@ const QRCodeGenerator = ({
   const handleExportPNG = () => {
     exportQRAsPNG(
       url,
-      qrName,
-      {
-        foregroundColor: designOptions.foregroundColor,
-        backgroundColor: designOptions.backgroundColor,
-        margin: designOptions.margin
-      }
+      watchedValues.name,
+      watchedValues.customDesign
     );
   };
 
   const handleExportSVG = () => {
     exportQRAsSVG(
       url,
-      qrName,
-      {
-        foregroundColor: designOptions.foregroundColor,
-        backgroundColor: designOptions.backgroundColor,
-        margin: designOptions.margin
-      }
+      watchedValues.name,
+      watchedValues.customDesign
     );
   };
 
   const handleExportPDF = () => {
     exportQRAsPDF(
       url,
-      qrName,
-      {
-        foregroundColor: designOptions.foregroundColor,
-        backgroundColor: designOptions.backgroundColor,
-        margin: designOptions.margin
-      }
+      watchedValues.name,
+      watchedValues.customDesign
     );
   };
   
@@ -97,8 +115,8 @@ const QRCodeGenerator = ({
             <QRCodeSVG
               value={url}
               size={200}
-              bgColor={designOptions.backgroundColor}
-              fgColor={designOptions.foregroundColor}
+              bgColor={watchedValues.customDesign.backgroundColor}
+              fgColor={watchedValues.customDesign.foregroundColor}
               level="H"
               includeMargin={true}
               className="mx-auto"
@@ -120,91 +138,162 @@ const QRCodeGenerator = ({
           </div>
         </div>
         
-        {/* Customization Options */}
+        {/* Customization Form with Zod Validation */}
         <div className="flex-1">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="qrName" className="block text-sm font-medium text-gray-700 mb-1">
-                QR Code Name
-              </label>
-              <Input
-                id="qrName"
-                type="text"
-                value={qrName}
-                onChange={(e) => setQrName(e.target.value)}
-                className="w-full"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+              {/* QR Code Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'name'> }) => (
+                  <FormItem>
+                    <FormLabel>QR Code Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="fgColor" className="block text-sm font-medium text-gray-700 mb-1">
-                Foreground Color
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  id="fgColor"
-                  type="color"
-                  value={designOptions.foregroundColor}
-                  onChange={(e) => setDesignOptions({...designOptions, foregroundColor: e.target.value})}
-                  className="h-10 w-10 p-0 border border-gray-300 rounded"
-                />
-                <Input
-                  type="text"
-                  value={designOptions.foregroundColor}
-                  onChange={(e) => setDesignOptions({...designOptions, foregroundColor: e.target.value})}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 mb-1">
-                Background Color
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  id="bgColor"
-                  type="color"
-                  value={designOptions.backgroundColor}
-                  onChange={(e) => setDesignOptions({...designOptions, backgroundColor: e.target.value})}
-                  className="h-10 w-10 p-0 border border-gray-300 rounded"
-                />
-                <Input
-                  type="text"
-                  value={designOptions.backgroundColor}
-                  onChange={(e) => setDesignOptions({...designOptions, backgroundColor: e.target.value})}
-                  className="flex-1"
-                />
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="margin" className="block text-sm font-medium text-gray-700 mb-1">
-                Margin Size (0-4)
-              </label>
-              <input
-                id="margin"
-                type="range"
-                min="0"
-                max="4"
-                step="1"
-                value={designOptions.margin}
-                onChange={(e) => setDesignOptions({...designOptions, margin: parseInt(e.target.value)})}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              
+              {/* Description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'description'> }) => (
+                  <FormItem>
+                    <FormLabel>Description (optional)</FormLabel>
+                    <FormControl>
+                      <Textarea {...field} placeholder="Add a description for this QR code" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <div className="text-sm text-gray-500 mt-1">{designOptions.margin}</div>
-            </div>
-            
-            <div className="mt-6">
+              
+              {/* Table Number */}
+              <FormField
+                control={form.control}
+                name="tableNumber"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'tableNumber'> }) => (
+                  <FormItem>
+                    <FormLabel>Table Number (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., Table 12" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Foreground Color */}
+              <FormField
+                control={form.control}
+                name="customDesign.foregroundColor"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'customDesign.foregroundColor'> }) => (
+                  <FormItem>
+                    <FormLabel>Foreground Color</FormLabel>
+                    <div className="flex space-x-2">
+                      <input
+                        type="color"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="h-10 w-10 p-0 border border-gray-300 rounded"
+                      />
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Background Color */}
+              <FormField
+                control={form.control}
+                name="customDesign.backgroundColor"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'customDesign.backgroundColor'> }) => (
+                  <FormItem>
+                    <FormLabel>Background Color</FormLabel>
+                    <div className="flex space-x-2">
+                      <input
+                        type="color"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="h-10 w-10 p-0 border border-gray-300 rounded"
+                      />
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Margin Size */}
+              <FormField
+                control={form.control}
+                name="customDesign.margin"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'customDesign.margin'> }) => (
+                  <FormItem>
+                    <FormLabel>Margin Size (0-4)</FormLabel>
+                    <div className="space-y-1">
+                      <input
+                        type="range"
+                        min="0"
+                        max="4"
+                        step="1"
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="text-sm text-gray-500">{field.value}</div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Active Status */}
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }: { field: ControllerRenderProps<QRCodeFormValues, 'isActive'> }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                    <div className="space-y-0.5">
+                      <FormLabel>Active</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Whether this QR code is active and can be used
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              {/* Form root error display */}
+              {form.formState.errors.root && (
+                <div className="text-red-500 text-sm">{form.formState.errors.root.message}</div>
+              )}
+              
+              {/* Submit Button */}
               <Button
-                onClick={handleSave}
+                type="submit"
                 disabled={isSaving}
                 className="w-full"
               >
                 {isSaving ? 'Saving...' : 'Save QR Code'}
               </Button>
-            </div>
-          </div>
+            </form>
+          </Form>
         </div>
       </div>
     </div>

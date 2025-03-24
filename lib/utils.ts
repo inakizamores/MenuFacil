@@ -1,11 +1,14 @@
-import { ClassValue, clsx } from 'clsx';
+import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 /**
- * Combines multiple class names into a single string, merging Tailwind classes intelligently
+ * Utility function to merge class names with Tailwind classes
  * 
- * @param inputs - Class values to be merged (strings, objects, arrays)
- * @returns A single string of merged class names
+ * This function combines clsx and tailwind-merge to allow for conditional
+ * class names and proper handling of Tailwind CSS class conflicts.
+ * 
+ * @example
+ * cn('px-2 py-1', condition && 'bg-blue-500', 'text-white')
  */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

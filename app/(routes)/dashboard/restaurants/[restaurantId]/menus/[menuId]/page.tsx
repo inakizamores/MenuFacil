@@ -7,7 +7,8 @@ import { getMenu, getMenuCategories, createCategory, deleteCategory, updateMenu,
 import { MenuCategory, Menu, QRCode } from '@/app/types/database';
 import Button from '@/app/components/ui/button';
 import Input from '@/app/components/ui/input';
-import QRCodeGenerator, { QRCodeDesignProps } from '@/app/components/qr-code/QRCodeGenerator';
+import QRCodeGenerator from '@/app/components/qr-code/QRCodeGenerator';
+import { QRCodeFormValues } from '@/lib/validation/schemas';
 
 // Components
 const CategoryCard = ({ 
@@ -281,23 +282,20 @@ const MenuPublishPanel = ({
     }
   };
   
-  const handleSaveQRCode = async (designOptions: QRCodeDesignProps) => {
+  const handleSaveQRCode = async (formValues: QRCodeFormValues) => {
     try {
       await createQRCode({
-        restaurant_id: restaurantId as `${string}-${string}-${string}-${string}-${string}`,
-        menu_id: menu.id as `${string}-${string}-${string}-${string}-${string}`,
-        name: `${menu.name} QR Code`,
-        description: `QR Code for ${menu.name}`,
+        menuId: menu.id as string,
+        restaurantId: restaurantId,
+        name: formValues.name,
         url: menuPublicUrl,
-        custom_design: {
-          foregroundColor: designOptions.foregroundColor,
-          backgroundColor: designOptions.backgroundColor,
-          margin: designOptions.margin,
-          cornerRadius: designOptions.cornerRadius || 0
-        },
-        is_active: true,
-        image_url: null,
-        table_number: null
+        design: {
+          foregroundColor: formValues.customDesign.foregroundColor,
+          backgroundColor: formValues.customDesign.backgroundColor,
+          margin: formValues.customDesign.margin,
+          cornerRadius: formValues.customDesign.cornerRadius || 0,
+          logoUrl: formValues.customDesign.logoUrl
+        }
       });
       
       // Reload QR codes
