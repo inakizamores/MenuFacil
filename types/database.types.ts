@@ -12,253 +12,225 @@ export interface Database {
       profiles: {
         Row: {
           id: string
+          created_at: string
+          updated_at: string
           full_name: string | null
           avatar_url: string | null
-          billing_address: Json | null
-          updated_at: string | null
-          created_at: string | null
+          role: 'system_admin' | 'restaurant_owner' | 'restaurant_staff'
+          parent_user_id: string | null
+          linked_restaurant_id: string | null
         }
         Insert: {
           id: string
+          created_at?: string
+          updated_at?: string
           full_name?: string | null
           avatar_url?: string | null
-          billing_address?: Json | null
-          updated_at?: string | null
-          created_at?: string | null
+          role?: 'system_admin' | 'restaurant_owner' | 'restaurant_staff'
+          parent_user_id?: string | null
+          linked_restaurant_id?: string | null
         }
         Update: {
           id?: string
+          created_at?: string
+          updated_at?: string
           full_name?: string | null
           avatar_url?: string | null
-          billing_address?: Json | null
-          updated_at?: string | null
-          created_at?: string | null
+          role?: 'system_admin' | 'restaurant_owner' | 'restaurant_staff'
+          parent_user_id?: string | null
+          linked_restaurant_id?: string | null
         }
       }
       restaurants: {
         Row: {
           id: string
+          created_at: string
+          updated_at: string
           name: string
           description: string | null
-          logo_url: string | null
-          primary_color: string | null
-          secondary_color: string | null
           address: string | null
-          city: string | null
-          state: string | null
-          postal_code: string | null
-          country: string | null
           phone: string | null
-          email: string | null
-          website: string | null
-          social_media: Json | null
-          business_hours: Json | null
           owner_id: string
-          is_active: boolean | null
-          updated_at: string | null
-          created_at: string | null
+          logo_url: string | null
+          is_active: boolean
         }
         Insert: {
           id?: string
+          created_at?: string
+          updated_at?: string
           name: string
           description?: string | null
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
           address?: string | null
-          city?: string | null
-          state?: string | null
-          postal_code?: string | null
-          country?: string | null
           phone?: string | null
-          email?: string | null
-          website?: string | null
-          social_media?: Json | null
-          business_hours?: Json | null
           owner_id: string
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          logo_url?: string | null
+          is_active?: boolean
         }
         Update: {
           id?: string
+          created_at?: string
+          updated_at?: string
           name?: string
           description?: string | null
-          logo_url?: string | null
-          primary_color?: string | null
-          secondary_color?: string | null
           address?: string | null
-          city?: string | null
-          state?: string | null
-          postal_code?: string | null
-          country?: string | null
           phone?: string | null
-          email?: string | null
-          website?: string | null
-          social_media?: Json | null
-          business_hours?: Json | null
           owner_id?: string
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          logo_url?: string | null
+          is_active?: boolean
+        }
+      }
+      restaurant_staff: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          restaurant_id: string
+          role: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          restaurant_id: string
+          role: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          restaurant_id?: string
+          role?: string
         }
       }
       restaurant_members: {
         Row: {
           id: string
+          created_at: string
+          updated_at: string
           restaurant_id: string
           user_id: string
-          role: Database['public']['Enums']['team_role']
-          is_active: boolean | null
-          updated_at: string | null
-          created_at: string | null
+          role: string
         }
         Insert: {
           id?: string
+          created_at?: string
+          updated_at?: string
           restaurant_id: string
           user_id: string
-          role?: Database['public']['Enums']['team_role']
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          role: string
         }
         Update: {
           id?: string
+          created_at?: string
+          updated_at?: string
           restaurant_id?: string
           user_id?: string
-          role?: Database['public']['Enums']['team_role']
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          role?: string
         }
       }
       menus: {
         Row: {
           id: string
-          restaurant_id: string
+          created_at: string
+          updated_at: string
           name: string
           description: string | null
-          is_active: boolean | null
-          is_default: boolean | null
-          template_id: string | null
-          custom_css: string | null
-          updated_at: string | null
-          created_at: string | null
+          restaurant_id: string
+          is_published: boolean
+          published_url: string | null
+          qr_code_url: string | null
         }
         Insert: {
           id?: string
-          restaurant_id: string
+          created_at?: string
+          updated_at?: string
           name: string
           description?: string | null
-          is_active?: boolean | null
-          is_default?: boolean | null
-          template_id?: string | null
-          custom_css?: string | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id: string
+          is_published?: boolean
+          published_url?: string | null
+          qr_code_url?: string | null
         }
         Update: {
           id?: string
-          restaurant_id?: string
+          created_at?: string
+          updated_at?: string
           name?: string
           description?: string | null
-          is_active?: boolean | null
-          is_default?: boolean | null
-          template_id?: string | null
-          custom_css?: string | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id?: string
+          is_published?: boolean
+          published_url?: string | null
+          qr_code_url?: string | null
         }
       }
       menu_categories: {
         Row: {
           id: string
-          menu_id: string
+          created_at: string
+          updated_at: string
           name: string
           description: string | null
-          image_url: string | null
-          sort_order: number
-          is_active: boolean | null
-          updated_at: string | null
-          created_at: string | null
+          restaurant_id: string
+          display_order: number
         }
         Insert: {
           id?: string
-          menu_id: string
+          created_at?: string
+          updated_at?: string
           name: string
           description?: string | null
-          image_url?: string | null
-          sort_order?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id: string
+          display_order?: number
         }
         Update: {
           id?: string
-          menu_id?: string
+          created_at?: string
+          updated_at?: string
           name?: string
           description?: string | null
-          image_url?: string | null
-          sort_order?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id?: string
+          display_order?: number
         }
       }
       menu_items: {
         Row: {
           id: string
-          category_id: string
+          created_at: string
+          updated_at: string
           name: string
           description: string | null
           price: number
-          discounted_price: number | null
           image_url: string | null
-          ingredients: string[] | null
-          allergens: string[] | null
-          nutritional_info: Json | null
-          dietary_options: string[] | null
-          preparation_time: number | null
-          sort_order: number
-          is_active: boolean | null
-          updated_at: string | null
-          created_at: string | null
+          restaurant_id: string
+          is_available: boolean
+          category_id: string | null
+          display_order: number
         }
         Insert: {
           id?: string
-          category_id: string
+          created_at?: string
+          updated_at?: string
           name: string
           description?: string | null
           price: number
-          discounted_price?: number | null
           image_url?: string | null
-          ingredients?: string[] | null
-          allergens?: string[] | null
-          nutritional_info?: Json | null
-          dietary_options?: string[] | null
-          preparation_time?: number | null
-          sort_order?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id: string
+          is_available?: boolean
+          category_id?: string | null
+          display_order?: number
         }
         Update: {
           id?: string
-          category_id?: string
+          created_at?: string
+          updated_at?: string
           name?: string
           description?: string | null
           price?: number
-          discounted_price?: number | null
           image_url?: string | null
-          ingredients?: string[] | null
-          allergens?: string[] | null
-          nutritional_info?: Json | null
-          dietary_options?: string[] | null
-          preparation_time?: number | null
-          sort_order?: number
-          is_active?: boolean | null
-          updated_at?: string | null
-          created_at?: string | null
+          restaurant_id?: string
+          is_available?: boolean
+          category_id?: string | null
+          display_order?: number
         }
       }
       item_variants: {
@@ -483,7 +455,7 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
-      team_role: 'owner' | 'admin' | 'editor' | 'viewer'
+      system_role: 'system_admin' | 'restaurant_owner' | 'restaurant_staff'
       subscription_status: 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'unpaid'
     }
     CompositeTypes: {

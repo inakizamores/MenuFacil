@@ -931,3 +931,79 @@ All necessary environment variables have been configured in Vercel:
 2. Set up proper error monitoring and logging for production
 3. Implement remaining authentication improvements (loading states, remember-me functionality)
 4. Complete comprehensive cross-browser and device testing
+
+## Project Status
+The MenuFácil project is currently in active development. The backend is mostly functional, and we're implementing and refining frontend features.
+
+## Recently Completed Features
+- Implemented comprehensive role-based authentication system with separate dashboards for administrators, restaurant owners, and staff
+- Added user role management with role-specific permissions and access control
+- Created dashboard interfaces for all three user roles with appropriate functionality
+- Implemented staff management for restaurant owners to add and remove staff members
+- Fixed Supabase environment variables in Vercel
+- Added proper Supabase database typing for improved type safety
+- Updated Supabase authentication to modern @supabase/ssr package
+- Fixed security vulnerabilities in dependencies (jspdf)
+- Fixed build errors related to missing browserbase dependencies
+- Implemented menu publishing workflow with PublishMenu component
+- Added improved error handling and success notifications to the `ItemCategorizer` component
+- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
+- Implemented a visual preview of dragged items using `DragOverlay`
+- Standardized image property naming across menu item forms
+- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
+- Standardized environment variable documentation in `.env.example`
+- Fixed TypeScript errors throughout the codebase
+- Implemented comprehensive form validation system with reusable components
+- Created dedicated `FormFeedback` component for consistent validation messages
+- Enhanced `Input` component with validation states and accessibility features
+- Added debounce utilities for optimized form validation performance
+- Upgraded restaurant creation form with improved validation and user feedback
+
+## In Progress
+- Creating restaurant management interfaces for administration
+- Adding detailed restaurant statistics and analytics
+- Improving error handling for network requests and form submissions
+- Enhancing user interface components for better usability
+- Implementing comprehensive client-side validation for all forms
+- Addressing deprecated dependencies
+
+## Planned Improvements
+
+### Short-term (Next Sprint)
+1. ~~Enhance `ItemCategorizer` with drag-and-drop functionality using `@dnd-kit/core`~~ ✅
+2. ~~Add error handling and success notifications to components~~ ✅ (Started with ItemCategorizer)
+3. ~~Complete the menu publishing workflow~~ ✅
+4. ~~Modernize Supabase authentication with @supabase/ssr~~ ✅
+5. ~~Implement comprehensive client-side validation for all forms~~ ✅ (Started with restaurant forms)
+6. ~~Implement role-based user system with different dashboards~~ ✅
+7. ~~Add staff management functionality for restaurant owners~~ ✅ 
+8. Add restaurant management interface for admins
+9. Apply enhanced form validation to remaining forms (login, registration, menu creation)
+10. Create form controls for complex data types (arrays, nested objects)
+
+### Medium-term
+1. ~~Refactor authentication to use a single, consistent implementation~~ ✅
+2. Implement image optimization for uploaded menu item images
+3. Add support for multi-language menus
+4. Improve accessibility across all UI components
+5. Replace deprecated node-fetch dependency with modern alternatives
+6. Add detailed analytics for restaurant owners
+
+### Long-term
+1. Implement analytics tracking for menu views and interactions
+2. Create a mobile app version using React Native
+3. Add support for online ordering integration
+4. Implement real-time menu updates using WebSockets
+
+## Technical Debt
+- Some components lack proper error handling for edge cases
+- Need for more comprehensive test coverage
+- UI components could benefit from better accessibility features
+- Some dependencies have punycode deprecation warnings that need to be addressed
+
+## Dependencies
+- Next.js 14.0.4
+- React 18
+- Supabase for authentication and data storage (using @supabase/ssr)
+- Tailwind CSS for styling
+- TypeScript for type safety
