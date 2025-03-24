@@ -2,15 +2,14 @@
 
 Welcome to MenuFácil - the easy-to-use digital menu management system for restaurants.
 
-## Recent Updates (June 24, 2024)
+## Recent Updates (March 24, 2025)
 
-We've made significant improvements to the project:
+We've made significant improvements to the project and completed the first production deployment:
 
-- **Vercel Deployment**: Fixed client-reference-manifest errors by implementing comprehensive route mapping and middleware improvements
-- **QR Code System**: Enhanced the QR code export system with multiple formats (PNG, SVG, PDF, ZIP) and batch generation capabilities
-- **Menu Publishing**: Implemented a complete publishing workflow with toggle UI and visual feedback
-- **Form Validation**: Created a robust form validation system with reusable components and performance optimization
-- **Code Quality**: Fixed ESLint issues and improved TypeScript implementation across the codebase
+- **Production Deployment**: Successfully deployed to Vercel with all core functionality working
+- **Supabase Integration**: Configured database and authentication with Supabase
+- **Test Environment**: Set up test user accounts and simulated data for evaluation
+- **Documentation**: Added comprehensive deployment documentation and testing guides
 
 For comprehensive details about the project and development progress, see:
 - [DEVELOPMENT_PROGRESS.md](./DEVELOPMENT_PROGRESS.md) - Complete project documentation and current status
@@ -87,7 +86,38 @@ For developers continuing work on this project, the next steps should focus on i
 
 ## Production URL
 
-The application is deployed at: https://menufacil-apv8pgzdp-inakizamores-projects.vercel.app
+The application is deployed at: https://menufacil.vercel.app
+
+## Testing the Application
+
+You can test the application using the following credentials:
+
+- **Email**: test@menufacil.app
+- **Password**: test123456
+
+Or you can create your own account through the registration page.
+
+### Testing Steps
+
+1. **Login/Registration**:
+   - Use the test credentials or create a new account
+   - Navigate the dashboard
+
+2. **Restaurant Creation**:
+   - Click "Create Restaurant" in the dashboard
+   - Fill in the required information
+   - Submit the form
+
+3. **Menu Creation**:
+   - Select a restaurant from your dashboard
+   - Go to Menus section
+   - Create a new menu
+   - Add categories and menu items
+
+4. **Menu Publishing**:
+   - Navigate to the menu's Publish section
+   - Click "Publish Menu" to make it publicly accessible
+   - Use the generated URL to view the public menu
 
 ## Learn More
 
