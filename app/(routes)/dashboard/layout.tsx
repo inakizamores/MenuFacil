@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
+import RouteProtection from '@/app/components/RouteProtection';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -72,6 +73,14 @@ const navigation: NavItem[] = [
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RouteProtection>
+      <DashboardUI>{children}</DashboardUI>
+    </RouteProtection>
+  );
+}
+
+function DashboardUI({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout, isLoading } = useAuth();
