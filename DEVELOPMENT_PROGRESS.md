@@ -225,6 +225,19 @@ We've improved the QR code management functionality with the following enhanceme
 - ✅ Implemented batch QR code generation
 - ✅ Added drag-and-drop for menu item organization
 - ✅ Improved authentication with Supabase SSR package
+- ✅ Implemented enhanced form validation for login, registration, and menu creation forms
+- ✅ Created reusable form controls for complex data types (arrays, nested objects)
+
+## Short-term (Next Sprint)
+1. ~~Enhance `ItemCategorizer` with drag-and-drop functionality using `@dnd-kit/core`~~ ✅
+2. ~~Add error handling and success notifications to components~~ ✅ (Started with ItemCategorizer)
+3. ~~Complete the menu publishing workflow~~ ✅
+4. ~~Modernize Supabase authentication with @supabase/ssr~~ ✅
+5. ~~Implement comprehensive client-side validation for all forms~~ ✅ (Started with restaurant forms)
+6. ~~Apply enhanced form validation to remaining forms (login, registration, menu creation)~~ ✅
+7. ~~Create form controls for complex data types (arrays, nested objects)~~ ✅
+8. Update menu item creation and editing forms to use the new complex form controls
+9. Create comprehensive documentation for using the form controls
 
 ## Next Steps for Developers
 
