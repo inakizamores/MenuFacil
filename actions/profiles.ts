@@ -117,7 +117,6 @@ export async function updateUserSettings(
   settings: {
     full_name?: string;
     language?: string;
-    theme?: string;
     notifications?: {
       email?: boolean;
       push?: boolean;
@@ -182,7 +181,6 @@ export async function updateUserSettings(
       data: {
         full_name: settings.full_name,
         language: settings.language,
-        theme: settings.theme,
         notifications: settings.notifications,
       },
     });

@@ -9,6 +9,18 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 **Framework:** Next.js 14 with App Router  
 **Last Updated:** July 15, 2024
 
+## UI Design Principles
+
+The MenuFácil application follows these key design principles:
+
+1. **Consistent Light Theme** - The application uses a consistent light theme throughout to ensure a clean, professional appearance and simplify UI development. This design decision eliminates the complexity of supporting dark mode and multiple theme options.
+
+2. **Mobile-First Approach** - All interfaces are designed with mobile users in mind, then scaled up for larger screens.
+
+3. **Brand Consistency** - Primary UI colors align with the MenuFácil brand identity.
+
+4. **Accessibility** - The light theme with high contrast ensures good readability for all users.
+
 ## Recent Implementations
 
 ### Enhanced QR Code Management (July 15, 2024)
@@ -63,7 +75,7 @@ We've improved the QR code management functionality with the following enhanceme
 - **Context API:** For global state management (authentication state)
 - **Custom Hooks:** For form handling, validation, and data fetching
 - **Server Components:** For performance-optimized rendering where applicable
-- **Responsive Design:** Mobile-first approach with adaptive layouts
+- **Responsive Design:** Mobile-first approach with adaptive layouts using a consistent light theme
 - **Repository Pattern:** For database access with Supabase
 - **Facade Pattern:** For service abstraction
 - **Atomic Design Principles:** For UI component organization
@@ -130,7 +142,6 @@ We've improved the QR code management functionality with the following enhanceme
 
 #### Public Menu Views (100%)
 - **Customer-Facing Pages:** ✅ Complete
-- **Theme System:** ⏳ Not Started
 - **Multilingual Support:** ⏳ Not Started
 
 ### In Progress Features (🔄)
@@ -330,6 +341,11 @@ All components follow these organization principles:
    - Zod schemas have been implemented for all major forms
    - Integration with React Hook Form is functioning correctly
    - Error handling and user feedback are working as expected
+
+3. **User Interface**
+   - Application uses a consistent light theme throughout
+   - Settings page has been simplified to remove theme selection options
+   - Focus is on clean, professional design with good contrast and readability
 
 ### Known Issues
 1. **Type Compatibility**

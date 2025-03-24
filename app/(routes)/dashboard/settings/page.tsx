@@ -11,7 +11,6 @@ const settingsFormSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email"),
   language: z.enum(["en", "es"]),
-  theme: z.enum(["light", "dark", "system"]),
   notifications: z.object({
     email: z.boolean(),
     push: z.boolean(),
@@ -27,7 +26,6 @@ export default function SettingsPage() {
     full_name: '',
     email: '',
     language: 'en',
-    theme: 'system',
     notifications: {
       email: true,
       push: true,
@@ -41,7 +39,6 @@ export default function SettingsPage() {
         full_name: user.user_metadata?.full_name || '',
         email: user.email || '',
         language: user.user_metadata?.language || 'en',
-        theme: user.user_metadata?.theme || 'system',
         notifications: {
           email: user.user_metadata?.notifications?.email !== false,
           push: user.user_metadata?.notifications?.push !== false,
@@ -100,11 +97,10 @@ export default function SettingsPage() {
       if (!user) throw new Error("User not authenticated");
       
       // Use the new server action to update user settings
-      const { language, theme, notifications, full_name } = formValues;
+      const { language, notifications, full_name } = formValues;
       const result = await updateUserSettings(user.id, {
         full_name,
         language,
-        theme,
         notifications,
       });
       
@@ -185,7 +181,7 @@ export default function SettingsPage() {
               </div>
 
               {/* Preferences Section */}
-              <div className="pt-6 border-t border-gray-200">
+              <div>
                 <h2 className="text-lg font-medium text-gray-900 mb-4">Preferences</h2>
                 
                 <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
@@ -203,25 +199,6 @@ export default function SettingsPage() {
                       >
                         <option value="en">English</option>
                         <option value="es">Español</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="sm:col-span-3">
-                    <label htmlFor="theme" className="block text-sm font-medium text-gray-700">
-                      Theme
-                    </label>
-                    <div className="mt-1">
-                      <select
-                        id="theme"
-                        name="theme"
-                        value={formValues.theme}
-                        onChange={handleInputChange}
-                        className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2"
-                      >
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                        <option value="system">System (Auto)</option>
                       </select>
                     </div>
                   </div>
