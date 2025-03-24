@@ -43,11 +43,25 @@ export const signUp = async ({ email, password, name }: SignUpCredentials) => {
 };
 
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
+  // Clear all browser cookies related to the session
+  document.cookie.split(';').forEach(cookie => {
+    const [name] = cookie.split('=');
+    if (name.trim().startsWith('sb-')) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`;
+    }
+  });
+  
+  // Call Supabase signOut
+  const { error } = await supabase.auth.signOut({
+    scope: 'global' // This will remove all Supabase session information
+  });
   
   if (error) {
     throw new Error(error.message);
   }
+  
+  // Force page reload to clear any cached auth state
+  window.location.href = '/';
 };
 
 export const resetPassword = async (email: string) => {
