@@ -2,26 +2,31 @@
 
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
-import { useForm } from '../../../hooks/useForm';
+import { useZodForm } from '../../../hooks/useZodForm';
 import Input from '../../../components/ui/input';
 import Button from '../../../components/ui/button';
 import { useState } from 'react';
 import { loginSchema } from '@/lib/validation/schemas';
-import { createValidationRules } from '@/lib/validation/index';
 import type { LoginFormValues } from '@/lib/validation/schemas';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const initialValues: LoginFormValues = {
-    email: '',
-    password: '',
-    rememberMe: false,
-  };
-
-  // Create validation rules from Zod schema
-  const validationRules = createValidationRules(loginSchema);
+  // Use Zod form with schema validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+  } = useZodForm({
+    schema: loginSchema,
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false,
+    },
+  });
 
   const handleLogin = async (values: LoginFormValues) => {
     setServerError(null);
@@ -34,16 +39,6 @@ export default function LoginPage() {
       setServerError(error.message || 'Login failed. Please try again.');
     }
   };
-
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm<LoginFormValues>(initialValues, validationRules, handleLogin);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -67,42 +62,54 @@ export default function LoginPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <Input
-              label="Email address"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={values.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.email}
-              touched={touched.email}
-            />
+          <form className="space-y-6" onSubmit={handleSubmit(handleLogin)}>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.email ? 'border-red-500' : ''
+                  }`}
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
 
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={values.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.password}
-              touched={touched.password}
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.password ? 'border-red-500' : ''
+                  }`}
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="rememberMe"
-                  name="rememberMe"
                   type="checkbox"
-                  checked={values.rememberMe}
-                  onChange={handleChange}
                   className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  {...register('rememberMe')}
                 />
                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
                   Remember me

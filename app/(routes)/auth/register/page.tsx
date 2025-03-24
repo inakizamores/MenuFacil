@@ -2,33 +2,37 @@
 
 import Link from 'next/link';
 import { useAuth } from '../../../context/auth-context';
-import { useForm } from '../../../hooks/useForm';
-import Input from '../../../components/ui/input';
+import { useZodForm } from '../../../hooks/useZodForm';
 import Button from '../../../components/ui/button';
 import { useState } from 'react';
 import { registerSchema } from '@/lib/validation/schemas';
-import { createValidationRules } from '@/lib/validation/index';
 import type { RegisterFormValues } from '@/lib/validation/schemas';
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  const initialValues: RegisterFormValues = {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    terms: false,
-  };
-
-  // Create validation rules from Zod schema
-  const validationRules = createValidationRules(registerSchema);
+  // Use Zod form with schema validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+  } = useZodForm({
+    schema: registerSchema,
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      terms: false,
+    },
+  });
 
   const handleRegister = async (values: RegisterFormValues) => {
     setServerError(null);
     try {
-      await register({
+      await registerUser({
         name: values.name,
         email: values.email,
         password: values.password,
@@ -37,16 +41,6 @@ export default function RegisterPage() {
       setServerError(error.message || 'Registration failed. Please try again.');
     }
   };
-
-  const {
-    values,
-    errors,
-    touched,
-    isSubmitting,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm<RegisterFormValues>(initialValues, validationRules, handleRegister);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -70,67 +64,93 @@ export default function RegisterPage() {
             </div>
           )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <Input
-              label="Full name"
-              name="name"
-              type="text"
-              autoComplete="name"
-              required
-              value={values.name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.name}
-              touched={touched.name}
-            />
+          <form className="space-y-6" onSubmit={handleSubmit(handleRegister)}>
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Full name
+              </label>
+              <div className="mt-1">
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.name ? 'border-red-500' : ''
+                  }`}
+                  {...register('name')}
+                />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+                )}
+              </div>
+            </div>
 
-            <Input
-              label="Email address"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={values.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.email}
-              touched={touched.email}
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1">
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.email ? 'border-red-500' : ''
+                  }`}
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
+                )}
+              </div>
+            </div>
 
-            <Input
-              label="Password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={values.password}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.password}
-              touched={touched.password}
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.password ? 'border-red-500' : ''
+                  }`}
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+            </div>
 
-            <Input
-              label="Confirm password"
-              name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={values.confirmPassword}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.confirmPassword}
-              touched={touched.confirmPassword}
-            />
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                Confirm password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.confirmPassword ? 'border-red-500' : ''
+                  }`}
+                  {...register('confirmPassword')}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center">
               <input
                 id="terms"
-                name="terms"
                 type="checkbox"
-                checked={values.terms}
-                onChange={handleChange}
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                {...register('terms')}
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                 I agree to the{' '}
@@ -143,8 +163,8 @@ export default function RegisterPage() {
                 </Link>
               </label>
             </div>
-            {touched.terms && errors.terms && (
-              <div className="mt-1 text-sm text-red-600">{errors.terms}</div>
+            {errors.terms && (
+              <div className="mt-1 text-sm text-red-600">{errors.terms.message}</div>
             )}
 
             <Button

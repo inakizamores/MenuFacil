@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/auth-context';
-import { useForm } from '@/app/hooks/useForm';
+import { useZodForm } from '@/app/hooks/useZodForm';
 import { getRestaurant, createMenu } from '@/app/utils/db';
 import Input from '@/app/components/ui/input';
 import Button from '@/app/components/ui/button';
 import { menuSchema, MenuFormValues } from '@/lib/validation/schemas';
-import { createValidationRules } from '@/lib/validation/index';
 
 interface CreateMenuPageProps {
   params: {
@@ -25,6 +24,27 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize the form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, touchedFields },
+    watch,
+  } = useZodForm({
+    schema: menuSchema,
+    defaultValues: {
+      name: '',
+      description: '',
+      isActive: true,
+      isDefault: false,
+      customCss: '',
+      currency: 'USD',
+    },
+  });
+
+  // Watch form values
+  const formValues = watch();
 
   useEffect(() => {
     const fetchRestaurant = async () => {
@@ -52,18 +72,7 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
     fetchRestaurant();
   }, [restaurantId, user, router]);
 
-  const initialValues: MenuFormValues = {
-    name: '',
-    description: '',
-    isActive: true,
-    isDefault: false,
-    customCss: '',
-    currency: 'USD',
-  };
-
-  const validationRules = createValidationRules(menuSchema);
-
-  const handleCreateMenu = async (values: MenuFormValues) => {
+  const onSubmit = async (values: MenuFormValues) => {
     if (!user?.id || !restaurant) {
       setServerError('You must be logged in and restaurant must exist to create a menu');
       return;
@@ -95,15 +104,6 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
       setIsSubmitting(false);
     }
   };
-
-  const {
-    values,
-    errors,
-    touched,
-    handleChange,
-    handleBlur,
-    handleSubmit,
-  } = useForm<MenuFormValues>(initialValues, validationRules, handleCreateMenu);
 
   if (isLoading) {
     return (
@@ -163,19 +163,26 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 gap-6">
-            <Input
-              label="Menu Name"
-              name="name"
-              type="text"
-              required
-              value={values.name}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={errors.name}
-              touched={touched.name}
-            />
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Menu Name
+              </label>
+              <div className="mt-1">
+                <input
+                  id="name"
+                  type="text"
+                  className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm ${
+                    errors.name ? 'border-red-500' : ''
+                  }`}
+                  {...register('name')}
+                />
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-600">{errors.name.message}</p>
+                )}
+              </div>
+            </div>
 
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
@@ -184,13 +191,13 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
               <div className="mt-1">
                 <textarea
                   id="description"
-                  name="description"
                   rows={3}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                  value={values.description}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
+                  {...register('description')}
                 />
+                {errors.description && (
+                  <p className="mt-2 text-sm text-red-600">{errors.description.message}</p>
+                )}
               </div>
             </div>
 
@@ -200,11 +207,8 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
               </label>
               <select
                 id="currency"
-                name="currency"
                 className="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-                value={values.currency}
-                onChange={handleChange}
-                onBlur={handleBlur}
+                {...register('currency')}
               >
                 <option value="USD">USD ($)</option>
                 <option value="EUR">EUR (€)</option>
@@ -214,8 +218,8 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
                 <option value="AUD">AUD ($)</option>
                 <option value="JPY">JPY (¥)</option>
               </select>
-              {touched.currency && errors.currency && (
-                <p className="mt-2 text-sm text-red-600">{errors.currency}</p>
+              {errors.currency && (
+                <p className="mt-2 text-sm text-red-600">{errors.currency.message}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">
                 This setting affects how prices are displayed to customers.
@@ -225,11 +229,9 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
             <div className="flex items-center">
               <input
                 id="isActive"
-                name="isActive"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                checked={values.isActive}
-                onChange={handleChange}
+                {...register('isActive')}
               />
               <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
                 Active
@@ -239,55 +241,49 @@ export default function CreateMenuPage({ params }: CreateMenuPageProps) {
             <div className="flex items-center">
               <input
                 id="isDefault"
-                name="isDefault"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                checked={values.isDefault}
-                onChange={handleChange}
+                {...register('isDefault')}
               />
               <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
                 Set as default menu
               </label>
-              <span className="ml-2 text-xs text-gray-500">
-                (Default menu will be shown to customers when they visit your restaurant page)
-              </span>
             </div>
 
             <div>
               <label htmlFor="customCss" className="block text-sm font-medium text-gray-700">
-                Custom CSS (Optional)
+                Custom CSS (optional)
               </label>
               <div className="mt-1">
                 <textarea
                   id="customCss"
-                  name="customCss"
-                  rows={5}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm font-mono"
-                  value={values.customCss}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder=".menu-title { color: blue; }"
+                  rows={3}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  placeholder=".menu-title { color: red; }"
+                  {...register('customCss')}
                 />
-                {touched.customCss && errors.customCss && (
-                  <p className="mt-2 text-sm text-red-600">{errors.customCss}</p>
+                {errors.customCss && (
+                  <p className="mt-2 text-sm text-red-600">{errors.customCss.message}</p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Add custom CSS to style your menu. This is advanced functionality and optional.
-                </p>
               </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Add custom CSS styles to customize the look of your menu.
+              </p>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-4 pt-4">
+          <div className="flex justify-end">
             <Button
+              type="button"
               variant="outline"
               onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus`)}
-              type="button"
+              className="mr-2"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              variant="primary"
               isLoading={isSubmitting}
               disabled={isSubmitting}
             >
