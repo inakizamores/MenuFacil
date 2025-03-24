@@ -1,25 +1,30 @@
 'use server';
 
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '../types/supabase.types';
-// TODO: Import and use ensureUUID from @/lib/utils after fixing type compatibility issues
+import { toUUID } from '@/lib/utils';
 
-// Create a Supabase client configured to use cookies
+/**
+ * Create a Supabase client for server components with cookies for auth
+ * Uses the createServerClient from @supabase/ssr for proper SSR support
+ */
 const createClient = () => {
   const cookieStore = cookies();
+  
+  // Create a properly typed client with cookie-based authentication
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
+        get(name) {
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: { path: string; maxAge: number; domain?: string }) {
+        set(name, value, options) {
           cookieStore.set({ name, value, ...options });
         },
-        remove(name: string, options: { path: string; domain?: string }) {
+        remove(name, options) {
           cookieStore.set({ name, value: '', ...options });
         },
       },
@@ -27,6 +32,13 @@ const createClient = () => {
   );
 };
 
+/**
+ * Updates or creates a user profile with the provided data
+ * 
+ * @param userId - The ID of the user to update
+ * @param profileData - Profile data to update
+ * @returns An object indicating success or failure with a message
+ */
 export async function updateUserProfile(
   userId: string,
   profileData: {
@@ -41,9 +53,7 @@ export async function updateUserProfile(
   try {
     const supabase = createClient();
     
-    // TODO: Add UUID validation for userId using ensureUUID(userId)
-    
-    // First, check if the profile exists
+    // First check if profile exists
     const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
@@ -54,8 +64,9 @@ export async function updateUserProfile(
       throw new Error(`Error fetching profile: ${fetchError.message}`);
     }
     
-    // Prepare the update data
-    const nameParts = profileData.full_name?.split(' ') || [];
+    // Parse the profile data to extract first and last name
+    const fullName = profileData.full_name || '';
+    const nameParts = fullName.split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
     
@@ -68,7 +79,7 @@ export async function updateUserProfile(
           last_name: lastName,
           avatar_url: profileData.avatar_url,
           updated_at: new Date().toISOString(),
-        })
+        } as Database['public']['Tables']['profiles']['Update'])
         .eq('user_id', userId);
       
       if (error) throw new Error(`Error updating profile: ${error.message}`);
@@ -83,35 +94,32 @@ export async function updateUserProfile(
           avatar_url: profileData.avatar_url,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        } as Database['public']['Tables']['profiles']['Insert']);
       
       if (error) throw new Error(`Error creating profile: ${error.message}`);
     }
     
-    // Also update user metadata
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: {
-        full_name: profileData.full_name,
-        avatar_url: profileData.avatar_url,
-        bio: profileData.bio,
-        website: profileData.website,
-        company: profileData.company,
-        position: profileData.position,
-      },
-    });
-    
-    if (updateError) throw new Error(`Error updating user metadata: ${updateError.message}`);
-    
-    return { success: true };
-  } catch (error) {
+    return {
+      status: 'success',
+      message: existingProfile ? 'Profile updated successfully' : 'Profile created successfully',
+    };
+  } catch (error: any) {
     console.error('Profile update error:', error);
-    return { 
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    
+    return {
+      status: 'error',
+      message: error.message || 'Failed to update profile',
     };
   }
 }
 
+/**
+ * Updates a user's settings in the database
+ * 
+ * @param userId - The ID of the user to update settings for
+ * @param settings - The settings data to update
+ * @returns An object indicating success or failure with a message
+ */
 export async function updateUserSettings(
   userId: string,
   settings: {
@@ -126,9 +134,7 @@ export async function updateUserSettings(
   try {
     const supabase = createClient();
     
-    // TODO: Add UUID validation for userId using ensureUUID(userId)
-    
-    // First, check if the profile exists
+    // Check if profile exists
     const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
@@ -139,30 +145,26 @@ export async function updateUserSettings(
       throw new Error(`Error fetching profile: ${fetchError.message}`);
     }
     
-    // Prepare name data if provided
-    let firstName, lastName;
-    if (settings.full_name) {
-      const nameParts = settings.full_name.split(' ');
-      firstName = nameParts[0];
-      lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
-    }
+    // Parse the settings data
+    const fullName = settings.full_name || '';
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
     
     if (existingProfile) {
-      // Update existing profile if name is provided
-      if (settings.full_name) {
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            first_name: firstName,
-            last_name: lastName,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
-        
-        if (error) throw new Error(`Error updating profile: ${error.message}`);
-      }
-    } else if (settings.full_name) {
-      // Create new profile if name is provided
+      // Update existing profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          updated_at: new Date().toISOString(),
+        } as Database['public']['Tables']['profiles']['Update'])
+        .eq('user_id', userId);
+      
+      if (error) throw new Error(`Error updating profile: ${error.message}`);
+    } else {
+      // Create new profile
       const { error } = await supabase
         .from('profiles')
         .insert({
@@ -171,28 +173,21 @@ export async function updateUserSettings(
           last_name: lastName,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        });
+        } as Database['public']['Tables']['profiles']['Insert']);
       
       if (error) throw new Error(`Error creating profile: ${error.message}`);
     }
     
-    // Update user metadata with settings
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: {
-        full_name: settings.full_name,
-        language: settings.language,
-        notifications: settings.notifications,
-      },
-    });
-    
-    if (updateError) throw new Error(`Error updating user settings: ${updateError.message}`);
-    
-    return { success: true };
-  } catch (error) {
+    return {
+      status: 'success',
+      message: 'Settings updated successfully',
+    };
+  } catch (error: any) {
     console.error('Settings update error:', error);
-    return { 
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    
+    return {
+      status: 'error',
+      message: error.message || 'Failed to update settings',
     };
   }
 } 

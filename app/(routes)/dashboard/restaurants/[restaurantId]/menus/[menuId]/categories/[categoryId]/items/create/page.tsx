@@ -3,7 +3,6 @@
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useForm } from '@/hooks/useForm';
 import { getCategory } from '@/actions/categories';
 import { createMenuItem } from '@/actions/menuItems';
 import { saveItemVariants } from '@/actions/menuItemVariants';
@@ -17,8 +16,11 @@ import { Spinner } from '@/components/ui/Spinner';
 import VariantsManager from '@/app/components/menu/VariantsManager';
 import { MenuItemVariant } from '@/app/types/database';
 import { menuItemSchema, type MenuItemFormValues } from '@/lib/validation/schemas';
+import { FormProvider, useForm, Controller, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useZodForm } from '@/app/hooks/useZodForm';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
+import { ArrayField } from '@/app/components/ui/ArrayField';
+import { ObjectField } from '@/app/components/ui/ObjectField';
 
 const CreateMenuItemPage: FC = () => {
   const router = useRouter();
@@ -46,15 +48,9 @@ const CreateMenuItemPage: FC = () => {
   const menuId = pathParts[menuIdIndex];
   const categoryId = pathParts[categoryIdIndex];
   
-  // Use Zod form with schema validation
-  const {
-    formState: { errors, touchedFields, isSubmitting: formSubmitting },
-    handleSubmit,
-    setValue,
-    register,
-    watch,
-  } = useZodForm({
-    schema: menuItemSchema,
+  // Use react-hook-form with Zod schema validation
+  const methods = useForm<MenuItemFormValues>({
+    resolver: zodResolver(menuItemSchema),
     defaultValues: {
       name: '',
       description: '',
@@ -78,121 +74,48 @@ const CreateMenuItemPage: FC = () => {
     },
   });
 
-  // Watch form values
+  const { handleSubmit, formState: { errors }, control, watch, setValue } = methods;
+  
+  // Watch for form values
   const formValues = watch();
 
-  // Fetch category details
+  // Fetch category and menu data
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || !categoryId) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // Fetch the category
-        const categoryResult = await getCategory(categoryId);
+        const categoryData = await getCategory(categoryId);
         
-        if (categoryResult.error) {
-          setError(categoryResult.error);
-          setIsLoading(false);
+        if (categoryData.error) {
+          setError(categoryData.error);
           return;
         }
-
-        if (!categoryResult.data) {
-          setError('Category not found');
-          setIsLoading(false);
-          return;
-        }
-
-        setCategory(categoryResult.data);
-        setIsLoading(false);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load category details');
+        
+        setCategory(categoryData);
+        setMenu(categoryData.menu);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load category data');
+      } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchData();
-  }, [user, categoryId]);
-
-  // Handle saving variants
-  const handleSaveVariants = async (updatedVariants: Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]) => {
-    setIsSavingVariants(true);
-    setVariantError(null);
-    
-    try {
-      // When creating a new item, we don't have an item ID yet, so we'll store the variants
-      // and save them after the item is created
-      setPendingVariants(updatedVariants);
-      return Promise.resolve();
-    } catch (err) {
-      console.error('Error saving variants:', err);
-      setVariantError('Failed to save variants. Please try again.');
-      throw err;
-    } finally {
-      setIsSavingVariants(false);
-    }
+  }, [categoryId]);
+  
+  // Handle file upload progress
+  const handleUploadProgress = (progress: number) => {
+    setUploadProgress(progress);
   };
-
-  // Handle image upload
-  const handleImageUpload = async (file: File) => {
-    if (!file) return;
-    
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    try {
-      // Set image in form
-      setValue('image', file);
-      
-      // Create a unique file name
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-').toLowerCase()}`;
-      
-      // Create a form data object
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Simulate upload progress
-      const uploadInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(uploadInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
-      
-      // Upload to Supabase storage
-      const response = await fetch(`/api/upload?fileName=${fileName}&folder=menu-items`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      clearInterval(uploadInterval);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload image');
-      }
-      
-      const data = await response.json();
-      setUploadProgress(100);
-      
-      // Reset upload state after a delay
-      setTimeout(() => {
-        setIsUploading(false);
-        setUploadProgress(0);
-      }, 1000);
-      
-    } catch (err) {
-      console.error('Error uploading image:', err);
-      setError('Failed to upload image. Please try again.');
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+  
+  // Handle upload state
+  const handleUploadState = (isUploading: boolean) => {
+    setIsUploading(isUploading);
+  };
+  
+  // Handle variants change
+  const handleVariantsChange = (variants: MenuItemVariant[]) => {
+    setPendingVariants(variants);
   };
 
   // Handle menu item creation
@@ -215,7 +138,12 @@ const CreateMenuItemPage: FC = () => {
         preparation_time: values.preparationTime,
         categoryId,
         image: values.image,
-        // Optional fields that might be added later
+        // Optional: Send these as additional data
+        // The backend might need to be updated to handle these
+        ...(values.ingredients?.length ? { ingredients: values.ingredients } : {}),
+        ...(values.allergens?.length ? { allergens: values.allergens } : {}),
+        ...(values.dietaryOptions?.length ? { dietary_options: values.dietaryOptions } : {}),
+        // Convert nutritional info to JSON string for storage
         nutrition_info: values.nutritionalInfo ? JSON.stringify(values.nutritionalInfo) : null,
       });
 
@@ -258,184 +186,242 @@ const CreateMenuItemPage: FC = () => {
   // Error state
   if (error) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-          <Button 
-            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`)}
-            className="mt-4"
-            variant="outline"
-          >
-            Back to Category
-          </Button>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4 max-w-md">
+          <h2 className="text-red-800 text-lg font-medium mb-2">Error</h2>
+          <p className="text-red-700">{error}</p>
         </div>
+        <Button onClick={() => router.back()} variant="outline">
+          Go Back
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Create Menu Item</h1>
-        <Button 
-          onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`)}
-          variant="outline"
-        >
-          Cancel
-        </Button>
+    <div className="container max-w-4xl p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Add New Item to {category?.name}</h1>
+        <p className="text-muted-foreground">Create a new menu item in the {menu?.name} menu</p>
       </div>
-      
-      {category && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded">
-          <p className="text-sm text-blue-700">
-            Adding item to category: <span className="font-semibold">{category.name}</span>
-          </p>
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">Basic Information</h2>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1">
-                Item Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="name"
-                {...register('name')}
-                placeholder="e.g., Margherita Pizza"
-                error={errors.name?.message}
+
+      <FormProvider {...methods}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-medium">Basic Information</h2>
+              
+              <FormField
+                control={control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Name <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Margherita Pizza"
+                        {...field}
+                        error={errors.name?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">
-                Description
-              </label>
-              <Textarea
-                id="description"
-                {...register('description')}
-                placeholder="Describe the menu item..."
-                rows={3}
+              
+              <FormField
+                control={control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe the menu item..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium mb-1">
-                Price <span className="text-red-500">*</span>
-              </label>
-              <PriceInput
-                id="price"
+              
+              <FormField
+                control={control}
                 name="price"
-                value={formValues.price}
-                onChange={(value) => setValue('price', value)}
-                error={errors.price?.message}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <PriceInput
+                        id="price"
+                        name="price"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        error={errors.price?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isAvailable"
+              
+              <div className="space-y-2">
+                <FormField
+                  control={control}
                   name="isAvailable"
-                  checked={formValues.isAvailable}
-                  onChange={(e) => setValue('isAvailable', e.target.checked)}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          id="isAvailable"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer">
+                        Item is available for ordering
+                      </FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <label htmlFor="isAvailable" className="text-sm font-medium">
-                  Item is available for ordering
-                </label>
+                
+                <FormField
+                  control={control}
+                  name="isPopular"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          id="isPopular"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer">
+                        Mark as popular item
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
               </div>
               
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isPopular"
-                  name="isPopular"
-                  checked={formValues.isPopular}
-                  onChange={(e) => setValue('isPopular', e.target.checked)}
-                />
-                <label htmlFor="isPopular" className="text-sm font-medium">
-                  Mark as popular item
-                </label>
-              </div>
+              <FormField
+                control={control}
+                name="preparationTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preparation Time (minutes)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 15"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber || undefined)}
+                        error={errors.preparationTime?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             
-            <div>
-              <label htmlFor="preparationTime" className="block text-sm font-medium mb-1">
-                Preparation Time (minutes)
-              </label>
-              <Input
-                id="preparationTime"
-                type="number"
-                {...register('preparationTime', { valueAsNumber: true })}
-                placeholder="e.g., 15"
-                error={errors.preparationTime?.message}
+            {/* Image Upload and Additional Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-medium">Image & Additional Details</h2>
+              
+              <FormField
+                control={control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Image</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        id="image"
+                        value={field.value}
+                        onChange={(file) => field.onChange(file)}
+                        accept="image/*"
+                        maxSize={5 * 1024 * 1024} // 5MB
+                        onProgress={handleUploadProgress}
+                        onUploading={handleUploadState}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Upload an image of the menu item (max 5MB)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Complex data types using new components */}
+              <ArrayField
+                name="ingredients"
+                label="Ingredients"
+                placeholder="Add an ingredient"
+                description="List all ingredients in this item"
+                emptyMessage="No ingredients added yet"
+              />
+              
+              <ArrayField
+                name="allergens"
+                label="Allergens"
+                placeholder="Add an allergen"
+                description="List any allergy information"
+                emptyMessage="No allergens added yet"
+              />
+              
+              <ArrayField
+                name="dietaryOptions"
+                label="Dietary Options"
+                placeholder="Add dietary option"
+                description="E.g., Vegetarian, Vegan, Gluten-Free"
+                emptyMessage="No dietary options added yet"
+              />
+              
+              <ObjectField
+                name="nutritionalInfo"
+                label="Nutritional Information"
+                description="Enter nutritional facts per serving"
+                fields={[
+                  { key: 'calories', label: 'Calories', type: 'number', suffix: 'kcal' },
+                  { key: 'protein', label: 'Protein', type: 'number', suffix: 'g' },
+                  { key: 'carbs', label: 'Carbs', type: 'number', suffix: 'g' },
+                  { key: 'fat', label: 'Fat', type: 'number', suffix: 'g' },
+                  { key: 'sugar', label: 'Sugar', type: 'number', suffix: 'g' },
+                  { key: 'fiber', label: 'Fiber', type: 'number', suffix: 'g' },
+                  { key: 'sodium', label: 'Sodium', type: 'number', suffix: 'mg' },
+                ]}
+                columns={2}
               />
             </div>
           </div>
           
-          {/* Image Upload and Additional Information */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">Image & Additional Information</h2>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Item Image
-              </label>
-              <FileUpload 
-                onFileSelected={handleImageUpload}
-                accept="image/*"
-                maxSizeInMB={5}
-                isLoading={isUploading}
-                progress={uploadProgress}
-              />
-              {formValues.image && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Image uploaded successfully!
-                </p>
-              )}
-              {errors.image && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.image.message}
-                </p>
-              )}
-            </div>
+          {/* Variants Management */}
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-medium mb-4">Item Variants (Optional)</h2>
+            <VariantsManager 
+              variants={pendingVariants} 
+              onChange={handleVariantsChange}
+              error={variantError}
+            />
           </div>
-        </div>
-        
-        {/* Variants Section */}
-        <div className="mt-8">
-          <h2 className="text-xl font-medium mb-4">Item Variants</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Add size or variation options for this menu item, such as Small, Medium, Large, etc.
-            Each variant can have its own price adjustment relative to the base price.
-          </p>
           
-          <VariantsManager 
-            itemId={createdItemId || 'temp-id'}
-            initialVariants={[]}
-            onSave={handleSaveVariants}
-          />
-          
-          {variantError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-              <p>{variantError}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="border-t pt-6">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || isUploading || isSavingVariants}
-            className="w-full sm:w-auto"
-          >
-            {isSubmitting ? <Spinner size="sm" /> : 'Create Menu Item'}
-          </Button>
-        </div>
-      </form>
+          <div className="border-t pt-6">
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || isUploading || isSavingVariants}
+              className="w-full sm:w-auto"
+            >
+              {isSubmitting ? <Spinner size="sm" /> : 'Create Menu Item'}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
     </div>
   );
 };

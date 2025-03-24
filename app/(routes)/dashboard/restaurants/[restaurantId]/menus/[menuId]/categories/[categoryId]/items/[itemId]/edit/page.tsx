@@ -3,9 +3,6 @@
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { useForm } from '@/hooks/useForm';
-import { validate, combineValidators } from '@/lib/validation';
-import { getCategory } from '@/actions/categories';
 import { getMenuItem, updateMenuItem } from '@/actions/menuItems';
 import { getItemVariants, saveItemVariants } from '@/actions/menuItemVariants';
 import { Input } from '@/components/ui/Input';
@@ -17,39 +14,32 @@ import { PriceInput } from '@/components/ui/PriceInput';
 import { Spinner } from '@/components/ui/Spinner';
 import VariantsManager from '@/app/components/menu/VariantsManager';
 import { MenuItemVariant } from '@/app/types/database';
+import { menuItemSchema, type MenuItemFormValues } from '@/lib/validation/schemas';
+import { FormProvider, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
+import { ArrayField } from '@/app/components/ui/ArrayField';
+import { ObjectField } from '@/app/components/ui/ObjectField';
 
-type MenuItemFormValues = {
-  name: string;
-  description: string;
-  price: number;
-  image?: File | null;
-  isAvailable: boolean;
-  isPopular: boolean;
-  preparationTime?: number;
-  nutrition?: {
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-  };
-};
+interface RouteParams {
+  restaurantId: string;
+  menuId: string;
+  categoryId: string;
+  itemId: string;
+}
 
 const EditMenuItemPage: FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState<any>(null);
-  const [menuItem, setMenuItem] = useState<any>(null);
-  const [variants, setVariants] = useState<MenuItemVariant[] | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [variantError, setVariantError] = useState<string | null>(null);
+  const [menuItem, setMenuItem] = useState<any>(null);
+  const [variants, setVariants] = useState<MenuItemVariant[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isSavingVariants, setIsSavingVariants] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   
-  // Get the restaurantId, menuId, categoryId, and itemId from the URL
+  // Get the route params from the URL
   const path = window.location.pathname;
   const pathParts = path.split('/');
   const restaurantIdIndex = pathParts.indexOf('restaurants') + 1;
@@ -60,267 +50,163 @@ const EditMenuItemPage: FC = () => {
   const restaurantId = pathParts[restaurantIdIndex];
   const menuId = pathParts[menuIdIndex];
   const categoryId = pathParts[categoryIdIndex];
-  const itemId = pathParts[itemIdIndex + 1]; // +1 because "items" is followed by the itemId
+  const itemId = pathParts[itemIdIndex];
   
-  // Validation rules
-  const validationRules = {
-    name: [validate.required('Name is required')],
-    price: [validate.required('Price is required')]
-  };
-
-  const { values, errors, touched, handleChange, handleBlur, handleSubmit, setFieldValue, setValues } = 
-    useForm<MenuItemFormValues>({
-      initialValues: {
-        name: '',
-        description: '',
-        price: 0,
-        image: null,
-        isAvailable: true,
-        isPopular: false,
-        preparationTime: undefined,
-        nutrition: {
-          calories: undefined,
-          protein: undefined,
-          carbs: undefined,
-          fat: undefined
-        }
+  // Setup react-hook-form with Zod validation
+  const methods = useForm<MenuItemFormValues>({
+    resolver: zodResolver(menuItemSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      price: 0,
+      image: null,
+      isAvailable: true,
+      isPopular: false,
+      preparationTime: undefined,
+      ingredients: [],
+      allergens: [],
+      dietaryOptions: [],
+      nutritionalInfo: {
+        calories: undefined,
+        protein: undefined,
+        carbs: undefined,
+        fat: undefined,
+        sugar: undefined,
+        fiber: undefined,
+        sodium: undefined,
       },
-      validationRules,
-      onSubmit: async (formValues) => {
-        await handleUpdateMenuItem(formValues);
-      }
-    });
-
-  // Fetch menu item and category details
+    },
+  });
+  
+  const { handleSubmit, formState: { errors }, control, reset, setValue, watch } = methods;
+  
+  // Fetch menu item and variants data
   useEffect(() => {
     const fetchData = async () => {
-      if (!user || !itemId || !categoryId) {
+      if (!itemId) {
         setIsLoading(false);
+        setError('Menu item ID is missing');
         return;
       }
-
+      
       try {
         // Fetch the menu item
-        const itemResult = await getMenuItem(itemId);
+        const menuItemData = await getMenuItem(itemId);
         
-        if (itemResult.error) {
-          setError(itemResult.error);
-          setIsLoading(false);
+        if (!menuItemData || menuItemData.error) {
+          setError(menuItemData?.error || 'Failed to fetch menu item data');
           return;
         }
-
-        if (!itemResult.data) {
-          setError('Menu item not found');
-          setIsLoading(false);
-          return;
-        }
-
-        setMenuItem(itemResult.data);
-
-        // Fetch the category
-        const categoryResult = await getCategory(categoryId);
         
-        if (categoryResult.error) {
-          setError(categoryResult.error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!categoryResult.data) {
-          setError('Category not found');
-          setIsLoading(false);
-          return;
-        }
-
-        setCategory(categoryResult.data);
+        setMenuItem(menuItemData);
         
-        // Fetch variants
-        const variantsResult = await getItemVariants(itemId);
-        if (variantsResult.data) {
-          setVariants(variantsResult.data);
-        }
-        
-        // Set form values from menu item data
-        const item = itemResult.data;
-        let nutritionInfo = null;
-        
-        try {
-          if (item.nutrition_info) {
-            nutritionInfo = JSON.parse(item.nutrition_info);
+        // Parse nutritional info if available
+        let nutritionalInfo = undefined;
+        if (menuItemData.nutrition_info) {
+          try {
+            nutritionalInfo = JSON.parse(menuItemData.nutrition_info);
+          } catch (e) {
+            console.error('Error parsing nutritional info:', e);
           }
-        } catch (e) {
-          console.error('Error parsing nutrition info:', e);
         }
         
-        setValues({
-          name: item.name || '',
-          description: item.description || '',
-          price: item.price || 0,
-          image: null,
-          isAvailable: item.is_available !== false,
-          isPopular: item.is_popular === true,
-          preparationTime: item.preparation_time,
-          nutrition: nutritionInfo || {
-            calories: undefined,
-            protein: undefined,
-            carbs: undefined,
-            fat: undefined
-          }
+        // Initialize form with menu item data
+        reset({
+          name: menuItemData.name,
+          description: menuItemData.description || '',
+          price: menuItemData.price,
+          image: null, // Image will need to be uploaded again if needed
+          isAvailable: menuItemData.is_available,
+          isPopular: menuItemData.is_popular,
+          preparationTime: menuItemData.preparation_time,
+          ingredients: menuItemData.ingredients || [],
+          allergens: menuItemData.allergens || [],
+          dietaryOptions: menuItemData.dietary_options || [],
+          nutritionalInfo: nutritionalInfo,
         });
-
-        // Set current image URL if available
-        if (item.image_url) {
-          setCurrentImageUrl(item.image_url);
+        
+        // Fetch item variants
+        const variantsData = await getItemVariants(itemId);
+        
+        if (variantsData && !variantsData.error) {
+          setVariants(variantsData);
         }
-
-        setIsLoading(false);
       } catch (err) {
         console.error('Error fetching data:', err);
-        setError('Failed to load menu item details');
+        setError('Failed to load menu item data');
+      } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchData();
-  }, [user, itemId, categoryId, setValues]);
-
-  // Handle saving variants
-  const handleSaveVariants = async (updatedVariants: Omit<MenuItemVariant, 'id' | 'created_at' | 'updated_at'>[]) => {
-    setIsSavingVariants(true);
-    setVariantError(null);
-    
-    try {
-      const result = await saveItemVariants(itemId, updatedVariants);
-      
-      if (!result.success) {
-        setVariantError(result.error || 'Failed to save variants');
-        return;
-      }
-      
-      // Refresh variants
-      const variantsResult = await getItemVariants(itemId);
-      if (variantsResult.data) {
-        setVariants(variantsResult.data);
-      }
-      
-      return Promise.resolve();
-    } catch (err) {
-      console.error('Error saving variants:', err);
-      setVariantError('Failed to save variants. Please try again.');
-      throw err;
-    } finally {
-      setIsSavingVariants(false);
-    }
+  }, [itemId, reset]);
+  
+  // Handle file upload progress
+  const handleUploadProgress = (progress: number) => {
+    setUploadProgress(progress);
   };
-
-  // Handle image upload
-  const handleImageUpload = async (file: File) => {
-    if (!file) return;
-    
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    try {
-      // Create a unique file name
-      const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-').toLowerCase()}`;
-      
-      // Create a form data object
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Simulate upload progress
-      const uploadInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(uploadInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 300);
-      
-      // Upload to Supabase storage
-      const response = await fetch(`/api/upload?fileName=${fileName}&folder=menu-items`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      clearInterval(uploadInterval);
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to upload image');
-      }
-      
-      const data = await response.json();
-      setFieldValue('image', file);
-      setCurrentImageUrl(data.url);
-      setUploadProgress(100);
-      
-      // Reset upload state after a delay
-      setTimeout(() => {
-        setIsUploading(false);
-        setUploadProgress(0);
-      }, 1000);
-      
-    } catch (err) {
-      console.error('Error uploading image:', err);
-      setError('Failed to upload image. Please try again.');
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+  
+  // Handle upload state
+  const handleUploadState = (isUploading: boolean) => {
+    setIsUploading(isUploading);
   };
-
-  // Handle menu item update
-  const handleUpdateMenuItem = async (values: MenuItemFormValues) => {
+  
+  // Handle variants change
+  const handleVariantsChange = (updatedVariants: MenuItemVariant[]) => {
+    setVariants(updatedVariants);
+  };
+  
+  // Handle form submission
+  const onSubmit = async (values: MenuItemFormValues) => {
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError(null);
+    
     try {
-      setIsSubmitting(true);
-      
-      if (!user) {
-        setError('You must be logged in');
-        return;
-      }
-
-      if (!menuItem) {
-        setError('Menu item not found');
-        return;
-      }
-
       // Update the menu item
       const result = await updateMenuItem({
         id: itemId,
         name: values.name,
-        description: values.description,
+        description: values.description || '',
         price: values.price,
         isAvailable: values.isAvailable,
-        shouldUpdateImage: !!values.image,
+        isPopular: values.isPopular,
+        preparationTime: values.preparationTime,
         image: values.image,
-        is_available: values.isAvailable,
-        is_popular: values.isPopular,
-        preparation_time: values.preparationTime,
-        nutrition_info: values.nutrition && Object.values(values.nutrition).some(val => val !== undefined) 
-          ? JSON.stringify(values.nutrition)
-          : null,
-        category_id: categoryId
+        // Optional: Send these as additional data if present
+        ...(values.ingredients?.length ? { ingredients: values.ingredients } : {}),
+        ...(values.allergens?.length ? { allergens: values.allergens } : {}),
+        ...(values.dietaryOptions?.length ? { dietaryOptions: values.dietaryOptions } : {}),
+        nutritionInfo: values.nutritionalInfo ? JSON.stringify(values.nutritionalInfo) : null,
       });
-
+      
       if (result.error) {
         setError(result.error);
+        setIsSubmitting(false);
         return;
       }
-
-      // Redirect back to category items page
+      
+      // Update variants if they've changed
+      if (variants && variants.length > 0) {
+        await saveItemVariants(itemId, variants);
+      }
+      
+      // Redirect back to the menu item list
       router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`);
       router.refresh();
     } catch (err) {
       console.error('Error updating menu item:', err);
-      setError('Failed to update menu item. Please try again.');
+      setError('Failed to update menu item');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Loading state
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -328,261 +214,256 @@ const EditMenuItemPage: FC = () => {
       </div>
     );
   }
-
-  // Error state
+  
   if (error) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          <p>{error}</p>
-          <Button 
-            onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`)}
-            className="mt-4"
-            variant="outline"
-          >
-            Back to Category
-          </Button>
+      <div className="flex flex-col items-center justify-center min-h-screen p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4 max-w-md">
+          <h2 className="text-red-800 text-lg font-medium mb-2">Error</h2>
+          <p className="text-red-700">{error}</p>
         </div>
+        <Button onClick={() => router.back()} variant="outline">
+          Go Back
+        </Button>
       </div>
     );
   }
-
+  
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Edit Menu Item</h1>
-        <Button 
-          onClick={() => router.push(`/dashboard/restaurants/${restaurantId}/menus/${menuId}/categories/${categoryId}`)}
-          variant="outline"
-        >
-          Cancel
-        </Button>
+    <div className="container max-w-4xl p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Edit Menu Item</h1>
+        <p className="text-muted-foreground">Update details for {menuItem?.name}</p>
       </div>
       
-      {category && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded">
-          <p className="text-sm text-blue-700">
-            Editing item in category: <span className="font-semibold">{category.name}</span>
-          </p>
-        </div>
-      )}
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">Basic Information</h2>
-            
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium mb-1">
-                Item Name <span className="text-red-500">*</span>
-              </label>
-              <Input
-                id="name"
+      <FormProvider {...methods}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-medium">Basic Information</h2>
+              
+              <FormField
+                control={control}
                 name="name"
-                value={values.name}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="e.g., Margherita Pizza"
-                error={touched.name && errors.name ? errors.name : undefined}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Name <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Margherita Pizza"
+                        {...field}
+                        error={errors.name?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium mb-1">
-                Description
-              </label>
-              <Textarea
-                id="description"
+              
+              <FormField
+                control={control}
                 name="description"
-                value={values.description}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="Describe the menu item..."
-                rows={3}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe the menu item..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium mb-1">
-                Price <span className="text-red-500">*</span>
-              </label>
-              <PriceInput
-                id="price"
+              
+              <FormField
+                control={control}
                 name="price"
-                value={values.price}
-                onChange={(value) => setFieldValue('price', value)}
-                onBlur={() => handleBlur({ target: { name: 'price' }} as React.FocusEvent<HTMLInputElement>)}
-                error={touched.price && errors.price ? errors.price : undefined}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price <span className="text-red-500">*</span></FormLabel>
+                    <FormControl>
+                      <PriceInput
+                        id="price"
+                        name="price"
+                        value={field.value}
+                        onChange={(value) => field.onChange(value)}
+                        error={errors.price?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="preparationTime" className="block text-sm font-medium mb-1">
-                Preparation Time (minutes)
-              </label>
-              <Input
-                id="preparationTime"
-                name="preparationTime"
-                type="number"
-                value={values.preparationTime || ''}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="e.g., 15"
-              />
-            </div>
-            
-            <div className="flex space-x-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="isAvailable"
+              
+              <div className="space-y-2">
+                <FormField
+                  control={control}
                   name="isAvailable"
-                  checked={values.isAvailable}
-                  onChange={(e) => setFieldValue('isAvailable', e.target.checked)}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          id="isAvailable"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer">
+                        Item is available for ordering
+                      </FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <label htmlFor="isAvailable" className="text-sm font-medium">
-                  Available
-                </label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="isPopular"
+                
+                <FormField
+                  control={control}
                   name="isPopular"
-                  checked={values.isPopular}
-                  onChange={(e) => setFieldValue('isPopular', e.target.checked)}
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2">
+                      <FormControl>
+                        <Checkbox
+                          id="isPopular"
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      </FormControl>
+                      <FormLabel className="cursor-pointer">
+                        Mark as popular item
+                      </FormLabel>
+                    </FormItem>
+                  )}
                 />
-                <label htmlFor="isPopular" className="text-sm font-medium">
-                  Popular
-                </label>
               </div>
-            </div>
-          </div>
-          
-          {/* Image Upload and Additional Information */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-medium">Image & Additional Information</h2>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Item Image
-              </label>
-              <FileUpload 
-                onFileSelected={handleImageUpload}
-                accept="image/*"
-                maxSizeInMB={5}
-                isLoading={isUploading}
-                progress={uploadProgress}
-                preview={currentImageUrl || undefined}
-              />
-              {currentImageUrl && (
-                <p className="mt-1 text-xs text-gray-500">
-                  {menuItem?.image_url === currentImageUrl 
-                    ? 'Current image' 
-                    : 'New image uploaded successfully!'}
-                </p>
-              )}
-            </div>
-            
-            <div className="mt-6">
-              <h3 className="text-md font-medium mb-3">Nutrition Information (Optional)</h3>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="calories" className="block text-sm font-medium mb-1">
-                    Calories
-                  </label>
-                  <Input
-                    id="calories"
-                    name="nutrition.calories"
-                    type="number"
-                    value={values.nutrition?.calories || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 450"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="protein" className="block text-sm font-medium mb-1">
-                    Protein (g)
-                  </label>
-                  <Input
-                    id="protein"
-                    name="nutrition.protein"
-                    type="number"
-                    value={values.nutrition?.protein || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 10"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="carbs" className="block text-sm font-medium mb-1">
-                    Carbs (g)
-                  </label>
-                  <Input
-                    id="carbs"
-                    name="nutrition.carbs"
-                    type="number"
-                    value={values.nutrition?.carbs || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 50"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="fat" className="block text-sm font-medium mb-1">
-                    Fat (g)
-                  </label>
-                  <Input
-                    id="fat"
-                    name="nutrition.fat"
-                    type="number"
-                    value={values.nutrition?.fat || ''}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder="e.g., 15"
-                  />
-                </div>
-              </div>
+              <FormField
+                control={control}
+                name="preparationTime"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preparation Time (minutes)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 15"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber || undefined)}
+                        error={errors.preparationTime?.message}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Image Upload and Additional Information */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-medium">Image & Additional Details</h2>
+              
+              <FormField
+                control={control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Item Image</FormLabel>
+                    <FormControl>
+                      <FileUpload
+                        value={field.value}
+                        onChange={(file) => field.onChange(file)}
+                        accept="image/*"
+                        maxSize={5 * 1024 * 1024} // 5MB
+                        onProgress={handleUploadProgress}
+                        onUploading={handleUploadState}
+                        currentImageUrl={menuItem?.image_url}
+                      />
+                    </FormControl>
+                    <div className="text-sm text-gray-500 mt-1">
+                      Upload a new image or keep the existing one
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Complex data types using new components */}
+              <ArrayField
+                name="ingredients"
+                label="Ingredients"
+                placeholder="Add an ingredient"
+                description="List all ingredients in this item"
+                emptyMessage="No ingredients added yet"
+              />
+              
+              <ArrayField
+                name="allergens"
+                label="Allergens"
+                placeholder="Add an allergen"
+                description="List any allergy information"
+                emptyMessage="No allergens added yet"
+              />
+              
+              <ArrayField
+                name="dietaryOptions"
+                label="Dietary Options"
+                placeholder="Add dietary option"
+                description="E.g., Vegetarian, Vegan, Gluten-Free"
+                emptyMessage="No dietary options added yet"
+              />
+              
+              <ObjectField
+                name="nutritionalInfo"
+                label="Nutritional Information"
+                description="Enter nutritional facts per serving"
+                fields={[
+                  { key: 'calories', label: 'Calories', type: 'number', suffix: 'kcal' },
+                  { key: 'protein', label: 'Protein', type: 'number', suffix: 'g' },
+                  { key: 'carbs', label: 'Carbs', type: 'number', suffix: 'g' },
+                  { key: 'fat', label: 'Fat', type: 'number', suffix: 'g' },
+                  { key: 'sugar', label: 'Sugar', type: 'number', suffix: 'g' },
+                  { key: 'fiber', label: 'Fiber', type: 'number', suffix: 'g' },
+                  { key: 'sodium', label: 'Sodium', type: 'number', suffix: 'mg' },
+                ]}
+                columns={2}
+              />
             </div>
           </div>
-        </div>
-        
-        {/* Variants Section */}
-        <div className="mt-8">
-          <h2 className="text-xl font-medium mb-4">Item Variants</h2>
-          <p className="text-sm text-gray-600 mb-4">
-            Add size or variation options for this menu item, such as Small, Medium, Large, etc.
-            Each variant can have its own price adjustment relative to the base price.
-          </p>
           
-          <VariantsManager 
-            itemId={itemId}
-            initialVariants={variants || []}
-            onSave={handleSaveVariants}
-          />
+          {/* Variants Management */}
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-medium mb-4">Item Variants</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Add variations like size or options for this menu item
+            </p>
+            
+            <VariantsManager 
+              initialVariants={variants}
+              itemId={itemId}
+              onChange={handleVariantsChange}
+            />
+          </div>
           
-          {variantError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
-              <p>{variantError}</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="border-t pt-6">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting || isUploading || isSavingVariants}
-            className="w-full sm:w-auto"
-          >
-            {isSubmitting ? <Spinner size="sm" /> : 'Save Changes'}
-          </Button>
-        </div>
-      </form>
+          <div className="border-t pt-6 flex items-center justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+            >
+              Cancel
+            </Button>
+            
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || isUploading}
+            >
+              {isSubmitting ? <Spinner size="sm" /> : 'Update Menu Item'}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
     </div>
   );
 };

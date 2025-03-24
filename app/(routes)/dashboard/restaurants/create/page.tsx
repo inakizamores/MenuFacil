@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/useToast';
 import { restaurantSchema } from '@/lib/validation/schemas';
 import { createValidationRules } from '@/lib/validation/index';
 import type { RestaurantFormValues } from '@/lib/validation/schemas';
-import type { UUID } from 'crypto';
+import { toUUID } from '@/lib/utils';
 
 export default function CreateRestaurantPage() {
   const { user } = useAuth();
@@ -61,7 +61,9 @@ export default function CreateRestaurantPage() {
         phone: values.phone || null,
         email: values.email || null,
         website: values.website || null,
-        owner_id: user.id as unknown as UUID,
+        // Using toUUID utility to properly convert the string ID to UUID type
+        // This resolves TypeScript errors with Supabase database types that require UUID
+        owner_id: toUUID(user.id),
         logo_url: null,
         social_media: null,
         business_hours: null,

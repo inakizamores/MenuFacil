@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { UUID } from 'crypto';
 
 /**
  * Utility function to merge class names with Tailwind classes
@@ -19,10 +20,22 @@ export function cn(...inputs: ClassValue[]) {
  */
 
 /**
+ * ===== UUID HANDLING UTILITIES =====
+ * 
+ * The following functions handle UUID type compatibility issues between 
+ * string IDs (commonly used in the application) and the UUID type
+ * (required by Supabase database types).
+ * 
+ * These utilities solve TypeScript errors related to owner_id and other
+ * ID fields that require proper UUID typing when interacting with the database.
+ */
+
+/**
  * Ensures a value is a valid UUID string
  * This helps with type compatibility between Supabase types and our application
  * @param id The ID to convert to a UUID string
  * @returns The validated UUID string
+ * @throws Error if the ID is null, undefined, or not a valid UUID format
  */
 export function ensureUUID(id: string | undefined | null): string {
   if (!id) {
@@ -57,6 +70,75 @@ export function safeUUID(id: unknown, defaultValue: string = ''): string {
     return defaultValue;
   }
 }
+
+/**
+ * Converts a string ID to a typed UUID for use with database types
+ * This solves TypeScript errors when assigning string IDs to UUID typed fields
+ * in database operations (e.g., owner_id: toUUID(user.id) instead of as unknown as UUID)
+ * 
+ * @param id String ID to convert to UUID type
+ * @returns The ID as a proper UUID type
+ * @throws Error if the ID is null, undefined, or not a valid UUID format
+ * 
+ * @example
+ * // In restaurant creation
+ * const newRestaurant = await createRestaurant({
+ *   // ...other fields,
+ *   owner_id: toUUID(user.id), // Properly typed as UUID
+ * });
+ */
+export function toUUID(id: string | null | undefined): UUID {
+  if (!id) {
+    throw new Error('Cannot convert null or undefined to UUID');
+  }
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    throw new Error(`Invalid UUID format: ${id}`);
+  }
+  
+  // Cast the string to UUID type for TypeScript
+  return id as unknown as UUID;
+}
+
+/**
+ * Safely converts a string ID to a typed UUID, with proper error handling
+ * Returns null if the conversion fails
+ * Use this when you need a UUID type but the input might be invalid
+ * 
+ * @param id String ID to safely convert to UUID type
+ * @returns The ID as a UUID type or null if invalid
+ */
+export function safeToUUID(id: string | null | undefined): UUID | null {
+  try {
+    if (!id) return null;
+    
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) return null;
+    
+    return id as unknown as UUID;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Converts a UUID type to a string representation
+ * This is useful when you need to use the UUID in situations expecting strings
+ * (e.g., URL parameters, localStorage, or user-facing displays)
+ * 
+ * @param uuid UUID type to convert to string
+ * @returns The UUID as a string or null if the input is invalid
+ */
+export function uuidToString(uuid: UUID | null | undefined): string | null {
+  if (!uuid) return null;
+  return String(uuid);
+}
+
+/**
+ * ===== STRING AND DATE FORMATTING UTILITIES =====
+ */
 
 /**
  * Formats a date string to a localized format
