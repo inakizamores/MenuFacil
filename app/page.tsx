@@ -155,9 +155,9 @@ export default function LandingPage() {
             } 
           }
         }}
-        className="pt-32 pb-32 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white relative overflow-hidden"
+        className="pt-32 pb-20 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
               variants={{
@@ -173,22 +173,17 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/auth/register">
-                  <div className="inline-block">
-                    <Button size="lg" className="bg-white text-brand-primary hover:bg-gray-100 transform hover:scale-105 transition duration-250">
-                      Start Free Trial
-                    </Button>
-                  </div>
+                  <Button size="lg" className="bg-white text-brand-primary hover:bg-gray-100 transform hover:scale-105 transition duration-250">
+                    Start Free Trial
+                  </Button>
                 </Link>
                 <Link href="/about">
-                  <div className="inline-block">
-                    <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250">
-                      Learn More
-                    </Button>
-                  </div>
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250">
+                    Learn More
+                  </Button>
                 </Link>
               </div>
             </motion.div>
-            
             <motion.div
               variants={{
                 hidden: { opacity: 0, x: 50 },
@@ -238,18 +233,18 @@ export default function LandingPage() {
           </div>
         </div>
         
-        {/* Hero Wave Divider - New Implementation */}
-        <div className="absolute left-0 right-0 bottom-0 h-20 overflow-hidden">
+        {/* Hero Wave Divider */}
+        <div className="absolute w-full bottom-0 left-0">
           <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            preserveAspectRatio="none" 
-            version="1.1" 
+            className="w-full h-auto" 
             viewBox="0 0 1440 100" 
-            className="absolute bottom-0 w-full"
+            preserveAspectRatio="none" 
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ display: 'block' }}
           >
             <path 
-              fill="#ffffff" 
-              d="M0,0 C240,100 480,100 720,50 C960,0 1200,0 1440,50 L1440,100 L0,100 Z"
+              d="M0,0 C240,95 480,95 720,48 C960,0 1200,0 1440,48 L1440,100 L0,100 Z" 
+              fill="#ffffff"
             />
           </svg>
         </div>
@@ -271,7 +266,7 @@ export default function LandingPage() {
             } 
           }
         }}
-        className="py-20 bg-white relative"
+        className="py-20 bg-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
