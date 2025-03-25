@@ -14,10 +14,13 @@
  */
 
 export const routeMap = {
-  // Marketing root routes - now using simple pages instead of nested (routes)/(marketing) structure
+  // Main landing page with marketing content and hero section
   '/': { page: '/' },
+  
+  // Marketing root routes - now using simple pages instead of nested (routes)/(marketing) structure
   '/about': { page: '/about' },
   '/contact': { page: '/contact' },
+  '/home': { page: '/home' },
   
   // Auth routes
   '/dashboard': { page: '/dashboard' },

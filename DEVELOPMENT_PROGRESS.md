@@ -125,6 +125,16 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## Recently Completed Improvements
 
+### Landing Page
+- Implemented modern animated landing page at the root URL with hero section
+- Added responsive navigation with mobile menu support
+- Created feature showcase section with animated entrance effects
+- Implemented pricing section with clear call-to-action
+- Added proper footer with site navigation and company information
+- Ensured smooth scroll behavior and section-based animations using Framer Motion
+- Fixed routing to ensure marketing pages are accessible from main domain
+- Updated routes.js to include the landing page route for proper deployment
+
 ### Authentication System
 - Enhanced session management with unique session IDs to prevent stale data
 - Improved user switching with proper state cleanup between sessions
