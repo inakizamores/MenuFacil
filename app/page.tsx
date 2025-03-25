@@ -860,7 +860,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-brand-primary text-white pt-24 pb-12">
+      <footer className="bg-brand-primary text-white pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
