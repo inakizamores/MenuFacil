@@ -173,7 +173,10 @@ export default function LandingPage() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/auth/register">
-                  <Button size="lg" className="bg-white text-brand-primary hover:bg-gray-100 shadow-md border border-gray-200 font-semibold transform hover:scale-105 transition duration-250">
+                  <Button 
+                    size="lg" 
+                    className="bg-white !text-brand-primary hover:bg-gray-100 transform hover:scale-105 transition duration-250 font-bold"
+                  >
                     Start Free Trial
                   </Button>
                 </Link>
@@ -234,7 +237,7 @@ export default function LandingPage() {
         </div>
         
         {/* Hero Wave Divider */}
-        <div className="absolute w-full bottom-0 left-0 z-10 overflow-hidden" style={{ pointerEvents: 'none' }}>
+        <div className="absolute w-full bottom-0 left-0 z-10">
           <svg 
             className="w-full h-auto" 
             viewBox="0 0 1440 100" 
