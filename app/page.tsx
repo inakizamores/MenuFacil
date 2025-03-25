@@ -245,9 +245,22 @@ export default function LandingPage() {
             className="w-full h-[60px] md:h-[80px]" 
             fill="#ffffff"
           >
-            <path 
-              d="M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z" 
+            <motion.path 
+              d="M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z"
               fillRule="evenodd"
+              animate={{
+                d: [
+                  "M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z",
+                  "M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,60 C200,20 400,100 600,40 C800,-20 1000,80 1200,50 L1200,0 L0,0 Z",
+                  "M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z"
+                ],
+                transition: {
+                  duration: 20,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }
+              }}
             />
           </svg>
         </div>
