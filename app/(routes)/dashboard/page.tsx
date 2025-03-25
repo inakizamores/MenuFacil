@@ -1,15 +1,33 @@
 'use client';
 
 import { useAuth } from '../../context/auth-context';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/ui/button';
 import LogoutButton from '@/app/components/LogoutButton';
-import { getUserRoleDisplay } from '@/types/user-roles';
+import { getUserRoleDisplay, isRestaurantStaff } from '@/types/user-roles';
+import { useStaffRestaurant } from '@/app/hooks/useStaffRestaurant';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
+  const { restaurant, loading: restaurantLoading } = useStaffRestaurant();
+  const [restaurantName, setRestaurantName] = useState<string | null>(null);
 
-  if (isLoading) {
+  // For staff members, get their associated restaurant name
+  useEffect(() => {
+    if (user && isRestaurantStaff(user)) {
+      if (restaurant) {
+        setRestaurantName(restaurant.name);
+      } else if (typeof window !== 'undefined') {
+        // Fallback to localStorage if hook data isn't available yet
+        const storedName = localStorage.getItem('staffRestaurantName');
+        if (storedName) {
+          setRestaurantName(storedName);
+        }
+      }
+    }
+  }, [user, restaurant]);
+
+  if (isLoading || (isRestaurantStaff(user) && restaurantLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -34,8 +52,19 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold mb-4">Welcome, {user?.user_metadata?.full_name || user?.email}</h2>
             
             <div className="mb-6">
-              <p className="text-gray-600">You are logged in as {user?.email}</p>
-              <p className="text-gray-600 mt-1">Role: {getUserRoleDisplay(user)}</p>
+              {isRestaurantStaff(user) ? (
+                <>
+                  <p className="text-gray-600">You are logged in as a <span className="font-medium">Restaurant Staff Member</span></p>
+                  {restaurantName && (
+                    <p className="text-gray-600 mt-1">You have access to: <span className="font-medium">{restaurantName}</span></p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-600">You are logged in as {user?.email}</p>
+                  <p className="text-gray-600 mt-1">Role: {getUserRoleDisplay(user)}</p>
+                </>
+              )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

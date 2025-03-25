@@ -50,6 +50,7 @@ export interface StaffMemberCreationData {
  * Utility functions for role checking
  */
 export const isSystemAdmin = (user: any): boolean => {
+  if (!user) return false;
   return (
     user?.user_metadata?.role === 'system_admin' || 
     user?.role === 'system_admin'
@@ -57,6 +58,7 @@ export const isSystemAdmin = (user: any): boolean => {
 };
 
 export const isRestaurantOwner = (user: any): boolean => {
+  if (!user) return false;
   return (
     user?.user_metadata?.role === 'restaurant_owner' || 
     user?.role === 'restaurant_owner'
@@ -64,6 +66,7 @@ export const isRestaurantOwner = (user: any): boolean => {
 };
 
 export const isRestaurantStaff = (user: any): boolean => {
+  if (!user) return false;
   return (
     user?.user_metadata?.role === 'restaurant_staff' || 
     user?.role === 'restaurant_staff'
@@ -87,8 +90,16 @@ export const hasRestaurantAccess = (user: any, restaurantId: string): boolean =>
  * Get user role as a string for display
  */
 export const getUserRoleDisplay = (user: any): string => {
+  if (!user) return 'Guest';
   if (isSystemAdmin(user)) return 'System Administrator';
   if (isRestaurantOwner(user)) return 'Restaurant Owner';
   if (isRestaurantStaff(user)) return 'Restaurant Staff';
+  
+  // Look more deeply in case role data is in unusual places
+  const roleInMetadata = user?.user_metadata?.role;
+  if (roleInMetadata === 'system_admin') return 'System Administrator';
+  if (roleInMetadata === 'restaurant_owner') return 'Restaurant Owner';
+  if (roleInMetadata === 'restaurant_staff') return 'Restaurant Staff';
+  
   return 'User';
 }; 

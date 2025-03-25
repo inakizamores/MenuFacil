@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
 import RouteProtection from '@/app/components/RouteProtection';
 import LogoutButton from '@/app/components/LogoutButton';
-import { getUserRoleDisplay } from '@/types/user-roles';
+import { getUserRoleDisplay, isRestaurantStaff } from '@/types/user-roles';
+import { useStaffRestaurant } from '@/app/hooks/useStaffRestaurant';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -86,6 +87,23 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout, isLoading } = useAuth();
+  const { restaurant } = useStaffRestaurant();
+  const [restaurantName, setRestaurantName] = useState<string | null>(null);
+
+  // For staff members, get their associated restaurant name
+  useEffect(() => {
+    if (user && isRestaurantStaff(user)) {
+      if (restaurant) {
+        setRestaurantName(restaurant.name);
+      } else if (typeof window !== 'undefined') {
+        // Fallback to localStorage if hook data isn't available yet
+        const storedName = localStorage.getItem('staffRestaurantName');
+        if (storedName) {
+          setRestaurantName(storedName);
+        }
+      }
+    }
+  }, [user, restaurant]);
 
   if (isLoading) {
     return (
@@ -184,9 +202,18 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-gray-700">
                   {user?.user_metadata?.full_name || user?.email}
                 </p>
-                <p className="text-xs text-gray-500 mb-1">
-                  {getUserRoleDisplay(user)}
-                </p>
+                {isRestaurantStaff(user) ? (
+                  <>
+                    <p className="text-xs text-gray-500 mb-1">Restaurant Staff</p>
+                    {restaurantName && (
+                      <p className="text-xs text-gray-500 mb-1">{restaurantName}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-gray-500 mb-1">
+                    {getUserRoleDisplay(user)}
+                  </p>
+                )}
                 <LogoutButton
                   className="text-xs font-medium text-gray-500 hover:text-gray-700"
                   showIcon={false}
@@ -222,9 +249,18 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
                 <div className="ml-2 flex flex-col">
-                  <span className="text-xs text-gray-700">
-                    {getUserRoleDisplay(user)}
-                  </span>
+                  {isRestaurantStaff(user) ? (
+                    <>
+                      <span className="text-xs text-gray-700">Restaurant Staff</span>
+                      {restaurantName && (
+                        <span className="text-xs text-gray-700">{restaurantName}</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-xs text-gray-700">
+                      {getUserRoleDisplay(user)}
+                    </span>
+                  )}
                   <LogoutButton
                     className="text-xs font-medium text-gray-500 hover:text-gray-700"
                     showIcon={false}
