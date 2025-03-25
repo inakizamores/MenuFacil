@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { FC, useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/app/context/auth-context';
 import { getCategory } from '@/actions/categories';
 import { getMenu } from '@/actions/menus';
 import { getCategoryItems, deleteMenuItem } from '@/actions/menuItems';

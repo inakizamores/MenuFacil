@@ -2,7 +2,7 @@
 
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/app/context/auth-context';
 import { getCategory } from '@/actions/categories';
 import { createMenuItem } from '@/actions/menuItems';
 import { saveItemVariants } from '@/actions/menuItemVariants';

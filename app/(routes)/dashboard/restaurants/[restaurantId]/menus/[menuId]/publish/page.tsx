@@ -2,7 +2,7 @@
 
 import { FC, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/app/context/auth-context';
 import { getMenu, publishMenu, unpublishMenu } from '@/actions/menus';
 import PublishMenuWithQR from '@/app/components/menu/PublishMenuWithQR';
 import QRCodeManager from '@/app/components/qr-code/management/QRCodeManager';
