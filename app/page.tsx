@@ -155,7 +155,7 @@ export default function LandingPage() {
             } 
           }
         }}
-        className="pt-32 pb-20 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white"
+        className="pt-32 pb-20 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white relative"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -235,46 +235,23 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </div>
-      </motion.section>
-
-      {/* New Animated Wave Divider */}
-      <div className="relative">
-        <div className="absolute top-0 left-0 w-full overflow-hidden">
+        
+        {/* New wave divider directly inside the hero section */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-0" style={{ transform: 'translateY(1px)' }}>
           <svg 
+            viewBox="0 0 1200 120" 
+            preserveAspectRatio="none" 
             xmlns="http://www.w3.org/2000/svg" 
-            viewBox="0 0 1440 320" 
-            className="w-full h-auto"
-            preserveAspectRatio="none"
-            style={{ display: 'block', backgroundColor: 'transparent' }}
+            className="w-full h-[60px] md:h-[80px]" 
+            fill="#ffffff"
           >
-            <defs>
-              <linearGradient id="dividerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#121c74" />
-                <stop offset="50%" stopColor="#3e46f3" />
-                <stop offset="100%" stopColor="#d98b48" />
-              </linearGradient>
-            </defs>
-            <motion.path 
-              initial={{ d: "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" }}
-              animate={{ 
-                d: [
-                  "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z",
-                  "M0,128L48,144C96,160,192,192,288,181.3C384,171,480,117,576,128C672,139,768,213,864,213.3C960,213,1056,139,1152,112C1248,85,1344,107,1392,117.3L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z",
-                  "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-                ],
-                transition: {
-                  duration: 15,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                  repeatType: "reverse"
-                }
-              }}
-              fill="url(#dividerGradient)"
+            <path 
+              d="M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z" 
+              fillRule="evenodd"
             />
           </svg>
         </div>
-        <div className="h-32"></div>
-      </div>
+      </motion.section>
 
       {/* Features Section */}
       <motion.section 
