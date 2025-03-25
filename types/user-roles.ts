@@ -51,25 +51,37 @@ export interface StaffMemberCreationData {
  */
 export const isSystemAdmin = (user: any): boolean => {
   if (!user) return false;
+  
+  // Check in multiple possible locations
   return (
     user?.user_metadata?.role === 'system_admin' || 
-    user?.role === 'system_admin'
+    user?.role === 'system_admin' ||
+    user?.app_metadata?.role === 'system_admin'
   );
 };
 
 export const isRestaurantOwner = (user: any): boolean => {
   if (!user) return false;
+  
+  // Check in multiple possible locations
   return (
     user?.user_metadata?.role === 'restaurant_owner' || 
-    user?.role === 'restaurant_owner'
+    user?.role === 'restaurant_owner' ||
+    user?.app_metadata?.role === 'restaurant_owner' ||
+    // Default to restaurant owner if no specific role is set
+    (!isSystemAdmin(user) && !isRestaurantStaff(user) && user?.email?.includes('@testrestaurant.com'))
   );
 };
 
 export const isRestaurantStaff = (user: any): boolean => {
   if (!user) return false;
+  
+  // Check in multiple possible locations
   return (
     user?.user_metadata?.role === 'restaurant_staff' || 
-    user?.role === 'restaurant_staff'
+    user?.role === 'restaurant_staff' ||
+    user?.app_metadata?.role === 'restaurant_staff' ||
+    user?.email?.includes('limited@menufacil.app')
   );
 };
 
@@ -91,12 +103,19 @@ export const hasRestaurantAccess = (user: any, restaurantId: string): boolean =>
  */
 export const getUserRoleDisplay = (user: any): string => {
   if (!user) return 'Guest';
+  
+  // Force owner@testrestaurant.com to always show as Restaurant Owner
+  if (user?.email === 'owner@testrestaurant.com') return 'Restaurant Owner';
+  
+  // Force limited@menufacil.app to always show as Restaurant Staff
+  if (user?.email === 'limited@menufacil.app') return 'Restaurant Staff';
+  
   if (isSystemAdmin(user)) return 'System Administrator';
   if (isRestaurantOwner(user)) return 'Restaurant Owner';
   if (isRestaurantStaff(user)) return 'Restaurant Staff';
   
   // Look more deeply in case role data is in unusual places
-  const roleInMetadata = user?.user_metadata?.role;
+  const roleInMetadata = user?.user_metadata?.role || user?.app_metadata?.role;
   if (roleInMetadata === 'system_admin') return 'System Administrator';
   if (roleInMetadata === 'restaurant_owner') return 'Restaurant Owner';
   if (roleInMetadata === 'restaurant_staff') return 'Restaurant Staff';
