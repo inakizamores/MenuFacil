@@ -4,6 +4,7 @@ import { useAuth } from '../../context/auth-context';
 import { useEffect } from 'react';
 import Button from '../../components/ui/button';
 import LogoutButton from '@/app/components/LogoutButton';
+import { getUserRoleDisplay } from '@/types/user-roles';
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();
@@ -34,6 +35,7 @@ export default function DashboardPage() {
             
             <div className="mb-6">
               <p className="text-gray-600">You are logged in as {user?.email}</p>
+              <p className="text-gray-600 mt-1">Role: {getUserRoleDisplay(user)}</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
 import RouteProtection from '@/app/components/RouteProtection';
 import LogoutButton from '@/app/components/LogoutButton';
+import { getUserRoleDisplay } from '@/types/user-roles';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -183,6 +184,9 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-gray-700">
                   {user?.user_metadata?.full_name || user?.email}
                 </p>
+                <p className="text-xs text-gray-500 mb-1">
+                  {getUserRoleDisplay(user)}
+                </p>
                 <LogoutButton
                   className="text-xs font-medium text-gray-500 hover:text-gray-700"
                   showIcon={false}
@@ -217,10 +221,15 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                     {user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
-                <LogoutButton
-                  className="ml-2 text-xs font-medium text-gray-500 hover:text-gray-700"
-                  showIcon={false}
-                />
+                <div className="ml-2 flex flex-col">
+                  <span className="text-xs text-gray-700">
+                    {getUserRoleDisplay(user)}
+                  </span>
+                  <LogoutButton
+                    className="text-xs font-medium text-gray-500 hover:text-gray-700"
+                    showIcon={false}
+                  />
+                </div>
               </div>
             </div>
           </div>
