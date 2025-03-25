@@ -13,13 +13,14 @@ import {
   Settings, 
   LogOut
 } from 'lucide-react';
+import LogoutButton from '@/app/components/LogoutButton';
 
 export default function OwnerDashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user, isLoading, isRestaurantOwner, logout } = useAuth();
+  const { user, isLoading, isRestaurantOwner } = useAuth();
   const router = useRouter();
 
   // Owner access control
@@ -28,16 +29,6 @@ export default function OwnerDashboardLayout({
       router.push('/auth/login');
     }
   }, [isLoading, isRestaurantOwner, router]);
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -112,13 +103,10 @@ export default function OwnerDashboardLayout({
             <span>Settings</span>
           </Link>
           
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center px-4 py-3 hover:bg-blue-800 rounded-md transition-colors text-left"
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            <span>Logout</span>
-          </button>
+          <LogoutButton
+            className="w-full flex items-center px-4 py-3 hover:bg-blue-800 rounded-md transition-colors text-left text-white"
+            label="Logout"
+          />
         </nav>
       </aside>
       

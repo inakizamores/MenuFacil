@@ -10,11 +10,20 @@ import { registerSchema } from '@/lib/validation/schemas';
 import type { RegisterFormValues } from '@/lib/validation/schemas';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
 
+/**
+ * RegisterPage - User registration form
+ * 
+ * This component implements a comprehensive registration form with modern validation using
+ * Zod schemas and React Hook Form. It includes validation for name, email, password,
+ * password confirmation, and terms acceptance with real-time feedback.
+ * 
+ * The form uses the Form component system for consistent validation UI and accessibility.
+ */
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Use Zod form with schema validation
+  // Initialize form with Zod schema validation and default values
   const form = useZodForm({
     schema: registerSchema,
     defaultValues: {
@@ -26,6 +35,11 @@ export default function RegisterPage() {
     },
   });
 
+  /**
+   * Handle form submission for user registration
+   * Attempts to register a new user with the provided information
+   * Handles any server errors that occur during registration
+   */
   const handleRegister = async (values: RegisterFormValues) => {
     setServerError(null);
     try {
@@ -34,6 +48,7 @@ export default function RegisterPage() {
         email: values.email,
         password: values.password,
       });
+      // Successful registration is handled by the auth context (redirect)
     } catch (error: any) {
       setServerError(error.message || 'Registration failed. Please try again.');
     }
@@ -55,13 +70,16 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+          {/* Display server-side errors during registration */}
           {serverError && (
             <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
               {serverError}
             </div>
           )}
           
+          {/* Registration form with comprehensive validation */}
           <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
+            {/* Full name field with validation */}
             <FormField
               control={form.control}
               name="name"
@@ -82,6 +100,7 @@ export default function RegisterPage() {
               )}
             />
 
+            {/* Email field with validation */}
             <FormField
               control={form.control}
               name="email"
@@ -102,6 +121,7 @@ export default function RegisterPage() {
               )}
             />
 
+            {/* Password field with validation and requirements description */}
             <FormField
               control={form.control}
               name="password"
@@ -124,6 +144,7 @@ export default function RegisterPage() {
               )}
             />
 
+            {/* Confirm password field with matching validation */}
             <FormField
               control={form.control}
               name="confirmPassword"
@@ -143,6 +164,7 @@ export default function RegisterPage() {
               )}
             />
 
+            {/* Terms acceptance checkbox with required validation */}
             <FormField
               control={form.control}
               name="terms"
@@ -174,6 +196,7 @@ export default function RegisterPage() {
               )}
             />
 
+            {/* Submit button with loading state */}
             <Button
               type="submit"
               fullWidth

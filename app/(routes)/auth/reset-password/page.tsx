@@ -11,6 +11,15 @@ import { resetPasswordSchema } from '@/lib/validation/schemas';
 import type { ResetPasswordFormValues } from '@/lib/validation/schemas';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/app/components/ui/form';
 
+/**
+ * ResetPasswordPage - Password reset form
+ * 
+ * This component allows users to create a new password after receiving a reset link.
+ * It implements modern form validation using Zod schemas with React Hook Form,
+ * validates the reset token from URL params, and handles the password reset process.
+ * 
+ * The form includes password and confirmation inputs with matching validation.
+ */
 export default function ResetPasswordPage() {
   const { resetUserPassword } = useAuth();
   const router = useRouter();
@@ -18,7 +27,7 @@ export default function ResetPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Use Zod form with schema validation
+  // Initialize form with Zod schema validation and default values
   const form = useZodForm({
     schema: resetPasswordSchema,
     defaultValues: {
@@ -27,7 +36,11 @@ export default function ResetPasswordPage() {
     },
   });
 
-  // Define reset password handler
+  /**
+   * Handle form submission for password reset
+   * Submits the new password with the reset token
+   * Shows success feedback and redirects to login after success
+   */
   const handleResetPassword = async (values: ResetPasswordFormValues) => {
     if (!token) return;
 
@@ -35,6 +48,7 @@ export default function ResetPasswordPage() {
     try {
       await resetUserPassword(values.password);
       setIsSuccess(true);
+      // Redirect to login page after successful password reset
       setTimeout(() => {
         router.push('/auth/login');
       }, 3000);
@@ -43,6 +57,10 @@ export default function ResetPasswordPage() {
     }
   };
 
+  /**
+   * Extract token from URL parameters on component mount
+   * Redirects to login if no token is provided
+   */
   useEffect(() => {
     // Extract token from URL on client side
     const searchParams = new URLSearchParams(window.location.search);
@@ -55,6 +73,7 @@ export default function ResetPasswordPage() {
     }
   }, [router]);
 
+  // Show success message after password reset
   if (isSuccess) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -88,13 +107,16 @@ export default function ResetPasswordPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+          {/* Display server-side errors */}
           {serverError && (
             <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
               {serverError}
             </div>
           )}
           
+          {/* Password reset form with validation */}
           <Form form={form} onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-6">
+            {/* New password field with validation and requirements description */}
             <FormField
               control={form.control}
               name="password"
@@ -117,6 +139,7 @@ export default function ResetPasswordPage() {
               )}
             />
 
+            {/* Confirm password field with matching validation */}
             <FormField
               control={form.control}
               name="confirmPassword"
@@ -136,6 +159,7 @@ export default function ResetPasswordPage() {
               )}
             />
 
+            {/* Submit button with loading state */}
             <Button
               type="submit"
               fullWidth

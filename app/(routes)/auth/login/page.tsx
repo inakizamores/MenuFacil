@@ -10,11 +10,19 @@ import { loginSchema } from '@/lib/validation/schemas';
 import type { LoginFormValues } from '@/lib/validation/schemas';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
 
+/**
+ * LoginPage - Authentication form for user login
+ * 
+ * This component implements a modern form with comprehensive validation using Zod schemas
+ * and React Hook Form. It provides real-time validation feedback and proper accessibility.
+ * The form includes email, password inputs and remember me checkbox, with validation
+ * for each field according to the loginSchema.
+ */
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, error: authError } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // Use Zod form with schema validation
+  // Initialize form with Zod schema validation and default values
   const form = useZodForm({
     schema: loginSchema,
     defaultValues: {
@@ -24,17 +32,28 @@ export default function LoginPage() {
     },
   });
 
+  /**
+   * Handle form submission for user login
+   * Attempts to log in with provided credentials and handles any errors
+   */
   const handleLogin = async (values: LoginFormValues) => {
     setServerError(null);
     try {
+      console.log('Attempting login with:', values.email);
       await login({
         email: values.email,
         password: values.password,
       });
+      console.log('Login successful');
+      // Successful login is handled by the auth context (redirect)
     } catch (error: any) {
+      console.error('Login error:', error);
       setServerError(error.message || 'Login failed. Please try again.');
     }
   };
+
+  // Combine errors from auth context and local state
+  const errorMessage = serverError || authError;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
@@ -52,13 +71,16 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-          {serverError && (
+          {/* Display server-side errors (e.g., invalid credentials) */}
+          {errorMessage && (
             <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
-              {serverError}
+              {errorMessage}
             </div>
           )}
           
+          {/* Form with accessibility and validation using Form component */}
           <Form form={form} onSubmit={form.handleSubmit(handleLogin)} className="space-y-6">
+            {/* Email field with validation */}
             <FormField
               control={form.control}
               name="email"
@@ -79,6 +101,7 @@ export default function LoginPage() {
               )}
             />
 
+            {/* Password field with validation */}
             <FormField
               control={form.control}
               name="password"
@@ -99,6 +122,7 @@ export default function LoginPage() {
             />
 
             <div className="flex items-center justify-between">
+              {/* Remember me checkbox */}
               <FormField
                 control={form.control}
                 name="rememberMe"
@@ -118,6 +142,7 @@ export default function LoginPage() {
                 )}
               />
 
+              {/* Forgot password link */}
               <div className="text-sm">
                 <Link href="/auth/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
                   Forgot your password?
@@ -125,6 +150,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Submit button with loading state */}
             <Button
               type="submit"
               fullWidth

@@ -242,14 +242,13 @@ We've improved the QR code management functionality with the following enhanceme
 - Enhanced `Input` component with validation states and accessibility features
 - Added debounce utilities for optimized form validation performance
 - Upgraded restaurant creation form with improved validation and user feedback
-- Prepared application for testing and deployment with test user support
-- Enhanced Vercel configuration for proper API route handling
-- Added production build script for simplified deployment
-- Fixed Supabase environment variables for Vercel deployment to ensure proper server-side authentication
+- Consolidated authentication system after implementing tiered user roles
+- Fixed login persistence issues by properly configuring Supabase client
+- Added dedicated LogoutButton component for consistent logout UX
+- Fixed user session persistence issues in auth flow
+- Added proper role-based routing for different user types (admin, owner, staff)
 
 ## In Progress
-- Testing application functionality with test users
-- Deploying to Vercel for production testing
 - Improving error handling for network requests and form submissions
 - Enhancing user interface components for better usability
 - Implementing comprehensive client-side validation for all forms
@@ -1004,6 +1003,11 @@ The MenuFácil project is currently in active development. The backend is mostly
 - Enhanced `Input` component with validation states and accessibility features
 - Added debounce utilities for optimized form validation performance
 - Upgraded restaurant creation form with improved validation and user feedback
+- Consolidated authentication system after implementing tiered user roles
+- Fixed login persistence issues by properly configuring Supabase client
+- Added dedicated LogoutButton component for consistent logout UX
+- Fixed user session persistence issues in auth flow
+- Added proper role-based routing for different user types (admin, owner, staff)
 
 ## In Progress
 - Creating restaurant management interfaces for administration

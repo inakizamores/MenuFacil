@@ -3,16 +3,21 @@
 import { useAuth } from '../../context/auth-context';
 import { useEffect } from 'react';
 import Button from '../../components/ui/button';
+import LogoutButton from '@/app/components/LogoutButton';
 
 export default function DashboardPage() {
-  const { user, logout, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
       </div>
     );
+  }
+
+  if (!user) {
+    return <div>Please log in to access this page.</div>;
   }
 
   return (
@@ -72,12 +77,9 @@ export default function DashboardPage() {
                     </a>
                   </li>
                   <li>
-                    <button 
-                      onClick={logout}
+                    <LogoutButton
                       className="text-red-600 hover:text-red-800"
-                    >
-                      Sign Out
-                    </button>
+                    />
                   </li>
                 </ul>
               </div>

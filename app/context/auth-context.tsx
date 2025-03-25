@@ -2,18 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  signIn, 
-  signUp, 
-  signOut, 
-  resetPassword, 
-  updatePassword, 
-  getCurrentUser, 
-  getSession,
-  SignInCredentials,
-  SignUpCredentials
-} from '../utils/auth';
-import { supabase } from '../config/supabase';
+import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { 
   SystemRole, 
@@ -22,6 +11,20 @@ import {
   isRestaurantStaff 
 } from '../../types/user-roles';
 
+// Define the auth credentials types
+export type SignInCredentials = {
+  email: string;
+  password: string;
+};
+
+export type SignUpCredentials = {
+  email: string;
+  password: string;
+  name?: string;
+  role?: SystemRole;
+};
+
+// Define the auth context type
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -39,8 +42,10 @@ interface AuthContextType {
   getHomeRoute: () => string;
 }
 
+// Create the auth context
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -48,13 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<SystemRole | null>(null);
   const router = useRouter();
+  const supabase = createClient();
 
   // Initialize auth
   useEffect(() => {
     const initAuth = async () => {
       try {
         // Check for existing session
-        const session = await getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
         
@@ -74,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user || null);
       
@@ -90,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []); // Empty dependency array as this should only run once on mount
+  }, [supabase.auth]); // Add supabase.auth as dependency to ensure it recreates the listener if client changes
 
   // Helper function to determine home route based on user role
   const getHomeRoute = (): string => {
@@ -109,17 +116,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      const { user, session } = await signIn(credentials);
-      setUser(user);
-      setSession(session);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+      
+      if (error) throw error;
+      
+      setUser(data.user);
+      setSession(data.session);
       
       // Set role and redirect to appropriate dashboard
-      if (user) {
-        const role = user.user_metadata?.role as SystemRole || 'restaurant_owner';
+      if (data.user) {
+        const role = data.user.user_metadata?.role as SystemRole || 'restaurant_owner';
         setUserRole(role);
         router.push(getHomeRoute());
-      } else {
-        router.push('/dashboard');
       }
     } catch (error: any) {
       setError(error.message || 'Failed to sign in');
@@ -133,9 +144,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      const { user, session } = await signUp(credentials);
-      setUser(user);
-      setSession(session);
+      const { data, error } = await supabase.auth.signUp({
+        email: credentials.email,
+        password: credentials.password,
+        options: {
+          data: {
+            full_name: credentials.name,
+            role: credentials.role || 'restaurant_owner'
+          },
+        },
+      });
+      
+      if (error) throw error;
+      
+      setUser(data.user);
+      setSession(data.session);
       router.push('/dashboard');
     } catch (error: any) {
       setError(error.message || 'Failed to sign up');
@@ -149,15 +172,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      await signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear state
       setUser(null);
       setSession(null);
       setUserRole(null);
-      // The redirect is now handled in the signOut function itself
+      
+      // Redirect to home
+      router.push('/');
     } catch (error: any) {
       setError(error.message || 'Failed to sign out');
-      // Fallback - force a redirect to home
-      window.location.href = '/';
       throw error;
     } finally {
       setIsLoading(false);
@@ -168,7 +194,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      await resetPassword(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+      
+      if (error) throw error;
     } catch (error: any) {
       setError(error.message || 'Failed to reset password');
       throw error;
@@ -181,7 +211,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
-      await updatePassword(password);
+      const { error } = await supabase.auth.updateUser({
+        password,
+      });
+      
+      if (error) throw error;
     } catch (error: any) {
       setError(error.message || 'Failed to update password');
       throw error;

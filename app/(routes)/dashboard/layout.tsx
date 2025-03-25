@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
 import RouteProtection from '@/app/components/RouteProtection';
+import LogoutButton from '@/app/components/LogoutButton';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -182,12 +183,10 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-gray-700">
                   {user?.user_metadata?.full_name || user?.email}
                 </p>
-                <button 
-                  onClick={logout}
+                <LogoutButton
                   className="text-xs font-medium text-gray-500 hover:text-gray-700"
-                >
-                  Sign out
-                </button>
+                  showIcon={false}
+                />
               </div>
             </div>
           </div>
@@ -218,12 +217,10 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                     {user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
-                <button 
-                  onClick={logout}
+                <LogoutButton
                   className="ml-2 text-xs font-medium text-gray-500 hover:text-gray-700"
-                >
-                  Sign out
-                </button>
+                  showIcon={false}
+                />
               </div>
             </div>
           </div>

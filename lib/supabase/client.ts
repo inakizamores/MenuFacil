@@ -10,5 +10,13 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
   
-  return createBrowserClient<Database>(supabaseUrl, supabaseKey);
+  return createBrowserClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'supabase-auth-token',
+      detectSessionInUrl: true,
+      flowType: 'pkce'
+    }
+  });
 } 

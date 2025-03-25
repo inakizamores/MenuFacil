@@ -11,13 +11,14 @@ import {
   Settings, 
   LogOut
 } from 'lucide-react';
+import LogoutButton from '@/app/components/LogoutButton';
 
 export default function StaffDashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { user, isLoading, isRestaurantStaff, logout } = useAuth();
+  const { user, isLoading, isRestaurantStaff } = useAuth();
   const router = useRouter();
 
   // Staff access control
@@ -27,20 +28,10 @@ export default function StaffDashboardLayout({
     }
   }, [isLoading, isRestaurantStaff, router]);
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.push('/');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
       </div>
     );
   }
@@ -94,13 +85,10 @@ export default function StaffDashboardLayout({
             <span>Settings</span>
           </Link>
           
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center px-4 py-3 hover:bg-emerald-800 rounded-md transition-colors text-left"
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            <span>Logout</span>
-          </button>
+          <LogoutButton
+            className="w-full flex items-center px-4 py-3 hover:bg-emerald-800 rounded-md transition-colors text-left text-white"
+            label="Logout"
+          />
         </nav>
       </aside>
       
