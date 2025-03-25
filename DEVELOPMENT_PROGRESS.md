@@ -1,86 +1,65 @@
-# MenuFácil Development Progress
+# MenuFacil Development Progress
 
 ## Project Overview
 MenuFácil is a web-based application designed to help restaurants digitize their menus with QR codes. It provides a simple way for restaurant owners to create, manage, and update their digital menus, while offering customers an easy way to view menus on their mobile devices.
 
-**Project Start Date:** March 14, 2024  
 **Current Version:** 0.3.0 (Architecture Restructuring)  
 **Repository:** Private GitHub repository  
 **Framework:** Next.js 14 with App Router  
-**Last Updated:** July 21, 2024
 
 ## UI Design Principles
 
-The MenuFácil application follows these key design principles:
+| Principle | Description |
+|-----------|-------------|
+| **Consistent Light Theme** | Clean, professional appearance with simplified UI development |
+| **Adaptive Responsive Design** | Admin dashboard and management interfaces are desktop-optimized but scale to mobile devices; customer-facing menu views are mobile-first |
+| **Brand Consistency** | Primary UI colors aligned with MenuFácil brand identity |
+| **Accessibility** | Light theme with high contrast for optimal readability |
 
-1. **Consistent Light Theme** - The application uses a consistent light theme throughout to ensure a clean, professional appearance and simplify UI development. This design decision eliminates the complexity of supporting dark mode and multiple theme options.
+## Technology Stack
 
-2. **Mobile-First Approach** - All interfaces are designed with mobile users in mind, then scaled up for larger screens.
+| Category | Technologies |
+|----------|--------------|
+| **Frontend** | React 18.2.0, Next.js 14.0.4 |
+| **State Management** | React Context API |
+| **Type System** | TypeScript 5.3.3 |
+| **Styling** | TailwindCSS 3.4.1, custom UI components |
+| **API Architecture** | Serverless with Next.js API Routes |
+| **Database** | Supabase (PostgreSQL) |
+| **Authentication** | Supabase Auth with JWT |
+| **Storage** | Supabase Storage |
+| **Deployment** | Vercel (Production/Preview) |
+| **Analytics** | Posthog (planned) |
+| **Payments** | Stripe (planned) |
+| **Form Handling** | Zod and React Hook Form |
+| **Testing** | Jest (planned), Cypress (planned) |
+| **QR Code** | QRCode.react |
+| **File Export** | jsPDF, JSZip, file-saver |
 
-3. **Brand Consistency** - Primary UI colors align with the MenuFácil brand identity.
+## Responsive Design Strategy
 
-4. **Accessibility** - The light theme with high contrast ensures good readability for all users.
+| Interface | Approach | Target Devices | Priority |
+|-----------|----------|----------------|----------|
+| **Admin Dashboard** | Desktop-first | Desktop, tablets, mobile | Desktop > Tablet > Mobile |
+| **Restaurant Management** | Desktop-first | Desktop, tablets | Desktop > Tablet |
+| **Menu Editor** | Desktop-first | Desktop, tablets | Desktop > Tablet |
+| **Customer Menu Views** | Mobile-first | Mobile, tablets, desktop | Mobile > Tablet > Desktop |
+| **QR Code Generator** | Desktop-first | Desktop, tablets | Desktop > Tablet |
 
-## Recent Implementations
+## Key Design Patterns
 
-### Enhanced QR Code Management (July 15, 2024)
-We've improved the QR code management functionality with the following enhancements:
+| Pattern | Implementation |
+|---------|----------------|
+| **Component-Based Architecture** | Reusable UI components with separation of concerns |
+| **Context API** | Global state management (authentication state) |
+| **Custom Hooks** | Form handling, validation, and data fetching |
+| **Server Components** | Performance-optimized rendering where applicable |
+| **Responsive Design** | Desktop-first for admin, mobile-first for customer views |
+| **Repository Pattern** | Database access with Supabase |
+| **Facade Pattern** | Service abstraction |
+| **Atomic Design** | UI component organization |
 
-1. **Form Validation**
-   - Implemented Zod schema validation for QR code creation and editing forms
-   - Added comprehensive validation for all QR code properties (name, design options, table numbers, etc.)
-   - Integrated form validation with React Hook Form for a better user experience
-
-2. **User Interface Improvements**
-   - Enhanced the QR code editor with a more intuitive layout
-   - Added real-time preview of QR code changes
-   - Improved color selection interface with color picker support
-
-3. **Error Handling**
-   - Added better error handling for form submissions
-   - Implemented user-friendly error messages
-   - Improved feedback for successful operations
-
-4. **Code Quality**
-   - Ensured consistent TypeScript typing across components
-   - Fixed type compatibility issues between form values and server action parameters
-   - Improved reusability of QR code form components
-
-5. **Deployment Fixes**
-   - Simplified the `createQRCode` server action to resolve type compatibility issues
-   - Fixed import paths for form components to use the proper case-sensitive paths
-   - Successfully deployed to Vercel with zero TypeScript errors
-
-## Project Architecture
-
-### Technology Stack
-- **Frontend Framework:** React 18.2.0, Next.js 14.0.4
-- **State Management:** React Context API
-- **Type System:** TypeScript 5.3.3
-- **Styling:** TailwindCSS 3.4.1, with custom UI component library
-- **API Architecture:** Serverless with Next.js API Routes
-- **Database:** Supabase (PostgreSQL)
-- **Authentication:** Supabase Auth with JWT
-- **Storage:** Supabase Storage for images and assets
-- **Deployment:** Vercel (Production/Preview)
-- **Analytics:** Posthog (planned)
-- **Payments:** Stripe (planned)
-- **Form Handling:** Zod and React Hook Form
-- **Testing:** Jest (planned), Cypress (planned)
-- **QR Code Generation:** QRCode.react
-- **File Export:** jsPDF, JSZip, file-saver
-
-### Key Design Patterns
-- **Component-Based Architecture:** Reusable UI components with clear separation of concerns
-- **Context API:** For global state management (authentication state)
-- **Custom Hooks:** For form handling, validation, and data fetching
-- **Server Components:** For performance-optimized rendering where applicable
-- **Responsive Design:** Mobile-first approach with adaptive layouts using a consistent light theme
-- **Repository Pattern:** For database access with Supabase
-- **Facade Pattern:** For service abstraction
-- **Atomic Design Principles:** For UI component organization
-
-### Code Organization
+## Code Organization
 ```
 ├── app/ - Next.js application
 │   ├── (routes)/ - Route groups for different sections
@@ -104,140 +83,66 @@ We've improved the QR code management functionality with the following enhanceme
 
 ## Feature Implementation Status
 
-### Completed Features (✅)
+### Core Features
 
-#### Authentication System (100%)
-- **User Registration:** ✅ Complete with email verification
-- **Login System:** ✅ Complete with persistent sessions
-- **Authentication Context:** ✅ Complete with global state
-- **Profile Management:** ✅ Complete
+| Feature | Status | Details |
+|---------|--------|---------|
+| **Authentication System** | ✅ 100% | User registration, login, profile management complete |
+| **Restaurant Management** | ✅ 100% | Listing, creation, details, editing complete |
+| **Menu Management** | ✅ 100% | Creation, editing, category management, publishing complete |
+| **Menu Item Management** | ✅ 100% | CRUD operations, variants, categorization with drag-and-drop |
+| **QR Code Management** | ✅ 100% | Generation, editing, export, batch generation, analytics |
+| **Public Menu Views** | 🔄 90% | Customer-facing pages complete, URL structure and multilingual support pending |
 
-#### Restaurant Management (100%)
-- **Restaurant Listing:** ✅ Complete with filtering
-- **Restaurant Creation:** ✅ Complete with validation
-- **Restaurant Details:** ✅ Complete
-- **Restaurant Editing:** ✅ Complete
+### Secondary Features
 
-#### Menu Management (100%)
-- **Menu Listing:** ✅ Complete
-- **Menu Creation:** ✅ Complete
-- **Menu Editing:** ✅ Complete
-- **Category Management:** ✅ Complete
-- **Menu Publishing:** ✅ Complete
-
-#### Menu Item Management (100%)
-- **Item Listing:** ✅ Complete
-- **Item Creation:** ✅ Complete with validation
-- **Item Editing:** ✅ Complete with validation
-- **Item Deletion:** ✅ Complete
-- **Variant Management:** ✅ Complete
-- **Item Categorization:** ✅ Complete with drag-and-drop
-
-#### QR Code Management (100%)
-- **QR Code Generation:** ✅ Complete with customization and validation
-- **QR Code Editing:** ✅ Complete with validation
-- **QR Code Export:** ✅ Complete with multiple formats (PNG, SVG, PDF)
-- **Batch Generation:** ✅ Complete with up to 50 codes at once
-- **QR Code Analytics:** ✅ Complete with tracking
-
-#### Public Menu Views (100%)
-- **Customer-Facing Pages:** ✅ Complete
-- **Multilingual Support:** ⏳ Not Started
-
-### In Progress Features (🔄)
-
-#### Dashboard UI (90%)
-- **Layout Structure:** ✅ Complete
-- **Navigation System:** ✅ Complete
-- **Dashboard Homepage:** ✅ Complete
-- **Responsive Design:** ✅ Complete
-- **User Settings:** ✅ Complete
-
-#### Analytics Dashboard (60%)
-- **Menu Analytics:** ✅ Complete
-- **QR Code Analytics:** ✅ Complete
-- **Reporting:** 🔄 In Progress
-
-#### Admin Panel (50%)
-- **User Management:** ✅ Complete
-- **System Monitoring:** ✅ Complete
-- **Content Moderation:** ⏳ Not Started
-
-### Not Started Features (⏳)
-
-#### Subscription Management (0%)
-- **Plan Tiers:** ⏳ Not Started
-- **Payment Processing:** ⏳ Not Started
-- **Account Management:** ⏳ Not Started
+| Feature | Status | Details |
+|---------|--------|---------|
+| **Dashboard UI** | 🔄 90% | Layout, navigation, homepage, responsive design complete, settings in progress |
+| **Analytics Dashboard** | 🔄 60% | Menu analytics, QR code analytics complete, reporting in progress |
+| **Admin Panel** | 🔄 50% | User management, system monitoring complete, content moderation pending |
+| **Subscription Management** | ⏳ 0% | Plan tiers, payment processing, account management not started |
 
 ## Current Priority Tasks
 
-1. ✅ Fixed TypeScript errors in profiles.ts related to Supabase API compatibility
-2. ✅ Updated cookie handling in Supabase client creation to match current API
-3. ✅ Enhanced public menu viewing experience with mobile optimization and improved UI
-4. ✅ Completed restaurant statistics dashboard with detailed analytics
-5. ✅ Implemented user settings panel
+| Task | Status | Sprint |
+|------|--------|--------|
+| Fix TypeScript errors in profiles.ts related to Supabase API | ✅ Complete | Previous |
+| Update cookie handling in Supabase client creation | ✅ Complete | Previous |
+| Enhance public menu viewing experience | ✅ Complete | Previous |
+| Complete restaurant statistics dashboard | ✅ Complete | Previous |
+| Implement user settings panel | ✅ Complete | Previous |
+| Enhance session management with unique IDs | ✅ Complete | Current |
+| Improve user switching with proper state cleanup | ✅ Complete | Current |
+| Add automatic dashboard refresh when changing users | ✅ Complete | Current |
+| Create more reliable logout process | ✅ Complete | Current |
+| Add improved error handling in login flow | ✅ Complete | Current |
+| Implement standardized URL structure for public menus | ⏳ Planned | Next |
 
-## Future Enhancement Ideas
+## Recently Completed Improvements
 
-### High Impact Features
-
-1. **Table-Specific Ordering Integration** 
-   - Extend QR codes with table-specific functionality for order processing
-   - Allow customers to place orders directly from the menu QR code
-   - Enable waitstaff to see which table placed which order
-   - Implement order tracking by table for improved restaurant operations
-   - Add table-specific analytics (ordering patterns, popular items by table location)
-   - Include a payment processing option at the table
-
-2. **Real-time Menu Updates**
-   - Implement WebSocket connections for live menu updates
-   - Allow real-time availability status changes
-   - Show "just ordered" popularity indicators
-
-3. **Advanced Analytics**
-   - Export functionality for analytics data
-   - Customer behavior analysis
-   - Item popularity tracking
-   - Revenue optimization suggestions
-   - Traffic pattern analysis
-
-4. **Mobile Apps**
-   - Native mobile apps for restaurant owners
-   - Staff-facing mobile interface for order management
-   - Offline functionality for unstable connections
-
-5. **POS Integration**
-   - Connect with popular point-of-sale systems
-   - Synchronize inventory between POS and menu
-   - Integrate with kitchen display systems
-
-6. **Inventory Management**
-   - Track ingredient usage based on orders
-   - Automatic item availability updates
-   - Low stock alerts and supplier integration
-
-## Technical Debt
-
-- Some components lack proper error handling for edge cases
-- Need for more comprehensive test coverage
-- UI components could benefit from better accessibility features
-- Some dependencies have punycode deprecation warnings that need to be addressed
-
-## Project Status
-The MenuFácil project is currently in active development. The backend is mostly functional, and we're implementing and refining frontend features. The application is deployed and accessible at https://menufacil.vercel.app.
-
-## Recently Completed Features
+### Authentication System
+- Enhanced session management with unique session IDs to prevent stale data
+- Improved user switching with proper state cleanup between sessions
+- Automatic dashboard refresh when changing between user accounts
+- More reliable logout process that clears all user data
+- Better error handling and debugging in the login flow
 - Updated Supabase authentication to modern @supabase/ssr package
+- Fixed login persistence issues by properly configuring Supabase client
+- Added dedicated LogoutButton component for consistent logout UX
+- Fixed user session persistence issues in auth flow
+- Added proper role-based routing for different user types (admin, owner, staff)
+
+### General Improvements
 - Fixed security vulnerabilities in dependencies (jspdf)
 - Added proper Supabase database typing for improved type safety
 - Fixed build errors related to missing browserbase dependencies
 - Implemented menu publishing workflow with PublishMenu component
-- Added improved error handling and success notifications to the `ItemCategorizer` component
-- Enhanced the `ItemCategorizer` component with drag-and-drop functionality using `@dnd-kit/core`
+- Added improved error handling and success notifications to components
+- Enhanced the `ItemCategorizer` component with drag-and-drop functionality
 - Implemented a visual preview of dragged items using `DragOverlay`
 - Standardized image property naming across menu item forms
-- Fixed authentication context issues by properly exporting `AuthContext` and using `React.createElement` in `.ts` files
+- Fixed authentication context issues with proper exports
 - Standardized environment variable documentation in `.env.example`
 - Fixed TypeScript errors throughout the codebase
 - Implemented comprehensive form validation system with reusable components
@@ -245,30 +150,30 @@ The MenuFácil project is currently in active development. The backend is mostly
 - Enhanced `Input` component with validation states and accessibility features
 - Added debounce utilities for optimized form validation performance
 - Upgraded restaurant creation form with improved validation and user feedback
-- Consolidated authentication system after implementing tiered user roles
-- Fixed login persistence issues by properly configuring Supabase client
-- Added dedicated LogoutButton component for consistent logout UX
-- Fixed user session persistence issues in auth flow
-- Added proper role-based routing for different user types (admin, owner, staff)
-- Fixed build errors by correcting import paths for the auth context
-- Successfully deployed the application to Vercel production
 
 ## In Progress
-- Improving error handling for network requests and form submissions
-- Enhancing user interface components for better usability
-- Implementing comprehensive client-side validation for all forms
-- Addressing deprecated dependencies
+
+| Task | Status | Target Sprint |
+|------|--------|---------------|
+| Improve error handling for network requests | 🔄 In Progress | Current |
+| Enhance user interface components for better usability | 🔄 In Progress | Current |
+| Implement client-side validation for all forms | 🔄 In Progress | Current |
+| Address deprecated dependencies | 🔄 In Progress | Current |
+| Apply enhanced form validation to remaining forms | ⏳ Planned | Next |
+| Create form controls for complex data types | ⏳ Planned | Next |
+| Implement URL structure for public menus (`/menu/{restaurantName}`) | ⏳ Planned | Next |
 
 ## Planned Improvements
 
 ### Short-term (Next Sprint)
-1. ~~Enhance `ItemCategorizer` with drag-and-drop functionality using `@dnd-kit/core`~~ ✅
-2. ~~Add error handling and success notifications to components~~ ✅ (Started with ItemCategorizer)
+1. ~~Enhance `ItemCategorizer` with drag-and-drop functionality~~ ✅
+2. ~~Add error handling and success notifications to components~~ ✅
 3. ~~Complete the menu publishing workflow~~ ✅
 4. ~~Modernize Supabase authentication with @supabase/ssr~~ ✅
-5. ~~Implement comprehensive client-side validation for all forms~~ ✅ (Started with restaurant forms)
+5. ~~Implement comprehensive client-side validation~~ ✅ (Started with restaurant forms)
 6. Apply enhanced form validation to remaining forms (login, registration, menu creation)
 7. Create form controls for complex data types (arrays, nested objects)
+8. Implement public menu URLs following `menufacil.app/menu/{restaurantName}` structure
 
 ### Medium-term
 1. ~~Refactor authentication to use a single, consistent implementation~~ ✅
@@ -283,19 +188,77 @@ The MenuFácil project is currently in active development. The backend is mostly
 3. Add support for online ordering integration
 4. Implement real-time menu updates using WebSockets
 
-## Technical Debt
-- Some components lack proper error handling for edge cases
-- Need for more comprehensive test coverage
-- UI components could benefit from better accessibility features
-- Some dependencies have punycode deprecation warnings that need to be addressed
+## Future Enhancement Ideas
 
-## Dependencies
-- Next.js 14.0.4
-- React 18
-- Supabase for authentication and data storage (using @supabase/ssr)
-- Tailwind CSS for styling
-- TypeScript for type safety
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| **Table-Specific Ordering** | Extend QR codes with table ordering functionality | High |
+| **Real-time Menu Updates** | WebSocket connections for live menu updates | Medium |
+| **Advanced Analytics** | Export functionality, customer behavior analysis | Medium |
+| **Mobile Apps** | Native apps for restaurant owners and staff | Medium |
+| **POS Integration** | Connect with point-of-sale systems | High |
+| **Inventory Management** | Track ingredient usage, availability updates | Low |
+
+## Technical Debt
+
+| Area | Issue | Priority |
+|------|-------|----------|
+| **Error Handling** | Some components lack proper error handling | High |
+| **Testing** | Need for more comprehensive test coverage | Medium |
+| **Accessibility** | UI components need better accessibility features | Medium |
+| **Dependencies** | Address punycode deprecation warnings | Low |
 
 ## Deployment
 - Deployed to Vercel: https://menufacil.vercel.app
 - GitHub Repository: https://github.com/inakizamores/MenuFacil
+
+## Handover Notes
+
+### Current Sprint Accomplishments
+The current sprint focused on resolving authentication and state management issues:
+
+1. **Authentication System Enhancements**
+   - Enhanced session management with unique session IDs to prevent stale data
+   - Improved user switching with proper state cleanup between sessions
+   - Implemented automatic dashboard refresh when changing users
+   - Created a more reliable logout process that clears all user data
+   - Added improved error handling and debugging in the login flow
+
+2. **Documentation Improvements**
+   - Clarified responsive design approach (desktop-first for admin, mobile-first for customer views)
+   - Added detailed responsive design strategy table
+   - Updated feature completion status
+   - Added planned tasks for the next sprint
+
+### Code Changes Made
+- Enhanced `auth-context.tsx` with improved session initialization and cleanup
+- Updated `lib/supabase/client.ts` for better cookie handling
+- Added debug logs to trace authentication flow
+- Added user change detection in dashboard components
+- Implemented state reset mechanisms for clean user switching
+- Added timeout before navigation to ensure state updates complete
+
+### Next Steps
+For the next developer or AI agent, prioritize these tasks:
+
+1. **Immediate (Next Session)**
+   - Implement URL structure for public menus following `menufacil.app/menu/{restaurantName}` pattern
+   - This requires updating Next.js routes in the `app` directory
+   - Ensure QR codes generate links with the new URL structure
+
+2. **Short-term (This Sprint)**
+   - Apply enhanced form validation to remaining forms (login, registration, menu creation)
+   - Create form controls for complex data types (arrays, nested objects)
+   - Continue improving error handling for network requests and form submissions
+
+3. **Testing Required**
+   - Verify authentication flow works consistently across different browsers
+   - Test user switching between accounts with different roles
+   - Validate dashboard properly refreshes with new user data
+
+### Known Issues
+- Some components may need additional error handling for edge cases
+- Dependencies have punycode deprecation warnings that should be addressed soon
+- Need to verify compatibility with the latest Supabase client updates
+
+Remember to document all changes in this file at the end of each development session to ensure smooth handover between developers or AI agents.
