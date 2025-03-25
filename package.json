@@ -12,7 +12,8 @@
     "supabase:status": "npx supabase status",
     "supabase:migrations:new": "npx supabase migration new",
     "supabase:migrations:apply": "npx supabase db push",
-    "supabase:studio": "npx supabase studio"
+    "supabase:studio": "npx supabase studio",
+    "setup-test-data": "node scripts/ensure-test-data.js"
   },
   "repository": {
     "type": "git",

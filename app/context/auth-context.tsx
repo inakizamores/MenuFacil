@@ -11,6 +11,7 @@ import {
   isRestaurantStaff 
 } from '../../types/user-roles';
 import { navigateTo } from '@/app/utils/navigation';
+import { supabase } from '@/app/config/supabase';
 
 // Define the auth credentials types
 export type SignInCredentials = {
@@ -69,6 +70,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
           setUserRole(role);
+          
+          // For staff members, prefetch their linked restaurant
+          if (isRestaurantStaff(session.user)) {
+            try {
+              // Get staff restaurant from profiles
+              const { data: profileData } = await supabase
+                .from('profiles')
+                .select('linked_restaurant_id')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (profileData?.linked_restaurant_id) {
+                // Get restaurant details
+                const { data: restaurantData } = await supabase
+                  .from('restaurants')
+                  .select('name, id')
+                  .eq('id', profileData.linked_restaurant_id)
+                  .single();
+                
+                if (restaurantData) {
+                  // Store restaurant info in localStorage for UI display
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('staffRestaurantName', restaurantData.name);
+                    localStorage.setItem('staffRestaurantId', restaurantData.id);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching staff restaurant:', error);
+            }
+          }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
