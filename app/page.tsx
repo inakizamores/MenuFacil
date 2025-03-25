@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
 
 // UI Components
-import { Button } from '@/app/components/ui/button';
+import Button from '@/app/components/ui/button';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,10 +17,10 @@ export default function LandingPage() {
   const pricingRef = useRef(null);
   const testimonialsRef = useRef(null);
   
-  const heroInView = useInView(heroRef, { once: false, threshold: 0.1 });
-  const featuresInView = useInView(featuresRef, { once: false, threshold: 0.1 });
-  const pricingInView = useInView(pricingRef, { once: false, threshold: 0.1 });
-  const testimonialsInView = useInView(testimonialsRef, { once: false, threshold: 0.1 });
+  const heroInView = useInView(heroRef, { once: false });
+  const featuresInView = useInView(featuresRef, { once: false });
+  const pricingInView = useInView(pricingRef, { once: false });
+  const testimonialsInView = useInView(testimonialsRef, { once: false });
   
   const heroControls = useAnimation();
   const featuresControls = useAnimation();
