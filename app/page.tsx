@@ -175,7 +175,7 @@ export default function LandingPage() {
                 <Link href="/auth/register">
                   <Button 
                     size="lg" 
-                    className="bg-white !text-brand-primary hover:bg-gray-100 transform hover:scale-105 transition duration-250 font-bold"
+                    className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold"
                   >
                     Start Free Trial
                   </Button>
@@ -235,23 +235,19 @@ export default function LandingPage() {
             </motion.div>
           </div>
         </div>
-        
-        {/* Hero Wave Divider */}
-        <div className="absolute w-full bottom-0 left-0 z-10">
-          <svg 
-            className="w-full h-auto" 
-            viewBox="0 0 1440 100" 
-            preserveAspectRatio="none" 
-            xmlns="http://www.w3.org/2000/svg"
-            style={{ display: 'block', marginBottom: '-1px' }}
-          >
+      </motion.section>
+
+      {/* Completely new wave divider implementation */}
+      <div className="relative bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary h-24 -mt-24">
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-0 transform" style={{ zIndex: 20 }}>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-24" style={{ transform: 'rotateY(180deg)' }}>
             <path 
-              d="M0,0 C240,95 480,95 720,48 C960,0 1200,0 1440,48 L1440,100 L0,100 Z" 
-              fill="#ffffff"
+              d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+              className="fill-white" 
             />
           </svg>
         </div>
-      </motion.section>
+      </div>
 
       {/* Features Section */}
       <motion.section 
@@ -269,7 +265,7 @@ export default function LandingPage() {
             } 
           }
         }}
-        className="py-20 bg-white"
+        className="py-20 bg-white -mt-1"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
