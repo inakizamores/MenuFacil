@@ -822,56 +822,52 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      {/* Updated CTA Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0, transition: { duration: 0.8 } }}
-        className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mb-16 bg-gray-50"
-      >
-        <motion.div
-          className="bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white rounded-2xl shadow-2xl overflow-hidden"
-          whileHover={{ 
-            y: -5, 
-            transition: { 
-              duration: 0.3, 
-              ease: "easeOut" 
-            } 
-          }}
-          animate={{ 
-            boxShadow: ["0 10px 25px rgba(0, 0, 0, 0.1)", "0 20px 25px rgba(0, 0, 0, 0.2)", "0 10px 25px rgba(0, 0, 0, 0.1)"],
-            y: [0, -5, 0],
-          }}
-          transition={{ 
-            boxShadow: { repeat: Infinity, duration: 4, repeatType: "reverse" },
-            y: { repeat: Infinity, duration: 4, repeatType: "reverse", ease: "easeInOut" }
-          }}
+      {/* Updated CTA Section with proper background */}
+      <div className="bg-gray-50 pb-32">
+        <motion.section 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.8 } }}
+          className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mb-16"
         >
-          <div className="py-12 px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Restaurant Menu?</h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">Join hundreds of restaurants already using MenuFácil to create beautiful digital menus that customers love.</p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/auth/register">
-                <Button 
-                  size="lg" 
-                  className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold px-8 shadow-lg"
-                >
-                  Start Free Trial
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250 px-8"
-                >
-                  Schedule Demo
-                </Button>
-              </Link>
+          <motion.div
+            className="bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white rounded-2xl shadow-2xl overflow-hidden"
+            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            animate={{ 
+              boxShadow: ["0 10px 25px rgba(0, 0, 0, 0.1)", "0 20px 25px rgba(0, 0, 0, 0.2)", "0 10px 25px rgba(0, 0, 0, 0.1)"],
+              y: [0, -5, 0],
+            }}
+            transition={{ 
+              boxShadow: { repeat: Infinity, duration: 4, repeatType: "reverse" },
+              y: { repeat: Infinity, duration: 4, repeatType: "reverse", ease: "easeInOut" }
+            }}
+          >
+            <div className="py-12 px-8 text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Restaurant Menu?</h2>
+              <p className="text-xl mb-8 max-w-2xl mx-auto">Join hundreds of restaurants already using MenuFácil to create beautiful digital menus that customers love.</p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link href="/auth/register">
+                  <Button 
+                    size="lg" 
+                    className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold px-8 shadow-lg"
+                  >
+                    Start Free Trial
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250 px-8"
+                  >
+                    Schedule Demo
+                  </Button>
+                </Link>
+              </div>
+              <p className="mt-4 text-sm opacity-80">No credit card required • 14-day free trial • Full access to all features</p>
             </div>
-            <p className="mt-4 text-sm opacity-80">No credit card required • 14-day free trial • Full access to all features</p>
-          </div>
-        </motion.div>
-      </motion.section>
+          </motion.div>
+        </motion.section>
+      </div>
 
       {/* Footer */}
       <footer className="bg-brand-primary text-white pt-24 pb-12">
