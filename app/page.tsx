@@ -237,16 +237,43 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      {/* Completely new wave divider implementation */}
-      <div className="relative bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary h-24 -mt-24">
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-0 transform" style={{ zIndex: 20 }}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-24" style={{ transform: 'rotateY(180deg)' }}>
-            <path 
-              d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
-              className="fill-white" 
+      {/* New Animated Wave Divider */}
+      <div className="relative">
+        <div className="absolute top-0 left-0 w-full overflow-hidden">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            viewBox="0 0 1440 320" 
+            className="w-full h-auto"
+            preserveAspectRatio="none"
+            style={{ display: 'block', backgroundColor: 'transparent' }}
+          >
+            <defs>
+              <linearGradient id="dividerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#121c74" />
+                <stop offset="50%" stopColor="#3e46f3" />
+                <stop offset="100%" stopColor="#d98b48" />
+              </linearGradient>
+            </defs>
+            <motion.path 
+              initial={{ d: "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z" }}
+              animate={{ 
+                d: [
+                  "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z",
+                  "M0,128L48,144C96,160,192,192,288,181.3C384,171,480,117,576,128C672,139,768,213,864,213.3C960,213,1056,139,1152,112C1248,85,1344,107,1392,117.3L1440,128L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z",
+                  "M0,160L48,144C96,128,192,96,288,106.7C384,117,480,171,576,165.3C672,160,768,96,864,96C960,96,1056,160,1152,186.7C1248,213,1344,203,1392,197.3L1440,192L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+                ],
+                transition: {
+                  duration: 15,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }
+              }}
+              fill="url(#dividerGradient)"
             />
           </svg>
         </div>
+        <div className="h-32"></div>
       </div>
 
       {/* Features Section */}
@@ -265,7 +292,7 @@ export default function LandingPage() {
             } 
           }
         }}
-        className="py-20 bg-white -mt-1"
+        className="py-20 bg-white"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
