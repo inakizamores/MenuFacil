@@ -3,6 +3,7 @@
 import { useAuth } from '../context/auth-context';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
+import { resetAuthState } from '../utils/auth-helpers';
 
 interface LogoutButtonProps {
   className?: string;
@@ -20,10 +21,29 @@ export default function LogoutButton({
 
   const handleLogout = async () => {
     try {
+      console.log('Logout requested');
+      
+      // First, reset the auth state completely
+      await resetAuthState();
+      
+      // Then use the logout function from context
       await logout();
-      router.push('/');
+      
+      // Force a complete page refresh to clear all React state
+      if (typeof window !== 'undefined') {
+        console.log('Forcing page reload');
+        window.location.href = '/auth/login';
+      } else {
+        // Fallback to Next.js router
+        router.push('/auth/login');
+      }
     } catch (error) {
       console.error('Error logging out:', error);
+      
+      // Force navigation as a fallback
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login';
+      }
     }
   };
 

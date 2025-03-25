@@ -89,9 +89,15 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   const { restaurant } = useStaffRestaurant();
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  
+  // Use the user ID as a key to force component refresh when user changes
+  const userKey = user?.id || 'no-user';
 
   // For staff members, get their associated restaurant name
   useEffect(() => {
+    // Reset state on user change
+    setRestaurantName(null);
+    
     if (user && isRestaurantStaff(user)) {
       if (restaurant) {
         setRestaurantName(restaurant.name);
@@ -103,7 +109,12 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [user, restaurant]);
+    
+    // Add cleanup function
+    return () => {
+      setRestaurantName(null);
+    };
+  }, [user, restaurant, userKey]);
 
   if (isLoading) {
     return (

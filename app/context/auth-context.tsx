@@ -61,8 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Generate a unique ID for this session to prevent stale data
+        const sessionId = `auth_session_${Date.now()}`;
+        console.log(`Initializing auth (session ${sessionId})`);
+        
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Set state with the current session data
         setSession(session);
         setUser(session?.user || null);
         
@@ -70,36 +76,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
           setUserRole(role);
+          console.log(`User authenticated: ${session.user.email} (${role})`);
           
-          // For staff members, prefetch their linked restaurant
-          if (isRestaurantStaff(session.user)) {
-            try {
-              // Get staff restaurant from profiles
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('linked_restaurant_id')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (profileData?.linked_restaurant_id) {
-                // Get restaurant details
-                const { data: restaurantData } = await supabase
-                  .from('restaurants')
-                  .select('name, id')
-                  .eq('id', profileData.linked_restaurant_id)
-                  .single();
-                
-                if (restaurantData) {
-                  // Store restaurant info in localStorage for UI display
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('staffRestaurantName', restaurantData.name);
-                    localStorage.setItem('staffRestaurantId', restaurantData.id);
-                  }
-                }
-              }
-            } catch (error) {
-              console.error('Error fetching staff restaurant:', error);
-            }
+          // Store in localStorage for recovery if needed
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('currentUserEmail', session.user.email || '');
+          }
+        } else {
+          console.log('No authenticated user found');
+          // Clear any previous user data
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('currentUserEmail');
+            localStorage.removeItem('staffRestaurantName');
+            localStorage.removeItem('staffRestaurantId');
           }
         }
       } catch (error) {
@@ -113,24 +104,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email);
-      setSession(session);
-      setUser(session?.user || null);
+      console.log(`Auth state changed: ${event} for ${session?.user?.email || 'no user'}`);
       
-      // Update role when auth state changes
-      if (session?.user) {
-        const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
-        setUserRole(role);
-      } else {
+      // If user has changed, clear previous state first
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
         setUserRole(null);
+        
+        // Clear localStorage items on sign out
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('currentUserEmail');
+          localStorage.removeItem('staffRestaurantName');
+          localStorage.removeItem('staffRestaurantId');
+        }
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Check if this is a new user (different from the current one)
+        const currentEmail = localStorage.getItem('currentUserEmail');
+        const newEmail = session?.user?.email;
+        
+        if (currentEmail !== newEmail) {
+          console.log(`User changed: ${currentEmail} -> ${newEmail}`);
+          // Reset any user-specific state
+          setUser(null);
+          setSession(null);
+          setUserRole(null);
+        }
+        
+        // Update with new session data
+        setSession(session);
+        setUser(session?.user || null);
+        
+        // Update role when auth state changes
+        if (session?.user) {
+          const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
+          setUserRole(role);
+          
+          // Store updated user info
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('currentUserEmail', session.user.email || '');
+          }
+        }
       }
     });
 
     // Clean up subscription on unmount
     return () => {
+      console.log('Cleaning up auth listener');
       authListener.subscription.unsubscribe();
     };
-  }, [supabase.auth]); // Add supabase.auth as dependency to ensure it recreates the listener if client changes
+  }, [supabase.auth]);
 
   // Helper function to determine home route based on user role
   const getHomeRoute = (): string => {
@@ -231,18 +256,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      console.log('Logout initiated');
+      
+      // Sign out from Supabase
       await supabase.auth.signOut();
+      
+      // Clear all auth state
       setUser(null);
       setSession(null);
       setUserRole(null);
       
       // Clear localStorage items
       if (typeof window !== 'undefined') {
+        console.log('Clearing localStorage items');
         localStorage.removeItem('userRole');
+        localStorage.removeItem('currentUserEmail');
+        localStorage.removeItem('staffRestaurantName');
+        localStorage.removeItem('staffRestaurantId');
+        
+        // Force clear any cached data
+        sessionStorage.clear();
       }
       
-      router.push('/auth/login');
+      console.log('Redirecting to login page');
+      
+      // Use the navigation helper with a full page reload
+      navigateTo(router, '/auth/login', {
+        fallback: true,
+        delay: 100
+      }).then(() => {
+        // Force a full page reload to clear any React state
+        if (typeof window !== 'undefined') {
+          console.log('Forcing full page reload');
+          window.location.href = '/auth/login';
+        }
+      });
     } catch (error: any) {
+      console.error('Error during logout:', error);
       setError(error.message);
     }
   };

@@ -1,20 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/database.types';
 
-// Initialize Supabase client
+// Get the environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Create options with a unique cache key that will change on each page load
+const options = {
   auth: {
     persistSession: true,
-    autoRefreshToken: true
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: `supabase-auth-token-${Date.now()}`
   }
-});
+};
+
+// Create a Supabase client
+export const supabase = createClient(supabaseUrl, supabaseKey, options);
 
 // Set up auth API helpers
 export const getSession = async () => {
