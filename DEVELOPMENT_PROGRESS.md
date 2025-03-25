@@ -9,12 +9,16 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## UI Design Principles
 
-| Principle | Description |
-|-----------|-------------|
-| **Consistent Light Theme** | Clean, professional appearance with simplified UI development |
+| Design Principle    | Description |
+|---------------------|-------------|
+| **Modern & Interactive** | The landing page and hero section feature animations and hover effects for an engaging experience. Optimized for performance to ensure smooth loading on all devices. |
+| **Dashboard & B2B UX** | Clean, professional, and easy to use. Subtle animations keep it modern without distraction. Uses rounded corners, frosted glass, and shadows to create hierarchy and separation. |
 | **Adaptive Responsive Design** | Admin dashboard and management interfaces are desktop-optimized but scale to mobile devices; customer-facing menu views are mobile-first |
-| **Brand Consistency** | Primary UI colors aligned with MenuFácil brand identity |
-| **Accessibility** | Light theme with high contrast for optimal readability |
+| **Color & Gradients** | Follows the defined color palette. Gradients are more prominent on the landing page, while the dashboard keeps them minimal for clarity. |
+| **Hierarchy & Shadows** | Shadows are used to separate elements like headers and footers, improving structure and readability. |
+| **Published Menu Customization** | Restaurant owners can personalize their public menus with different fonts and colors while maintaining readability and usability. |
+| **Simplicity & Accessibility** | The interface is intuitive, with big, readable buttons and minimal complexity. Actions are easy to perform without unnecessary steps. |
+| **Inspired by SaaS & Big Tech** | Design takes inspiration from modern software-as-a-service (SaaS) platforms, ensuring a sleek and contemporary feel. |
 
 ## Technology Stack
 
@@ -150,6 +154,15 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 - Enhanced `Input` component with validation states and accessibility features
 - Added debounce utilities for optimized form validation performance
 - Upgraded restaurant creation form with improved validation and user feedback
+- Implemented centralized color palette constants for consistent UI design and branding
+- Added gradient utilities and predefined brand gradients for enhanced visual design
+- Refactored UI components to follow new design principles with consistent colors, gradients, and shadows
+- Updated Tailwind configuration to incorporate the new color system and design tokens
+- Enhanced Tabs component with multiple variants (default, pills, underlined) following the design system
+- Improved Textarea and Input components with consistent validation states and feedback
+- Updated Button component with gradient options and improved interactive states
+- Standardized Spinner component for loading states across the application
+- Synchronized app-level UI components with root components for consistent design language
 
 ## In Progress
 

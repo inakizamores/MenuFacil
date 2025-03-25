@@ -27,10 +27,10 @@ export const FormFeedback: React.FC<FormFeedbackProps> = ({
   if (!message || !visible) return null;
 
   const typeStyles = {
-    error: 'text-red-500',
-    success: 'text-green-500',
-    info: 'text-blue-500',
-    warning: 'text-yellow-500',
+    error: 'text-destructive',
+    success: 'text-success',
+    info: 'text-info',
+    warning: 'text-warning',
   };
 
   const iconElements = {
@@ -60,7 +60,7 @@ export const FormFeedback: React.FC<FormFeedbackProps> = ({
     <div
       id={id}
       className={cn(
-        'mt-1 flex items-center text-sm font-medium transition-all',
+        'mt-1 flex items-center text-sm font-medium transition-all duration-250',
         typeStyles[type],
         className
       )}

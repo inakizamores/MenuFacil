@@ -1,8 +1,9 @@
 import React, { ButtonHTMLAttributes } from 'react';
+import cn from 'classnames';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost' | 'link' | 'gradient';
+  size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
   fullWidth?: boolean;
   children: React.ReactNode;
@@ -18,39 +19,40 @@ export default function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const baseStyles = 'inline-flex items-center justify-center rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2';
-  
   const variantStyles = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500',
-    outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-500',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-primary-500',
-    link: 'bg-transparent text-primary-600 hover:text-primary-700 hover:underline focus:ring-primary-500 p-0',
+    primary: 'bg-primary text-white hover:bg-primary-600 active:bg-primary-700 shadow-sm hover:shadow',
+    secondary: 'bg-secondary text-white hover:bg-secondary-600 active:bg-secondary-700 shadow-sm hover:shadow',
+    accent: 'bg-accent text-white hover:bg-accent-600 active:bg-accent-700 shadow-sm hover:shadow',
+    outline: 'border border-primary-300 bg-transparent text-primary hover:bg-primary-50 hover:border-primary-400',
+    ghost: 'bg-transparent hover:bg-primary-50 text-primary hover:text-primary-700 active:bg-primary-100',
+    link: 'bg-transparent text-accent underline-offset-4 hover:underline hover:text-accent-700 p-0',
+    gradient: 'bg-primary-gradient-horizontal text-white hover:shadow-md active:bg-primary-700 active:shadow-sm',
   };
   
   const sizeStyles = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+    sm: 'h-8 px-3 py-1.5 text-xs rounded-md',
+    md: 'h-10 px-4 py-2 text-sm rounded-md',
+    lg: 'h-12 px-6 py-3 text-base rounded-lg',
+    icon: 'h-9 w-9 p-0 rounded-full',
   };
-  
-  const widthStyles = fullWidth ? 'w-full' : '';
-  
-  const loadingStyles = isLoading ? 'opacity-70 cursor-not-allowed' : '';
-  
-  const disabledStyles = disabled ? 'opacity-50 cursor-not-allowed' : '';
   
   return (
     <button
       disabled={disabled || isLoading}
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyles} ${loadingStyles} ${disabledStyles} ${className}`}
+      className={cn(
+        'inline-flex items-center justify-center font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+        variantStyles[variant],
+        sizeStyles[size],
+        fullWidth && 'w-full',
+        isLoading && 'opacity-70 cursor-not-allowed',
+        className
+      )}
       {...props}
     >
       {isLoading && (
-        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
+        <div className="mr-2 inline-block animate-spin rounded-full border-2 border-current border-t-transparent h-4 w-4" role="status">
+          <span className="sr-only">Loading...</span>
+        </div>
       )}
       {children}
     </button>

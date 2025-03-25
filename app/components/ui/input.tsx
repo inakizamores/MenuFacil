@@ -1,4 +1,5 @@
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useState } from 'react';
+import cn from 'classnames';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,6 +8,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
   leftAddon?: React.ReactNode;
   rightAddon?: React.ReactNode;
+  success?: boolean;
+  feedback?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -14,54 +17,53 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     {
       label,
       error,
-      touched,
+      touched = false,
       helperText,
       className = '',
       leftAddon,
       rightAddon,
       id,
       name,
+      required,
+      success = false,
+      feedback,
+      onFocus,
+      onBlur,
       ...props
     },
     ref
   ) => {
+    const [isFocused, setIsFocused] = useState(false);
     const inputId = id || name;
-    const showError = !!error && touched;
+    const showError = Boolean(error && (touched || isFocused));
     
-    // Input base classes
-    const inputBaseClasses = 'block w-full rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm';
+    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(true);
+      if (onFocus) onFocus(e);
+    };
     
-    // Add error styling or default styling
-    const inputClasses = showError
-      ? `${inputBaseClasses} border-red-300 text-red-900 placeholder-red-300`
-      : `${inputBaseClasses} border-gray-300 placeholder-gray-400`;
-    
-    // Add left/right addon padding
-    const inputPaddingClasses = 
-      leftAddon && rightAddon 
-        ? 'pl-10 pr-10' 
-        : leftAddon 
-          ? 'pl-10' 
-          : rightAddon 
-            ? 'pr-10' 
-            : '';
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      if (onBlur) onBlur(e);
+    };
     
     return (
       <div className={className}>
         {label && (
           <label 
             htmlFor={inputId} 
-            className={`block text-sm font-medium ${
-              showError ? 'text-red-700' : 'text-gray-700'
-            }`}
+            className={cn(
+              "block text-sm font-medium text-brand-text mb-1",
+              required && "after:content-['*'] after:ml-0.5 after:text-destructive"
+            )}
           >
             {label}
           </label>
         )}
         
-        <div className={`mt-1 relative rounded-md shadow-sm`}>
+        <div className="relative">
           {leftAddon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-600">
               {leftAddon}
             </div>
           )}
@@ -70,27 +72,54 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             name={name}
-            className={`${inputClasses} ${inputPaddingClasses}`}
+            required={required}
+            className={cn(
+              'flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-250 shadow-sm',
+              'placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50',
+              {
+                'border-destructive focus-visible:ring-destructive text-destructive bg-red-50/40': showError,
+                'border-success focus-visible:ring-success': success && !showError,
+                'border-input': !showError && !success,
+                'pl-10': leftAddon,
+                'pr-10': rightAddon,
+                'hover:border-neutral-300': !showError && !success,
+                'focus-visible:shadow-md': isFocused && !showError && !success,
+              }
+            )}
             aria-invalid={showError ? 'true' : 'false'}
-            aria-describedby={showError ? `${inputId}-error` : helperText ? `${inputId}-description` : undefined}
+            aria-describedby={
+              showError 
+                ? `${inputId}-error` 
+                : helperText 
+                  ? `${inputId}-description` 
+                  : undefined
+            }
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             {...props}
           />
           
           {rightAddon && (
-            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-neutral-600">
               {rightAddon}
             </div>
           )}
         </div>
         
         {showError && (
-          <p className="mt-2 text-sm text-red-600" id={`${inputId}-error`}>
+          <p className="mt-1 text-sm text-destructive font-medium" id={`${inputId}-error`}>
             {error}
           </p>
         )}
         
-        {helperText && !showError && (
-          <p className="mt-2 text-sm text-gray-500" id={`${inputId}-description`}>
+        {success && feedback && !showError && (
+          <p className="mt-1 text-sm text-success font-medium" id={`${inputId}-success`}>
+            {feedback}
+          </p>
+        )}
+        
+        {helperText && !showError && !success && (
+          <p className="mt-1 text-sm text-neutral-500" id={`${inputId}-description`}>
             {helperText}
           </p>
         )}
