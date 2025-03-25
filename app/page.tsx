@@ -16,23 +16,46 @@ export default function LandingPage() {
   const featuresRef = useRef(null);
   const pricingRef = useRef(null);
   const testimonialsRef = useRef(null);
+  const faqRef = useRef(null);
   
   const heroInView = useInView(heroRef, { once: false });
   const featuresInView = useInView(featuresRef, { once: false });
   const pricingInView = useInView(pricingRef, { once: false });
   const testimonialsInView = useInView(testimonialsRef, { once: false });
+  const faqInView = useInView(faqRef, { once: false });
   
   const heroControls = useAnimation();
   const featuresControls = useAnimation();
   const pricingControls = useAnimation();
   const testimonialsControls = useAnimation();
+  const faqControls = useAnimation();
   
   useEffect(() => {
     if (heroInView) heroControls.start('visible');
     if (featuresInView) featuresControls.start('visible');
     if (pricingInView) pricingControls.start('visible');
     if (testimonialsInView) testimonialsControls.start('visible');
-  }, [heroInView, featuresInView, pricingInView, testimonialsInView, heroControls, featuresControls, pricingControls, testimonialsControls]);
+    if (faqInView) faqControls.start('visible');
+    
+    // Add smooth scrolling behavior
+    const handleSmoothScroll = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'A') {
+        const href = target.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          const targetElement = document.querySelector(href);
+          if (targetElement) {
+            setIsMenuOpen(false);
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('click', handleSmoothScroll);
+    return () => document.removeEventListener('click', handleSmoothScroll);
+  }, [heroInView, featuresInView, pricingInView, testimonialsInView, faqInView, heroControls, featuresControls, pricingControls, testimonialsControls, faqControls]);
 
   return (
     <div className="min-h-screen font-sans bg-white overflow-hidden">
@@ -52,6 +75,12 @@ export default function LandingPage() {
               </Link>
               <Link href="/#pricing" className="text-brand-text hover:text-brand-accent px-3 py-2 rounded-md text-sm font-medium transition duration-250">
                 Pricing
+              </Link>
+              <Link href="/#testimonials" className="text-brand-text hover:text-brand-accent px-3 py-2 rounded-md text-sm font-medium transition duration-250">
+                Testimonials
+              </Link>
+              <Link href="/#faq" className="text-brand-text hover:text-brand-accent px-3 py-2 rounded-md text-sm font-medium transition duration-250">
+                FAQ
               </Link>
               <Link href="/about" className="text-brand-text hover:text-brand-accent px-3 py-2 rounded-md text-sm font-medium transition duration-250">
                 About
@@ -116,6 +145,12 @@ export default function LandingPage() {
                 <Link href="/#pricing" className="text-brand-text hover:text-brand-accent block px-3 py-2 rounded-md text-base font-medium">
                   Pricing
                 </Link>
+                <Link href="/#testimonials" className="text-brand-text hover:text-brand-accent block px-3 py-2 rounded-md text-base font-medium">
+                  Testimonials
+                </Link>
+                <Link href="/#faq" className="text-brand-text hover:text-brand-accent block px-3 py-2 rounded-md text-base font-medium">
+                  FAQ
+                </Link>
                 <Link href="/about" className="text-brand-text hover:text-brand-accent block px-3 py-2 rounded-md text-base font-medium">
                   About
                 </Link>
@@ -141,6 +176,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <motion.section 
         ref={heroRef}
+        id="hero"
         initial="hidden"
         animate={heroControls}
         variants={{
@@ -157,7 +193,49 @@ export default function LandingPage() {
         }}
         className="pt-32 pb-20 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white relative"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Floating Elements Animation */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ 
+              y: [0, -15, 0],
+              x: [0, 10, 0],
+              opacity: [0.3, 0.5, 0.3]
+            }}
+            transition={{ 
+              duration: 8, 
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="absolute top-20 left-[10%] w-24 h-24 rounded-full bg-white/10"
+          />
+          <motion.div 
+            animate={{ 
+              y: [0, 15, 0],
+              x: [0, -10, 0],
+              opacity: [0.2, 0.4, 0.2]
+            }}
+            transition={{ 
+              duration: 10, 
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="absolute bottom-16 right-[15%] w-32 h-32 rounded-full bg-white/10"
+          />
+          <motion.div 
+            animate={{ 
+              y: [0, 20, 0],
+              opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ 
+              duration: 12, 
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="absolute top-1/2 left-[30%] w-40 h-40 rounded-full bg-white/5"
+          />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div
               variants={{
@@ -176,15 +254,43 @@ export default function LandingPage() {
                   <Button 
                     size="lg" 
                     className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold"
+                    aria-label="Start free trial - no credit card required"
                   >
                     Start Free Trial
                   </Button>
                 </Link>
                 <Link href="/about">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250"
+                    aria-label="Learn more about our services"
+                  >
                     Learn More
                   </Button>
                 </Link>
+              </div>
+              
+              {/* Features highlights */}
+              <div className="flex flex-wrap gap-4 mt-8 text-sm">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-brand-neutral" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Easy Setup</span>
+                </div>
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-brand-neutral" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>QR Code Access</span>
+                </div>
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-brand-neutral" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>Real-time Updates</span>
+                </div>
               </div>
             </motion.div>
             <motion.div
@@ -230,10 +336,65 @@ export default function LandingPage() {
                       <div className="h-3 bg-gray-200 rounded w-4/6"></div>
                     </div>
                   </div>
+                  
+                  {/* Phone frame */}
+                  <div className="absolute -bottom-10 -left-5 w-40 h-80 bg-brand-primary rounded-3xl border-8 border-white shadow-xl transform rotate-6">
+                    <div className="bg-black h-full w-full rounded-2xl overflow-hidden p-2 flex flex-col">
+                      <div className="h-2 bg-brand-primary rounded-full mb-2"></div>
+                      <div className="flex-1 bg-white rounded-lg p-2">
+                        <div className="h-4 w-20 bg-brand-primary rounded-md mb-2"></div>
+                        <div className="space-y-1">
+                          <div className="h-2 bg-gray-200 rounded w-full"></div>
+                          <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+                        </div>
+                        <div className="h-10 bg-gray-200 rounded w-full mt-3"></div>
+                        <div className="h-10 bg-gray-200 rounded w-full mt-2"></div>
+                        <div className="h-10 bg-gray-200 rounded w-full mt-2"></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+              
+              {/* QR code example */}
+              <div className="absolute -right-4 -bottom-4 bg-white p-3 rounded-lg shadow-lg transform rotate-6">
+                <div className="w-24 h-24 bg-gray-200 rounded grid grid-cols-5 grid-rows-5 gap-1 p-2">
+                  <div className="col-span-2 row-span-2 bg-brand-primary rounded-sm"></div>
+                  <div className="col-span-2 row-span-2 bg-brand-primary rounded-sm col-start-4 row-start-1"></div>
+                  <div className="col-span-2 row-span-2 bg-brand-primary rounded-sm col-start-1 row-start-4"></div>
+                  <div className="col-span-1 row-span-1 bg-brand-primary rounded-sm col-start-3 row-start-3"></div>
+                  <div className="col-span-1 row-span-3 bg-brand-primary rounded-sm col-start-5 row-start-3"></div>
+                </div>
+                <div className="text-xs text-center text-brand-primary mt-1 font-medium">Scan Me</div>
               </div>
             </motion.div>
           </div>
+          
+          {/* Stats section */}
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0, y: 30 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.4 } }
+            }}
+            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold">300+</div>
+              <div className="text-sm">Restaurants</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold">15K+</div>
+              <div className="text-sm">Menu Items</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold">99%</div>
+              <div className="text-sm">Satisfaction</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 text-center">
+              <div className="text-3xl font-bold">30%</div>
+              <div className="text-sm">Sales Increase</div>
+            </div>
+          </motion.div>
         </div>
         
         {/* New wave divider directly inside the hero section */}
@@ -244,6 +405,7 @@ export default function LandingPage() {
             xmlns="http://www.w3.org/2000/svg" 
             className="w-full h-[60px] md:h-[80px]" 
             fill="#ffffff"
+            aria-hidden="true"
           >
             <motion.path 
               d="M0,0 L1200,0 L1200,120 L0,120 L0,0 Z M0,40 C200,100 400,10 600,80 C800,150 1000,60 1200,90 L1200,0 L0,0 Z"
@@ -458,6 +620,237 @@ export default function LandingPage() {
               <p className="text-xs text-center text-gray-500 mt-4">No credit card required to start</p>
             </div>
           </motion.div>
+        </div>
+      </motion.section>
+
+      {/* Testimonials Section */}
+      <motion.section 
+        id="testimonials"
+        ref={testimonialsRef}
+        initial="hidden"
+        animate={testimonialsControls}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { 
+            opacity: 1, 
+            transition: { 
+              staggerChildren: 0.2,
+              duration: 0.5
+            } 
+          }
+        }}
+        className="py-20 bg-white"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.h2 
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+              }}
+              className="text-3xl sm:text-4xl font-bold text-brand-primary mb-4"
+            >
+              What Our Customers Say
+            </motion.h2>
+            <motion.p 
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.1 } }
+              }}
+              className="text-lg text-gray-600 max-w-3xl mx-auto"
+            >
+              Don&apos;t just take our word for it - hear what restaurant owners have to say about MenuFácil.
+            </motion.p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Testimonial 1 */}
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+              }}
+              className="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition duration-300 border border-gray-100"
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-brand-primary rounded-full flex items-center justify-center text-white font-bold text-xl">R</div>
+                <div className="ml-4">
+                  <h4 className="font-semibold text-brand-primary">Ricardo Montalbán</h4>
+                  <p className="text-sm text-gray-500">El Sabor Restaurant</p>
+                </div>
+              </div>
+              <div className="flex text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 italic">&quot;Since implementing MenuFácil, we&apos;ve seen a 30% increase in orders for items with images. The QR code system is seamless, and updating our menu is incredibly simple.&quot;</p>
+            </motion.div>
+            
+            {/* Testimonial 2 */}
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.1 } }
+              }}
+              className="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition duration-300 border border-gray-100"
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white font-bold text-xl">C</div>
+                <div className="ml-4">
+                  <h4 className="font-semibold text-brand-primary">Carmen Rodriguez</h4>
+                  <p className="text-sm text-gray-500">Café Madrigal</p>
+                </div>
+              </div>
+              <div className="flex text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 italic">&quot;The customer analytics have been game-changing for our business. We now know which menu categories perform best and can make data-driven decisions about our offerings.&quot;</p>
+            </motion.div>
+            
+            {/* Testimonial 3 */}
+            <motion.div 
+              variants={{
+                hidden: { opacity: 0, y: 30 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.6, delay: 0.2 } }
+              }}
+              className="bg-white rounded-xl shadow-lg p-8 transform hover:-translate-y-2 transition duration-300 border border-gray-100"
+            >
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 bg-accent rounded-full flex items-center justify-center text-white font-bold text-xl">M</div>
+                <div className="ml-4">
+                  <h4 className="font-semibold text-brand-primary">Miguel Fernandez</h4>
+                  <p className="text-sm text-gray-500">Tapas & Vino</p>
+                </div>
+              </div>
+              <div className="flex text-accent mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27Z" />
+                  </svg>
+                ))}
+              </div>
+              <p className="text-gray-600 italic">&quot;Our customers love being able to scan the QR code and browse our full menu with photos and descriptions. The monthly cost is easily offset by the reduction in printed menu expenses.&quot;</p>
+            </motion.div>
+          </div>
+          
+          <motion.div 
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.4 } }
+            }}
+            className="mt-12 text-center"
+          >
+            <Link href="/auth/register">
+              <Button size="lg" className="transform hover:scale-105 transition duration-250 shadow-lg">
+                Join Satisfied Customers
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </motion.section>
+
+      {/* FAQ Section */}
+      <motion.section 
+        id="faq"
+        ref={faqRef}
+        initial="hidden"
+        animate={faqControls}
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { 
+            opacity: 1, 
+            transition: { 
+              staggerChildren: 0.2,
+              duration: 0.5
+            } 
+          }
+        }}
+        className="py-20 bg-gray-50"
+        aria-labelledby="faq-heading"
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.h2 
+              id="faq-heading"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+              }}
+              className="text-3xl sm:text-4xl font-bold text-brand-primary mb-4"
+            >
+              Frequently Asked Questions
+            </motion.h2>
+            <motion.p 
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, delay: 0.1 } }
+              }}
+              className="text-lg text-gray-600"
+            >
+              Got questions? We've got answers.
+            </motion.p>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition duration-300">
+              <h3 className="text-xl font-semibold text-brand-primary mb-2">How quickly can I get started?</h3>
+              <p className="text-gray-600">You can create your first digital menu in as little as 15 minutes. Our intuitive interface lets you add items, organize categories, and customize the appearance without any technical skills.</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition duration-300">
+              <h3 className="text-xl font-semibold text-brand-primary mb-2">Can I try before I subscribe?</h3>
+              <p className="text-gray-600">Absolutely! We offer a 14-day free trial with full access to all features. No credit card required to start.</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition duration-300">
+              <h3 className="text-xl font-semibold text-brand-primary mb-2">How do customers access my digital menu?</h3>
+              <p className="text-gray-600">Customers can access your menu by scanning a QR code displayed at your restaurant or through a direct link that you can share on your website and social media.</p>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition duration-300">
+              <h3 className="text-xl font-semibold text-brand-primary mb-2">Can I update menu items in real-time?</h3>
+              <p className="text-gray-600">Yes! You can instantly update prices, descriptions, and availability. Changes appear immediately on your digital menu, allowing you to mark items as sold out or change specials on the fly.</p>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* Updated CTA Section */}
+      <motion.section 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: { duration: 0.8 } }}
+        className="py-20 bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white"
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Restaurant Menu?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto">Join hundreds of restaurants already using MenuFácil to create beautiful digital menus that customers love.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/auth/register">
+              <Button 
+                size="lg" 
+                className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold px-8 shadow-lg"
+              >
+                Start Free Trial
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-white text-white hover:bg-white/10 transform hover:scale-105 transition duration-250 px-8"
+              >
+                Schedule Demo
+              </Button>
+            </Link>
+          </div>
+          <p className="mt-4 text-sm opacity-80">No credit card required • 14-day free trial • Full access to all features</p>
         </div>
       </motion.section>
 
