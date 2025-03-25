@@ -823,35 +823,13 @@ export default function LandingPage() {
       </motion.section>
 
       {/* Updated CTA Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0, transition: { duration: 0.8 } }}
-        className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mb-16"
-      >
+      <section className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 -mb-16">
         <motion.div
-          className="bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white rounded-2xl shadow-xl overflow-hidden"
-          initial={{ y: 0, boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)" }}
-          animate={{ 
-            boxShadow: ["0 10px 25px rgba(0, 0, 0, 0.1)", "0 20px 25px rgba(0, 0, 0, 0.2)", "0 10px 25px rgba(0, 0, 0, 0.1)"],
-            y: [0, -3, 0],
-          }}
-          transition={{ 
-            boxShadow: { 
-              repeat: Infinity, 
-              duration: 3, 
-              repeatType: "reverse", 
-              ease: "easeInOut" 
-            },
-            y: { 
-              repeat: Infinity, 
-              duration: 3, 
-              repeatType: "reverse", 
-              ease: "easeInOut" 
-            }
-          }}
+          className="bg-gradient-to-br from-brand-primary via-accent-500 to-brand-secondary text-white rounded-2xl shadow-md overflow-hidden"
           whileHover={{ 
-            boxShadow: "0 25px 30px rgba(0, 0, 0, 0.25)",
-            transition: { duration: 0.3 }
+            boxShadow: "0 15px 30px rgba(0, 0, 0, 0.15)",
+            y: -2,
+            transition: { duration: 0.2 }
           }}
         >
           <div className="py-12 px-8 text-center">
@@ -879,7 +857,7 @@ export default function LandingPage() {
             <p className="mt-4 text-sm opacity-80">No credit card required • 14-day free trial • Full access to all features</p>
           </div>
         </motion.div>
-      </motion.section>
+      </section>
 
       {/* Footer */}
       <footer className="bg-brand-primary text-white pt-24 pb-12">
