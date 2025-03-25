@@ -9,6 +9,8 @@ import { useState } from 'react';
 import { loginSchema } from '@/lib/validation/schemas';
 import type { LoginFormValues } from '@/lib/validation/schemas';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/app/components/ui/form';
+import { navigateTo } from '@/app/utils/navigation';
+import { useRouter } from 'next/navigation';
 
 /**
  * LoginPage - Authentication form for user login
@@ -18,9 +20,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
  * The form includes email, password inputs and remember me checkbox, with validation
  * for each field according to the loginSchema.
  */
-export default function LoginPage() {
+const LoginPage = () => {
+  const router = useRouter();
   const { login, error: authError } = useAuth();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form with Zod schema validation and default values
   const form = useZodForm({
@@ -36,19 +40,43 @@ export default function LoginPage() {
    * Handle form submission for user login
    * Attempts to log in with provided credentials and handles any errors
    */
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
     setServerError(null);
+
+    const { email, password } = form.getValues();
+    console.log('Login attempt with email:', email);
+
     try {
-      console.log('Attempting login with:', values.email);
       await login({
-        email: values.email,
-        password: values.password,
+        email,
+        password,
       });
-      console.log('Login successful');
-      // Successful login is handled by the auth context (redirect)
+      console.log('Login succeeded in page component');
+      
+      // As a backup, try navigating from here too in case context navigation failed
+      if (typeof window !== 'undefined') {
+        console.log('Attempting backup navigation from login page');
+        setTimeout(async () => {
+          // Get appropriate home route
+          let homePath = '/dashboard';
+          if (localStorage.getItem('userRole') === 'system_admin') {
+            homePath = '/admin/dashboard';
+          } else if (localStorage.getItem('userRole') === 'restaurant_owner') {
+            homePath = '/owner/dashboard';
+          } else if (localStorage.getItem('userRole') === 'restaurant_staff') {
+            homePath = '/staff/dashboard';
+          }
+
+          await navigateTo(router, homePath, { fallback: true, delay: 50 });
+        }, 300);
+      }
     } catch (error: any) {
-      console.error('Login error:', error);
-      setServerError(error.message || 'Login failed. Please try again.');
+      console.error('Login error in page component:', error);
+      setServerError(error.message || 'Failed to sign in. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -79,7 +107,7 @@ export default function LoginPage() {
           )}
           
           {/* Form with accessibility and validation using Form component */}
-          <Form form={form} onSubmit={form.handleSubmit(handleLogin)} className="space-y-6">
+          <Form form={form} onSubmit={handleLogin} className="space-y-6">
             {/* Email field with validation */}
             <FormField
               control={form.control}
@@ -154,8 +182,8 @@ export default function LoginPage() {
             <Button
               type="submit"
               fullWidth
-              isLoading={form.formState.isSubmitting}
-              disabled={form.formState.isSubmitting}
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
             >
               Sign in
             </Button>
@@ -164,4 +192,6 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default LoginPage; 

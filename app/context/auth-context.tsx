@@ -10,6 +10,7 @@ import {
   isRestaurantOwner, 
   isRestaurantStaff 
 } from '../../types/user-roles';
+import { navigateTo } from '@/app/utils/navigation';
 
 // Define the auth credentials types
 export type SignInCredentials = {
@@ -116,27 +117,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Login attempt started');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
+      });
+      
+      console.log('Login response received:', { 
+        success: !error, 
+        hasUser: !!data?.user,
+        hasSession: !!data?.session,
+        error: error ? error.message : null
       });
       
       if (error) throw error;
       
       setUser(data.user);
       setSession(data.session);
+      console.log('User and session set in context');
       
       // Set role and redirect to appropriate dashboard
       if (data.user) {
         const role = data.user.user_metadata?.role as SystemRole || 'restaurant_owner';
         setUserRole(role);
-        router.push(getHomeRoute());
+        console.log('User role set:', role);
+        
+        // Store role in localStorage for backup navigation
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userRole', role);
+        }
+        
+        // Determine home route based on user role
+        const homeRoute = getHomeRoute();
+        console.log('About to redirect to:', homeRoute);
+        
+        // Use navigation helper with fallback
+        const navigationResult = await navigateTo(router, homeRoute, { 
+          fallback: true,
+          delay: 150
+        });
+        
+        console.log('Navigation result:', navigationResult);
       }
     } catch (error: any) {
+      console.error('Login error caught:', error);
       setError(error.message || 'Failed to sign in');
       throw error;
     } finally {
       setIsLoading(false);
+      console.log('Login process completed, isLoading set to false');
     }
   };
 
@@ -169,24 +198,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    setIsLoading(true);
-    setError(null);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      // Clear state
+      await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setUserRole(null);
       
-      // Redirect to home
-      router.push('/');
+      // Clear localStorage items
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('userRole');
+      }
+      
+      router.push('/auth/login');
     } catch (error: any) {
-      setError(error.message || 'Failed to sign out');
-      throw error;
-    } finally {
-      setIsLoading(false);
+      setError(error.message);
     }
   };
 

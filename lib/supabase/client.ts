@@ -10,13 +10,12 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
   
-  return createBrowserClient<Database>(supabaseUrl, supabaseKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      storageKey: 'supabase-auth-token',
-      detectSessionInUrl: true,
-      flowType: 'pkce'
-    }
-  });
+  // For debugging
+  console.log('Creating Supabase browser client with URL:', supabaseUrl.substring(0, 15) + '...');
+  
+  // Create browser client with cookie persistence
+  return createBrowserClient<Database>(
+    supabaseUrl, 
+    supabaseKey
+  );
 } 
