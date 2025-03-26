@@ -1,73 +1,129 @@
 # MenuFacil Logo Files
 
-This document outlines the required logo files for the MenuFacil brand, including recommended formats, resolutions, and color variations.
+This document outlines all logo files for the MenuFacil brand, organized by category and variation.
 
-## Required Logo Files
+## Folder Structure
 
-### 1. Primary Logo (Main Identity)
+```
+public/images/logos/
+├── primary/      (Primary brand logos)
+├── secondary/    (Alternative layouts)
+├── submark/      (Compact variations)
+├── icons/        (Minimalist marks)
+├── favicon/      (Browser and device icons)
+└── README.md     (This file)
+```
 
-| File Name | Description | Recommended Format | Resolution |
-|-----------|-------------|-------------------|------------|
-| `primary-logo-clean.png` | Just the brand name and symbol | PNG with transparency | 600 × 200px |
-| `primary-logo-clean.svg` | Vector version of clean logo | SVG | Scalable |
-| `primary-logo-tagline.png` | Includes brand name, symbol, and tagline | PNG with transparency | 600 × 250px |
-| `primary-logo-cta.png` | Includes "visita" on top and ".com.mx" on bottom | PNG with transparency | 600 × 300px |
+## Current Logo Files
 
-### 2. Secondary Logo (Alternative Formats)
+### 1. Primary Logo (`/primary`)
 
-| File Name | Description | Recommended Format | Resolution |
-|-----------|-------------|-------------------|------------|
-| `secondary-logo-clean.png` | Stacked/alternative layout without domain | PNG with transparency | 400 × 400px |
-| `secondary-logo-domain.png` | Includes ".com.mx" for web presence | PNG with transparency | 400 × 450px |
-| `secondary-logo-clean.svg` | Vector version of secondary logo | SVG | Scalable |
+| File Name | Format | Description | Status |
+|-----------|--------|-------------|--------|
+| `primary-logo-clean.svg` | SVG | Vector version of clean logo | ✅ Available |
+| `primary-logo-clean.png` | PNG | Clean logo with brand colors | ✅ Available |
+| `primary-logo-clean-white.png` | PNG | White version for dark backgrounds | ✅ Available |
+| `primary-logo-clean-black.png` | PNG | Black version for monochrome use | ✅ Available |
+| `primary-logo-tagline.svg` | SVG | Vector version with tagline | ✅ Available |
+| `primary-logo-tagline.png` | PNG | Logo with tagline in brand colors | ✅ Available |
+| `primary-logo-tagline-white.png` | PNG | White tagline version | ✅ Available |
+| `primary-logo-tagline-black.png` | PNG | Black tagline version | ✅ Available |
+| `primary-logo-cta.svg` | SVG | Vector version with call to action | ✅ Available |
+| `primary-logo-cta.png` | PNG | CTA version in brand colors | ✅ Available |
+| `primary-logo-cta-white.png` | PNG | White CTA version | ✅ Available |
+| `primary-logo-cta-black.png` | PNG | Black CTA version | ✅ Available |
 
-### 3. Submark (Compact Variations)
+### 2. Secondary Logo (`/secondary`)
 
-| File Name | Description | Recommended Format | Resolution |
-|-----------|-------------|-------------------|------------|
-| `submark-compact.png` | Smaller, simplified version (initials/symbol) | PNG with transparency | 250 × 250px |
-| `submark-wide.png` | Horizontal version for narrow spaces | PNG with transparency | 400 × 100px |
-| `submark-compact.svg` | Vector version of compact submark | SVG | Scalable |
+| File Name | Format | Description | Status |
+|-----------|--------|-------------|--------|
+| `secondary-logo-clean.svg` | SVG | Vector stacked/alternate layout | ✅ Available |
+| `secondary-logo-clean.png` | PNG | Stacked layout in brand colors | ✅ Available |
+| `secondary-logo-clean-white.png` | PNG | White stacked version | ✅ Available |
+| `secondary-logo-clean-black.png` | PNG | Black stacked version | ✅ Available |
+| `secondary-logo-domain.svg` | SVG | Vector version with domain | ✅ Available |
+| `secondary-logo-domain.png` | PNG | Domain version in brand colors | ✅ Available |
+| `secondary-logo-domain-white.png` | PNG | White domain version | ✅ Available |
+| `secondary-logo-domain-black.png` | PNG | Black domain version | ✅ Available |
 
-### 4. Icons (Minimalist Marks)
+### 3. Submark (`/submark`)
 
-| File Name | Description | Recommended Format | Resolution |
-|-----------|-------------|-------------------|------------|
-| `icon-square.png` | Square version for app icons | PNG with transparency | 512 × 512px, 192 × 192px, 64 × 64px |
-| `icon-circle.png` | Circular version for favicons/social media | PNG with transparency | 512 × 512px, 192 × 192px, 64 × 64px |
-| `icon-shape.png` | Standalone brand mark without text | PNG with transparency | 512 × 512px |
-| `favicon.ico` | Website favicon | ICO | 16 × 16px, 32 × 32px, 48 × 48px |
+| File Name | Format | Description | Status |
+|-----------|--------|-------------|--------|
+| `submark-compact.png` | PNG | Compact version in brand colors | ✅ Available |
+| `submark-compact-white.png` | PNG | White compact version | ✅ Available |
+| `submark-compact-black.png` | PNG | Black compact version | ✅ Available |
+| `submark-wide.png` | PNG | Horizontal compact in brand colors | ✅ Available |
+| `submark-wide-white.png` | PNG | White horizontal compact | ✅ Available |
+| `submark-wide-black.png` | PNG | Black horizontal compact | ✅ Available |
+| `submark-compact.svg` | SVG | Vector compact version | ❌ Missing |
+| `submark-wide.svg` | SVG | Vector horizontal version | ❌ Missing |
 
-## Color Variations
+### 4. Icons (`/icons`)
 
-For maximum versatility, each logo should be available in the following color variations:
+| File Name | Format | Description | Status |
+|-----------|--------|-------------|--------|
+| `icon-square.png` | PNG | Square app icon | ✅ Available |
+| `icon-circle.png` | PNG | Circular social media icon | ✅ Available |
+| `icon-shape.png` | PNG | Standalone brand mark | ✅ Available |
+| `icon-shape.svg` | SVG | Vector standalone mark | ✅ Available |
+| `icon-square.svg` | SVG | Vector square icon | ❌ Missing |
+| `icon-circle.svg` | SVG | Vector circle icon | ❌ Missing |
+| `icon-square-white.png` | PNG | White square version | ❌ Missing |
+| `icon-circle-white.png` | PNG | White circle version | ❌ Missing |
+| `icon-shape-white.png` | PNG | White shape version | ❌ Missing |
 
-| Variation | Description | Use Case |
-|-----------|-------------|----------|
-| `[filename].png` | Standard blue brand color | Primary usage on light backgrounds |
-| `[filename]-white.png` | White/reversed version | For use on dark or colored backgrounds |
-| `[filename]-black.png` | Black version | For monochrome printing or special applications |
+### 5. Favicon (`/favicon`)
 
-Example naming: `primary-logo-clean.png`, `primary-logo-clean-white.png`, `primary-logo-clean-black.png`
+| File Name | Format | Description | Status |
+|-----------|--------|-------------|--------|
+| `favicon.ico` | ICO | Multi-size browser favicon | ✅ Available |
+| `favicon.svg` | SVG | Vector favicon | ✅ Available |
+| `favicon-96x96.png` | PNG | 96×96 favicon | ✅ Available |
+| `apple-touch-icon.png` | PNG | iOS home screen icon | ✅ Available |
+| `web-app-manifest-192x192.png` | PNG | PWA 192×192 icon | ✅ Available |
+| `web-app-manifest-512x512.png` | PNG | PWA 512×512 icon | ✅ Available |
+| `site.webmanifest` | JSON | Web app manifest file | ✅ Available |
 
-## File Format Recommendations
+## Missing Files & Recommendations
 
-- **PNG**: Preferred for digital use with transparency
-- **SVG**: Ideal for responsive web design and scaling
-- **JPG**: Only for specific applications requiring smaller file sizes (not recommended for logos)
-- **ICO**: For favicon only
+The following files would enhance the logo collection:
 
-## Implementation Notes
+1. **SVG versions of submarks**:
+   - `submark-compact.svg`
+   - `submark-wide.svg`
 
-- Use SVG format whenever possible for web applications to ensure sharp rendering at any size
-- For email signatures and Microsoft Office documents, PNG files are recommended
-- Social media profile pictures should use the square or circle icon variations
-- The favicon should follow web standards with multiple sizes embedded
+2. **SVG versions of all icons**:
+   - `icon-square.svg`
+   - `icon-circle.svg`
 
-## Brand Colors
+3. **White versions of icons**:
+   - `icon-square-white.png`
+   - `icon-circle-white.png`
+   - `icon-shape-white.png` 
+
+## Usage Guidelines
+
+### Web Usage
+
+- For web components, use SVG versions whenever possible
+- Apply CSS for color variations instead of using different files
+- For favicons, link all sizes in the HTML:
+
+```html
+<link rel="icon" href="/images/logos/favicon/favicon.ico" sizes="any">
+<link rel="icon" href="/images/logos/favicon/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/images/logos/favicon/apple-touch-icon.png">
+<link rel="manifest" href="/images/logos/favicon/site.webmanifest">
+```
+
+### Print Usage
+
+- Use vector SVG/PDF when available for print materials
+- For CMYK printing, create dedicated CMYK versions if necessary
+
+### Brand Colors
 
 - Primary Blue: #0057B8
 - Secondary Blue: #003A7A
 - Accent: #00A3E0
-
-Please ensure all logo files maintain consistent colors according to the brand guidelines. 
