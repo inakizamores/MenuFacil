@@ -64,8 +64,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-brand-primary rounded-md flex items-center justify-center text-white font-bold text-xl">M</div>
-              <span className="ml-2 text-xl font-bold text-brand-primary">MenuFacil</span>
+              <Link href="/" className="flex items-center">
+                <Image 
+                  src="/images/logos/primary/primary-logo-clean.svg"
+                  alt="MenuFacil"
+                  width={150}
+                  height={40}
+                  priority
+                  className="h-10 w-auto"
+                />
+              </Link>
             </div>
             
             {/* Desktop Nav */}
@@ -865,8 +873,13 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center text-brand-primary font-bold text-xl">M</div>
-                <span className="ml-2 text-xl font-bold">MenuFacil</span>
+                <Image 
+                  src="/images/logos/primary/primary-logo-clean-white.png"
+                  alt="MenuFacil"
+                  width={130}
+                  height={35}
+                  className="h-8 w-auto"
+                />
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.

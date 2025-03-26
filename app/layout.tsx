@@ -9,8 +9,22 @@ import GlobalErrorWrapper from './components/GlobalErrorWrapper';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'MenúFácil - Digital Menus Made Simple',
+  title: 'MenuFacil - Digital Menus Made Simple',
   description: 'Create beautiful digital menus for your restaurant in minutes',
+  icons: {
+    icon: [
+      { url: '/images/logos/favicon/favicon.ico', sizes: 'any' },
+      { url: '/images/logos/favicon/favicon.svg', type: 'image/svg+xml' }
+    ],
+    apple: '/images/logos/favicon/apple-touch-icon.png',
+    shortcut: '/images/logos/favicon/favicon.ico'
+  },
+  manifest: '/images/logos/favicon/site.webmanifest',
+  themeColor: '#0057B8',
+  appleWebApp: {
+    title: 'MenuFacil',
+    statusBarStyle: 'black-translucent'
+  }
 };
 
 export default function RootLayout({
