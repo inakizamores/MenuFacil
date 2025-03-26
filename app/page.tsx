@@ -65,7 +65,7 @@ export default function LandingPage() {
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
               <div className="h-8 w-8 bg-brand-primary rounded-md flex items-center justify-center text-white font-bold text-xl">M</div>
-              <span className="ml-2 text-xl font-bold text-brand-primary">MenúFácil</span>
+              <span className="ml-2 text-xl font-bold text-brand-primary">MenuFacil</span>
             </div>
             
             {/* Desktop Nav */}
@@ -455,7 +455,7 @@ export default function LandingPage() {
               }}
               className="text-3xl sm:text-4xl font-bold text-brand-primary mb-4"
             >
-              Why Choose MenúFácil?
+              Why Choose MenuFacil?
             </motion.h2>
             <motion.p 
               variants={{
@@ -659,7 +659,7 @@ export default function LandingPage() {
               }}
               className="text-lg text-gray-600 max-w-3xl mx-auto"
             >
-              Don&apos;t just take our word for it - hear what restaurant owners have to say about MenuFácil.
+              Don&apos;t just take our word for it - hear what restaurant owners have to say about MenuFacil.
             </motion.p>
           </div>
           
@@ -686,7 +686,7 @@ export default function LandingPage() {
                   </svg>
                 ))}
               </div>
-              <p className="text-gray-600 italic">&quot;Since implementing MenuFácil, we&apos;ve seen a 30% increase in orders for items with images. The QR code system is seamless, and updating our menu is incredibly simple.&quot;</p>
+              <p className="text-gray-600 italic">&quot;Since implementing MenuFacil, we&apos;ve seen a 30% increase in orders for items with images. The QR code system is seamless, and updating our menu is incredibly simple.&quot;</p>
             </motion.div>
             
             {/* Testimonial 2 */}
@@ -834,7 +834,7 @@ export default function LandingPage() {
         >
           <div className="py-12 px-8 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-6">Ready to Transform Your Restaurant Menu?</h2>
-            <p className="text-xl mb-8 max-w-2xl mx-auto">Join hundreds of restaurants already using MenuFácil to create beautiful digital menus that customers love.</p>
+            <p className="text-xl mb-8 max-w-2xl mx-auto">Join hundreds of restaurants already using MenuFacil to create beautiful digital menus that customers love.</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/auth/register">
                 <Button 
@@ -866,7 +866,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center mb-4">
                 <div className="h-8 w-8 bg-white rounded-md flex items-center justify-center text-brand-primary font-bold text-xl">M</div>
-                <span className="ml-2 text-xl font-bold">MenúFácil</span>
+                <span className="ml-2 text-xl font-bold">MenuFacil</span>
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.
@@ -921,7 +921,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-700 mt-12 pt-8 text-sm text-gray-400 text-center">
-            <p>&copy; {new Date().getFullYear()} MenúFácil. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} MenuFacil. All rights reserved.</p>
           </div>
         </div>
       </footer>
