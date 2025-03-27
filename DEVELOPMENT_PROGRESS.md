@@ -132,6 +132,13 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## Recently Completed Improvements
 
+### Bug Fixes
+- Fixed broken logout functionality with improved error handling
+- Consolidated Supabase client usage to avoid inconsistencies
+- Enhanced authentication state cleanup for more reliable session termination
+- Implemented direct navigation to ensure proper logout flow
+- Added comprehensive logging for better debugging of auth-related issues
+
 ### Mobile Responsiveness Improvements
 - Optimized authentication pages for better mobile experience
 - Improved vertical spacing and padding for form components
