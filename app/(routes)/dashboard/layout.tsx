@@ -207,12 +207,12 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                   className={`
                     group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
                     ${pathname === item.href
-                      ? 'bg-primary-50 text-primary-700 shadow-sm'
+                      ? 'bg-primary-gradient-horizontal text-white shadow-md'
                       : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
                   `}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-brand-accent' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
                     {<item.icon />}
                   </span>
                   {item.name}
@@ -243,10 +243,11 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={`
                     group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
-                    ${pathname === item.href 
-                      ? 'bg-primary-gradient-horizontal text-white shadow-md' 
+                    ${pathname === item.href
+                      ? 'bg-primary-gradient-horizontal text-white shadow-md'
                       : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
                   `}
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
                     {<item.icon />}
