@@ -137,6 +137,7 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 - Made active menu items use the same gradient background and text color across all screen sizes
 - Ensured consistent icon coloring between mobile and desktop navigations
 - Standardized shadow effects on active menu items
+- Increased dashboard logo size for better visibility and brand presence
 
 ### Unified Dashboard & Role-Based Access
 - Implemented a unified dashboard for all user roles at `/dashboard`
