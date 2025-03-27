@@ -125,6 +125,18 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## Recently Completed Improvements
 
+### Unified Dashboard & Role-Based Access
+- Implemented a unified dashboard for all user roles at `/dashboard`
+- Removed separate role-based dashboard routes (`/owner/dashboard`, `/staff/dashboard`, etc.)
+- Added role-based UI adjustments that show/hide functionality based on user roles
+- Updated login redirection to always direct users to the unified dashboard
+- Added middleware redirects to handle legacy dashboard route patterns
+- Improved the dashboard UI with better role-specific messaging and controls
+- Fixed authentication flow to properly use the unified dashboard path
+- Enhanced route configuration to support the streamlined dashboard structure
+- Updated navigation links throughout the application to use the new URL structure
+- Added explicit permission checks for sensitive dashboard functions
+
 ### Landing Page
 - Implemented modern animated landing page at the root URL with hero section
 - Added responsive navigation with mobile menu support
@@ -193,6 +205,7 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 | Task | Status | Target Sprint |
 |------|--------|---------------|
+| ~~Implement unified dashboard~~ | ✅ Completed | Current |
 | Improve error handling for network requests | 🔄 In Progress | Current |
 | Enhance user interface components for better usability | 🔄 In Progress | Current |
 | Implement client-side validation for all forms | 🔄 In Progress | Current |
@@ -209,9 +222,10 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 3. ~~Complete the menu publishing workflow~~ ✅
 4. ~~Modernize Supabase authentication with @supabase/ssr~~ ✅
 5. ~~Implement comprehensive client-side validation~~ ✅ (Started with restaurant forms)
-6. Apply enhanced form validation to remaining forms (login, registration, menu creation)
-7. Create form controls for complex data types (arrays, nested objects)
-8. Implement public menu URLs following `menufacil.app/menu/{restaurantName}` structure
+6. ~~Implement unified dashboard with role-based UI~~ ✅
+7. Apply enhanced form validation to remaining forms (login, registration, menu creation)
+8. Create form controls for complex data types (arrays, nested objects)
+9. Implement public menu URLs following `menufacil.app/menu/{restaurantName}` structure
 
 ### Medium-term
 1. ~~Refactor authentication to use a single, consistent implementation~~ ✅
