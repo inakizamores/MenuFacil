@@ -13,7 +13,6 @@ import {
   BarChart
 } from 'lucide-react';
 import LogoutButton from '@/app/components/LogoutButton';
-import Logo from '@/components/ui/Logo';
 
 export default function AdminDashboardLayout({
   children,
@@ -48,7 +47,7 @@ export default function AdminDashboardLayout({
       {/* Sidebar */}
       <aside className="bg-indigo-900 text-white w-64 min-h-screen py-6 px-4">
         <div className="mb-8">
-          <Logo variant="white" size="sm" showLink={false} />
+          <h1 className="text-2xl font-bold">MenuFácil Admin</h1>
         </div>
         
         <nav className="space-y-1">

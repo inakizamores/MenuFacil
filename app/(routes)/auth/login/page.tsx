@@ -59,16 +59,9 @@ const LoginPage = () => {
       if (typeof window !== 'undefined') {
         console.log('Attempting backup navigation from login page');
         setTimeout(async () => {
-          // Get appropriate home route
-          let homePath = '/dashboard';
-          if (localStorage.getItem('userRole') === 'system_admin') {
-            homePath = '/admin/dashboard';
-          } else if (localStorage.getItem('userRole') === 'restaurant_owner') {
-            homePath = '/owner/dashboard';
-          } else if (localStorage.getItem('userRole') === 'restaurant_staff') {
-            homePath = '/staff/dashboard';
-          }
-
+          // Always navigate to unified dashboard
+          const homePath = '/dashboard';
+          
           await navigateTo(router, homePath, { fallback: true, delay: 50 });
         }, 300);
       }

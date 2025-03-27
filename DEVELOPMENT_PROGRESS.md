@@ -125,18 +125,6 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## Recently Completed Improvements
 
-### Logo System Implementation
-- Created a reusable Logo component following Next.js 14 best practices
-- Implemented proper Next.js Image component usage for optimized loading
-- Created a flexible logo system with different variants (primary, white, black)
-- Added support for different logo types (default, clean, submark, icon)
-- Implemented responsive sizing with proper aspect ratio preservation
-- Replaced all hardcoded logo references with the new component
-- Improved favicon implementation with proper size declarations
-- Enhanced mobile web app manifest and apple-specific configurations
-- Fixed inconsistent branding across the application
-- Applied accessibility best practices to logo implementation (alt text, focus states)
-
 ### Landing Page
 - Implemented modern animated landing page at the root URL with hero section
 - Added responsive navigation with mobile menu support

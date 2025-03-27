@@ -7,7 +7,6 @@ import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion'
 
 // UI Components
 import Button from '@/app/components/ui/button';
-import Logo from '@/components/ui/Logo';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -65,7 +64,13 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <Logo size="sm" type="clean" />
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/images/logos/primary/primary-logo-clean.svg"
+                  alt="MenuFacil"
+                  className="h-8 w-auto"
+                />
+              </Link>
             </div>
             
             {/* Desktop Nav */}
@@ -865,7 +870,11 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Logo variant="white" size="xs" type="clean" />
+                <img 
+                  src="/images/logos/primary/primary-logo-clean-white.png"
+                  alt="MenuFacil"
+                  className="h-6 w-auto"
+                />
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.

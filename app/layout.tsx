@@ -18,47 +18,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/images/logos/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
-      { url: '/images/logos/favicon/favicon.svg', type: 'image/svg+xml' },
-      { url: '/images/logos/favicon/favicon.ico', sizes: '48x48' }
+      { url: '/images/logos/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/images/logos/favicon/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+      { url: '/images/logos/favicon/favicon.ico', sizes: 'any' }
     ],
-    apple: { 
-      url: '/images/logos/favicon/apple-touch-icon.png',
-      sizes: '180x180',
-      type: 'image/png'
-    },
-    shortcut: { 
-      url: '/images/logos/favicon/favicon-96x96.png',
-      sizes: '96x96',
-      type: 'image/png'
-    },
-    other: [
-      { 
-        rel: 'icon',
-        url: '/images/logos/favicon/web-app-manifest-192x192.png',
-        sizes: '192x192',
-        type: 'image/png'
-      },
-      { 
-        rel: 'icon',
-        url: '/images/logos/favicon/web-app-manifest-512x512.png',
-        sizes: '512x512',
-        type: 'image/png'
-      }
-    ]
+    apple: '/images/logos/favicon/apple-touch-icon.png',
+    shortcut: '/images/logos/favicon/apple-touch-icon.png'
   },
   manifest: '/images/logos/favicon/site.webmanifest',
   themeColor: '#0057B8',
   appleWebApp: {
     title: 'MenuFacil',
-    statusBarStyle: 'black-translucent',
-    capable: true,
-    startupImage: [
-      {
-        url: '/images/logos/favicon/apple-touch-icon.png',
-        media: '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
-      }
-    ]
+    statusBarStyle: 'black-translucent'
   }
 };
 

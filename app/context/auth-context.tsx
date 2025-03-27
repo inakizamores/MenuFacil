@@ -161,13 +161,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getHomeRoute = (): string => {
     if (!user) return '/';
     
-    if (isSystemAdmin(user)) {
-      return '/admin/dashboard';
-    } else if (isRestaurantStaff(user)) {
-      return '/staff/dashboard';
-    } else {
-      return '/dashboard'; // Default for restaurant owners
-    }
+    // All users now go to the unified dashboard
+    return '/dashboard';
   };
 
   const login = async (credentials: SignInCredentials) => {

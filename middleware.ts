@@ -82,6 +82,20 @@ export async function middleware(request: NextRequest) {
   // Check if this is a dashboard route
   const isDashboardRoute = pathname.startsWith('/dashboard')
   
+  // Handle redirects for legacy dashboard routes
+  if (pathname.startsWith('/owner/dashboard') || pathname.startsWith('/staff/dashboard')) {
+    // Extract the path after the legacy route prefix
+    const subPath = pathname.replace(/^\/(owner|staff)\/dashboard/, '');
+    
+    // Redirect to the corresponding path under /dashboard
+    const newPath = subPath ? `/dashboard${subPath}` : '/dashboard';
+    const redirectUrl = new URL(newPath, request.url);
+    
+    console.log(`Redirecting legacy route ${pathname} to ${newPath}`);
+    
+    return NextResponse.redirect(redirectUrl);
+  }
+  
   // Redirect to login if trying to access dashboard without authentication
   if (isDashboardRoute && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
