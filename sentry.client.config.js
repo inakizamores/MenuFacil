@@ -1,34 +1,27 @@
 // This file configures the initialization of Sentry on the client.
-// The config is used by the Sentry webpack plugin during the Next.js build process.
+// The config you add here will be used whenever a users loads a page in their browser.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  
-  // Adjust this value to control the sampling rate
-  // Performance Monitoring
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0, // Sample 10% in production, all in development
-  
-  // Session Replay for capturing user interactions (optional)
-  replaysSessionSampleRate: 0.1, // Capture 10% of all sessions
-  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
-  
-  // Enable Debug Mode only in non-production environments
-  debug: process.env.NODE_ENV !== 'production',
-  
-  // Ensure environment is properly set
   environment: process.env.NODE_ENV,
   
-  // Configure integrations
+  // Adjust this value in production, or use tracesSampler for greater control
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: false,
+
+  replaysOnErrorSampleRate: 1.0,
+  replaysSessionSampleRate: 0.1,
+  
   integrations: [
     new Sentry.BrowserTracing({
+      // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
       tracePropagationTargets: ['localhost', /^https:\/\/menufacil\.vercel\.app/],
     }),
-    new Sentry.Replay({
-      // Additional replay options
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
+    new Sentry.Replay(),
   ],
 }); 
