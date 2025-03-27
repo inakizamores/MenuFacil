@@ -11,6 +11,11 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'MenuFacil - Digital Menus Made Simple',
   description: 'Create beautiful digital menus for your restaurant in minutes',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5
+  },
   icons: {
     icon: [
       { url: '/images/logos/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },

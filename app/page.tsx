@@ -68,10 +68,10 @@ export default function LandingPage() {
                 <Image 
                   src="/images/logos/primary/primary-logo-clean.svg"
                   alt="MenuFacil"
-                  width={150}
-                  height={40}
+                  width={140}
+                  height={35}
                   priority
-                  className="h-10 w-auto"
+                  className="h-9 w-auto"
                 />
               </Link>
             </div>
@@ -876,9 +876,9 @@ export default function LandingPage() {
                 <Image 
                   src="/images/logos/primary/primary-logo-clean-white.png"
                   alt="MenuFacil"
-                  width={130}
-                  height={35}
-                  className="h-8 w-auto"
+                  width={120}
+                  height={30}
+                  className="h-7 w-auto"
                 />
               </div>
               <p className="text-sm text-gray-300 mb-4">
