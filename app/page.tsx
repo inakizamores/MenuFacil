@@ -64,16 +64,12 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center h-9">
-                <div className="w-[140px] h-9 relative">
-                  <Image 
-                    src="/images/logos/primary/primary-logo-clean.svg"
-                    alt="MenuFacil"
-                    fill
-                    priority
-                    style={{ objectFit: 'contain', objectPosition: 'left' }}
-                  />
-                </div>
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/images/logos/primary/primary-logo-clean.svg"
+                  alt="MenuFacil"
+                  className="h-8 w-auto"
+                />
               </Link>
             </div>
             
@@ -874,15 +870,11 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <div className="w-[120px] h-7 relative">
-                  <Image 
-                    src="/images/logos/primary/primary-logo-clean-white.png"
-                    alt="MenuFacil"
-                    fill
-                    priority
-                    style={{ objectFit: 'contain', objectPosition: 'left' }}
-                  />
-                </div>
+                <img 
+                  src="/images/logos/primary/primary-logo-clean-white.png"
+                  alt="MenuFacil"
+                  className="h-6 w-auto"
+                />
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.
