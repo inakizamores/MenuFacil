@@ -31,8 +31,8 @@ export default function Button({
   
   const sizeStyles = {
     sm: 'h-8 px-3 py-1.5 text-xs rounded-md',
-    md: 'h-10 px-4 py-2 text-sm rounded-md',
-    lg: 'h-12 px-6 py-3 text-base rounded-lg',
+    md: 'min-h-9 sm:min-h-10 px-4 py-2 text-sm rounded-md',
+    lg: 'min-h-11 sm:min-h-12 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg',
     icon: 'h-9 w-9 p-0 rounded-full',
   };
   
@@ -40,7 +40,7 @@ export default function Button({
     <button
       disabled={disabled || isLoading}
       className={cn(
-        'inline-flex items-center justify-center font-medium transition-all duration-250 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
         variantStyles[variant],
         sizeStyles[size],
         fullWidth && 'w-full',
@@ -50,7 +50,7 @@ export default function Button({
       {...props}
     >
       {isLoading && (
-        <div className="mr-2 inline-block animate-spin rounded-full border-2 border-current border-t-transparent h-4 w-4" role="status">
+        <div className="mr-2 inline-block animate-spin rounded-full border-2 border-current border-t-transparent h-3.5 w-3.5 sm:h-4 sm:w-4" role="status">
           <span className="sr-only">Loading...</span>
         </div>
       )}

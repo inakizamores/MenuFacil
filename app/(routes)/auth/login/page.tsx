@@ -96,45 +96,46 @@ const LoginPage = () => {
 
   return (
     <>
-      <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
           Sign in to your account
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">
           Or{' '}
-          <Link href="/auth/register" className="font-medium text-brand-accent hover:text-brand-accent/80">
+          <Link href="/auth/register" className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors duration-200">
             create a new account
           </Link>
         </p>
       </div>
 
-      <div className="bg-white p-8 shadow-lg rounded-xl">
+      <div className="bg-white p-5 sm:p-8 shadow-md sm:shadow-lg rounded-lg sm:rounded-xl">
         {/* Display server-side errors (e.g., invalid credentials) */}
         {errorMessage && (
-          <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-4 sm:mb-6 rounded-md bg-red-50 p-3 sm:p-4 text-xs sm:text-sm text-red-700">
             {errorMessage}
           </div>
         )}
         
         {/* Form with accessibility and validation using Form component */}
-        <Form form={form} onSubmit={handleLogin} className="space-y-6">
+        <Form form={form} onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
           {/* Email field with validation */}
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email address</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Email address</FormLabel>
                 <FormControl>
                   <Input 
                     id="email"
                     type="email" 
                     autoComplete="email"
                     placeholder="your@email.com"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -145,21 +146,22 @@ const LoginPage = () => {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Password</FormLabel>
                 <FormControl>
                   <Input 
                     id="password"
                     type="password" 
                     autoComplete="current-password"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-y-2">
             {/* Remember me checkbox */}
             <FormField
               control={form.control}
@@ -170,19 +172,19 @@ const LoginPage = () => {
                     <input
                       type="checkbox"
                       id="rememberMe" 
-                      className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
+                      className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
                       checked={field.value}
                       onChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="m-0">Remember me</FormLabel>
+                  <FormLabel className="m-0 text-xs sm:text-sm">Remember me</FormLabel>
                 </FormItem>
               )}
             />
 
             {/* Forgot password link */}
-            <div className="text-sm">
-              <Link href="/auth/forgot-password" className="font-medium text-brand-accent hover:text-brand-accent/80">
+            <div className="text-xs sm:text-sm">
+              <Link href="/auth/forgot-password" className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors duration-200">
                 Forgot your password?
               </Link>
             </div>
@@ -195,7 +197,7 @@ const LoginPage = () => {
             fullWidth
             isLoading={isSubmitting}
             disabled={isSubmitting}
-            className="mt-6"
+            className="mt-4 sm:mt-6 py-2 text-sm"
           >
             Sign in
           </Button>

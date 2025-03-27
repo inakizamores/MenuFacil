@@ -56,45 +56,46 @@ export default function RegisterPage() {
 
   return (
     <>
-      <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+      <div className="text-center mb-4 sm:mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
           Create your account
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600">
           Or{' '}
-          <Link href="/auth/login" className="font-medium text-brand-accent hover:text-brand-accent/80">
+          <Link href="/auth/login" className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors duration-200">
             sign in to an existing account
           </Link>
         </p>
       </div>
 
-      <div className="bg-white p-8 shadow-lg rounded-xl">
+      <div className="bg-white p-5 sm:p-8 shadow-md sm:shadow-lg rounded-lg sm:rounded-xl">
         {/* Display server-side errors during registration */}
         {serverError && (
-          <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+          <div className="mb-4 sm:mb-6 rounded-md bg-red-50 p-3 sm:p-4 text-xs sm:text-sm text-red-700">
             {serverError}
           </div>
         )}
         
         {/* Registration form with comprehensive validation */}
-        <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
+        <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-4 sm:space-y-6">
           {/* Full name field with validation */}
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full name</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Full name</FormLabel>
                 <FormControl>
                   <Input 
                     id="name"
                     type="text"
                     autoComplete="name"
                     placeholder="John Doe"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -105,17 +106,18 @@ export default function RegisterPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email address</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Email address</FormLabel>
                 <FormControl>
                   <Input 
                     id="email"
                     type="email" 
                     autoComplete="email"
                     placeholder="your@email.com"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -126,19 +128,20 @@ export default function RegisterPage() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Password</FormLabel>
                 <FormControl>
                   <Input 
                     id="password"
                     type="password" 
                     autoComplete="new-password"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormDescription className="text-xs">
-                  Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
+                <FormDescription className="text-xs mt-1">
+                  Must be at least 8 characters with uppercase, lowercase, numbers & special characters.
                 </FormDescription>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -149,16 +152,17 @@ export default function RegisterPage() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm password</FormLabel>
+                <FormLabel className="text-xs sm:text-sm">Confirm password</FormLabel>
                 <FormControl>
                   <Input 
                     id="confirmPassword"
                     type="password" 
                     autoComplete="new-password"
+                    className="text-sm mt-1"
                     {...field} 
                   />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-xs" />
               </FormItem>
             )}
           />
@@ -168,28 +172,28 @@ export default function RegisterPage() {
             control={form.control}
             name="terms"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-y-0 space-x-2">
+              <FormItem className="flex flex-row items-start space-y-0 space-x-2 pt-1">
                 <FormControl>
                   <input
                     type="checkbox"
                     id="terms" 
-                    className="h-4 w-4 mt-1 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4 mt-0.5 sm:mt-1 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
                     checked={field.value}
                     onChange={field.onChange}
                   />
                 </FormControl>
                 <div className="space-y-1 leading-none">
-                  <FormLabel className="m-0">
+                  <FormLabel className="m-0 text-xs sm:text-sm">
                     I agree to the{' '}
-                    <Link href="/terms" className="font-medium text-brand-accent hover:text-brand-accent/80">
+                    <Link href="/terms" className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors duration-200">
                       Terms of Service
                     </Link>{' '}
                     and{' '}
-                    <Link href="/privacy" className="font-medium text-brand-accent hover:text-brand-accent/80">
+                    <Link href="/privacy" className="font-medium text-brand-accent hover:text-brand-accent/80 transition-colors duration-200">
                       Privacy Policy
                     </Link>
                   </FormLabel>
-                  <FormMessage />
+                  <FormMessage className="text-xs" />
                 </div>
               </FormItem>
             )}
@@ -202,7 +206,7 @@ export default function RegisterPage() {
             fullWidth
             isLoading={form.formState.isSubmitting}
             disabled={form.formState.isSubmitting}
-            className="mt-6"
+            className="mt-4 sm:mt-6 py-2 text-sm"
           >
             Create account
           </Button>

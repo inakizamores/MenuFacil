@@ -74,17 +74,18 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             name={name}
             required={required}
             className={cn(
-              'flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-250 shadow-sm',
+              'flex h-9 sm:h-10 w-full rounded-md border bg-background px-3 py-1.5 sm:py-2 text-sm ring-offset-background transition-all duration-200 shadow-sm',
               'placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:border-accent disabled:cursor-not-allowed disabled:opacity-50',
               {
                 'border-destructive focus-visible:ring-destructive text-destructive bg-red-50/40': showError,
                 'border-success focus-visible:ring-success': success && !showError,
                 'border-input': !showError && !success,
-                'pl-10': leftAddon,
-                'pr-10': rightAddon,
+                'pl-9 sm:pl-10': leftAddon,
+                'pr-9 sm:pr-10': rightAddon,
                 'hover:border-neutral-300': !showError && !success,
                 'focus-visible:shadow-md': isFocused && !showError && !success,
-              }
+              },
+              className
             )}
             aria-invalid={showError ? 'true' : 'false'}
             aria-describedby={
