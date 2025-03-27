@@ -13,11 +13,12 @@ export const metadata: Metadata = {
   description: 'Create beautiful digital menus for your restaurant in minutes',
   icons: {
     icon: [
-      { url: '/images/logos/favicon/favicon.ico', sizes: 'any' },
-      { url: '/images/logos/favicon/favicon.svg', type: 'image/svg+xml' }
+      { url: '/images/logos/favicon/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/images/logos/favicon/favicon.svg', type: 'image/svg+xml', sizes: 'any' },
+      { url: '/images/logos/favicon/favicon.ico', sizes: 'any' }
     ],
     apple: '/images/logos/favicon/apple-touch-icon.png',
-    shortcut: '/images/logos/favicon/favicon.ico'
+    shortcut: '/images/logos/favicon/apple-touch-icon.png'
   },
   manifest: '/images/logos/favicon/site.webmanifest',
   themeColor: '#0057B8',
