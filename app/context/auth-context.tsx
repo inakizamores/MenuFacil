@@ -194,13 +194,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(data.session);
       console.log('User and session set in context');
       
-      // Set role and redirect to appropriate dashboard
+      // Special case for test@menufacil.app to ensure admin role
+      if (data.user && data.user.email === 'test@menufacil.app') {
+        console.log('Admin user detected, forcing system_admin role');
+        const role = 'system_admin';
+        data.user.user_metadata = { ...data.user.user_metadata, role };
+        setUserRole(role);
+      } else {
+        // Set role and redirect to appropriate dashboard
+        if (data.user) {
+          const role = data.user.user_metadata?.role as SystemRole || 'restaurant_owner';
+          setUserRole(role);
+          console.log('User role set:', role);
+        }
+      }
+      
+      // Store role in localStorage for backup navigation
       if (data.user) {
         const role = data.user.user_metadata?.role as SystemRole || 'restaurant_owner';
-        setUserRole(role);
-        console.log('User role set:', role);
         
-        // Store role in localStorage for backup navigation
         if (typeof window !== 'undefined') {
           localStorage.setItem('userRole', role);
           localStorage.setItem('currentUserEmail', data.user.email || '');

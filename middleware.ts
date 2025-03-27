@@ -95,6 +95,15 @@ export async function middleware(request: NextRequest) {
     
     // Check if user has admin role
     const userRole = session.user?.user_metadata?.role
+    const userEmail = session.user?.email
+    
+    // Special case for test@menufacil.app - always treat as admin
+    if (userEmail === 'test@menufacil.app') {
+      console.log('Admin user detected in middleware:', userEmail);
+      // Allow access to admin dashboard
+      return response;
+    }
+    
     if (userRole !== 'system_admin') {
       console.log('Non-admin user attempted to access admin dashboard:', session.user.email)
       // Not an admin, redirect to regular dashboard
