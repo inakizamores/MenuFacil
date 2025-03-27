@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useEffect, useState, useRef, MouseEvent } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
-import { Logo } from '@/components/ui/Logo';
 
 // UI Components
 import Button from '@/app/components/ui/button';
+import Logo from '@/components/ui/Logo';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -68,7 +65,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <Logo variant="primary" style="clean" size="md" />
+              <Logo size="sm" type="clean" />
             </div>
             
             {/* Desktop Nav */}
@@ -868,7 +865,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Logo variant="primary" style="clean" color="white" size="sm" href="" />
+                <Logo variant="white" size="xs" type="clean" />
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.

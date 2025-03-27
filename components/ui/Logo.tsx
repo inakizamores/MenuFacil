@@ -1,85 +1,92 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
-export type LogoVariant = 'primary' | 'secondary' | 'submark';
-export type LogoStyle = 'clean' | 'tagline' | 'cta' | 'domain';
-export type LogoColor = 'default' | 'white' | 'black';
+export type LogoVariant = 'primary' | 'white' | 'black';
+export type LogoType = 'default' | 'clean' | 'submark' | 'icon';
+export type LogoSize = 'xs' | 'sm' | 'md' | 'lg';
 
 interface LogoProps {
   variant?: LogoVariant;
-  style?: LogoStyle;
-  color?: LogoColor;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  type?: LogoType;
+  size?: LogoSize;
+  showLink?: boolean;
   className?: string;
-  href?: string | null | undefined;
-  alt?: string;
 }
 
+// Size mapping (in pixels)
 const sizeMap = {
-  xs: 16,
-  sm: 24,
-  md: 32,
-  lg: 48,
-  xl: 64,
+  xs: { height: 24, width: 120 }, // small
+  sm: { height: 32, width: 160 }, // medium (default)
+  md: { height: 40, width: 200 }, // large
+  lg: { height: 48, width: 240 }, // extra large
 };
 
-/**
- * Logo component for displaying brand logos across the application
- * Uses Next.js Image component for optimized image loading
- */
-export const Logo: React.FC<LogoProps> = ({
+// Icon size mapping (for square logos)
+const iconSizeMap = {
+  xs: { height: 24, width: 24 },
+  sm: { height: 32, width: 32 },
+  md: { height: 40, width: 40 },
+  lg: { height: 48, width: 48 },
+};
+
+export default function Logo({
   variant = 'primary',
-  style = 'clean',
-  color = 'default',
-  size = 'md',
-  className,
-  href = '/',
-  alt = 'MenuFacil',
-}) => {
-  // Define image properties
-  const filename = `${variant}-logo-${style}${color !== 'default' ? `-${color}` : ''}`;
-  const extension = 'svg';
-  const src = `/images/logos/${variant}/${filename}.${extension}`;
+  type = 'clean',
+  size = 'sm',
+  showLink = true,
+  className = '',
+}: LogoProps) {
+  // Use state to store the logo path to handle client-side navigation properly
+  const [logoSrc, setLogoSrc] = useState<string>('');
+  const [dimensions, setDimensions] = useState({ height: 0, width: 0 });
   
-  // Fallback to PNG if SVG might not be available (for certain variants)
-  const fallbackSrc = `/images/logos/${variant}/${filename}.png`;
-  
-  // Determine dimensions based on size
-  const height = sizeMap[size];
-  const width = height * (variant === 'submark' ? 1 : variant === 'secondary' ? 1.5 : 2.5);
-  
-  const logoImage = (
-    <Image
-      src={src}
-      alt={alt}
-      height={height}
-      width={width}
-      className={cn('h-auto', className)}
-      priority={true}
-      onError={(e) => {
-        // Fallback to PNG if SVG fails to load
-        const img = e.currentTarget;
-        img.onerror = null;
-        img.src = fallbackSrc;
-      }}
-    />
+  useEffect(() => {
+    // Determine which logo to use based on variant and type
+    let path: string;
+    let dims;
+    
+    if (type === 'icon') {
+      path = `/images/logos/icons/icon-square${variant === 'white' ? '-white' : variant === 'black' ? '-black' : ''}.png`;
+      dims = iconSizeMap[size];
+    } else if (type === 'submark') {
+      path = `/images/logos/submark/submark-compact${variant === 'white' ? '-white' : variant === 'black' ? '-black' : ''}.png`;
+      dims = iconSizeMap[size];
+    } else {
+      // Default primary logo
+      const extension = type === 'clean' ? '.svg' : '.png';
+      path = `/images/logos/primary/primary-logo-${type}${variant === 'white' ? '-white' : variant === 'black' ? '-black' : ''}${extension}`;
+      dims = sizeMap[size];
+    }
+
+    setLogoSrc(path);
+    setDimensions(dims);
+  }, [variant, type, size]);
+
+  const logo = (
+    <div className={`relative ${className}`} style={{ height: dimensions.height, width: dimensions.width }}>
+      {logoSrc && dimensions.height > 0 && (
+        <Image
+          src={logoSrc}
+          alt="MenuFacil"
+          fill
+          sizes={`(max-width: 768px) ${dimensions.width}px, ${dimensions.width}px`}
+          priority
+          className="object-contain"
+        />
+      )}
+    </div>
   );
 
-  // If href is null, undefined, or empty string, return just the image without a link
-  if (!href) {
-    return logoImage;
+  if (showLink) {
+    return (
+      <Link href="/" className="inline-flex focus:outline-none focus:ring-2 focus:ring-primary-500 rounded">
+        {logo}
+      </Link>
+    );
   }
 
-  // Otherwise wrap in a Link component
-  return (
-    <Link href={href} aria-label={`${alt} - Homepage`}>
-      {logoImage}
-    </Link>
-  );
-};
-
-export default Logo; 
+  return logo;
+} 

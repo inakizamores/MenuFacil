@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Logo from '@/components/ui/Logo';
 
 // Add export config for static generation
 export const dynamic = 'force-static';
@@ -15,9 +16,7 @@ export default function MarketingLayout({
       <header className="sticky top-0 z-50 w-full border-b bg-white">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-xl font-bold text-primary-600">MenúFácil</span>
-            </Link>
+            <Logo size="sm" type="clean" />
           </div>
           <nav className="hidden md:flex gap-6">
             <Link href="/#features" className="text-sm font-medium text-gray-600 hover:text-primary-600">
@@ -51,9 +50,7 @@ export default function MarketingLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             <div>
-              <Link href="/" className="flex items-center gap-2">
-                <span className="text-xl font-bold text-primary-600">MenúFácil</span>
-              </Link>
+              <Logo size="sm" type="clean" className="mb-2" />
               <p className="mt-2 text-sm text-gray-500">
                 Create beautiful digital menus for your restaurant in minutes.
               </p>
@@ -93,7 +90,7 @@ export default function MarketingLayout({
           </div>
           <div className="mt-8 border-t pt-8">
             <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} MenúFácil. All rights reserved.
+              &copy; {new Date().getFullYear()} MenuFacil. All rights reserved.
             </p>
           </div>
         </div>

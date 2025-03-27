@@ -14,6 +14,7 @@ import {
   LogOut
 } from 'lucide-react';
 import LogoutButton from '@/app/components/LogoutButton';
+import Logo from '@/components/ui/Logo';
 
 export default function OwnerDashboardLayout({
   children,
@@ -50,8 +51,8 @@ export default function OwnerDashboardLayout({
       {/* Sidebar */}
       <aside className="bg-blue-900 text-white w-64 min-h-screen py-6 px-4">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold">Owner Portal</h1>
-          <p className="text-blue-200 text-sm mt-1">{restaurantName}</p>
+          <Logo variant="white" size="sm" showLink={false} />
+          <p className="text-blue-200 text-sm mt-3">{restaurantName}</p>
         </div>
         
         <nav className="space-y-1">

@@ -8,7 +8,7 @@ import RouteProtection from '@/app/components/RouteProtection';
 import LogoutButton from '@/app/components/LogoutButton';
 import { getUserRoleDisplay, isRestaurantStaff } from '@/types/user-roles';
 import { useStaffRestaurant } from '@/app/hooks/useStaffRestaurant';
-import { Logo } from '@/components/ui/Logo';
+import Logo from '@/components/ui/Logo';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -139,7 +139,7 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
         {/* Sidebar */}
         <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white">
           <div className="flex h-16 flex-shrink-0 items-center justify-between px-4">
-            <Logo variant="primary" style="clean" size="sm" />
+            <div className="text-xl font-bold text-gray-900">MenúFácil</div>
             <button
               className="rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
               onClick={() => setSidebarOpen(false)}
@@ -174,7 +174,7 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white pt-5">
           <div className="flex flex-shrink-0 items-center px-4 pb-5">
-            <Logo variant="primary" style="clean" size="md" />
+            <Logo size="sm" type="clean" />
           </div>
           <div className="mt-5 flex flex-grow flex-col">
             <nav className="flex-1 space-y-1 px-2 pb-4">
