@@ -132,6 +132,15 @@ MenuFácil is a web-based application designed to help restaurants digitize thei
 
 ## Recently Completed Improvements
 
+### Mobile Responsiveness Improvements
+- Optimized authentication pages for better mobile experience
+- Improved vertical spacing and padding for form components
+- Enhanced form inputs and buttons with better touch targets
+- Added smooth transitions between form states
+- Improved registration page layout for more efficient display on smaller screens
+- Reduced text sizes on mobile for better readability
+- Optimized spacing around form labels and error messages
+
 ### UI Consistency Improvements
 - Fixed navigation menu style inconsistency between desktop and mobile views
 - Made active menu items use the same gradient background and text color across all screen sizes
