@@ -1,0 +1,7 @@
+warning: in the working copy of 'DEVELOPMENT_PROGRESS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+M	DEVELOPMENT_PROGRESS.md
+M	app/(routes)/dashboard/layout.tsx
+M	app/layout.tsx
+M	app/page.tsx
+M	public/images/logos/README.md

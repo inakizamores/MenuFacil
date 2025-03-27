@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, MouseEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { Logo } from '@/components/ui/Logo';
 
 // UI Components
 import Button from '@/app/components/ui/button';
@@ -64,13 +68,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center">
-                <img 
-                  src="/images/logos/primary/primary-logo-clean.svg"
-                  alt="MenuFacil"
-                  className="h-8 w-auto"
-                />
-              </Link>
+              <Logo variant="primary" style="clean" size="md" />
             </div>
             
             {/* Desktop Nav */}
@@ -870,11 +868,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <img 
-                  src="/images/logos/primary/primary-logo-clean-white.png"
-                  alt="MenuFacil"
-                  className="h-6 w-auto"
-                />
+                <Logo variant="primary" style="clean" color="white" size="sm" href="" />
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.

@@ -116,14 +116,3 @@ The following files would enhance the logo collection:
 <link rel="apple-touch-icon" href="/images/logos/favicon/apple-touch-icon.png">
 <link rel="manifest" href="/images/logos/favicon/site.webmanifest">
 ```
-
-### Print Usage
-
-- Use vector SVG/PDF when available for print materials
-- For CMYK printing, create dedicated CMYK versions if necessary
-
-### Brand Colors
-
-- Primary Blue: #0057B8
-- Secondary Blue: #003A7A
-- Accent: #00A3E0
