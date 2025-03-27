@@ -64,15 +64,16 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center">
-                <Image 
-                  src="/images/logos/primary/primary-logo-clean.svg"
-                  alt="MenuFacil"
-                  width={140}
-                  height={35}
-                  priority
-                  className="h-9 w-auto"
-                />
+              <Link href="/" className="flex items-center h-9">
+                <div className="w-[140px] h-9 relative">
+                  <Image 
+                    src="/images/logos/primary/primary-logo-clean.svg"
+                    alt="MenuFacil"
+                    fill
+                    priority
+                    style={{ objectFit: 'contain', objectPosition: 'left' }}
+                  />
+                </div>
               </Link>
             </div>
             
@@ -873,13 +874,15 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Image 
-                  src="/images/logos/primary/primary-logo-clean-white.png"
-                  alt="MenuFacil"
-                  width={120}
-                  height={30}
-                  className="h-7 w-auto"
-                />
+                <div className="w-[120px] h-7 relative">
+                  <Image 
+                    src="/images/logos/primary/primary-logo-clean-white.png"
+                    alt="MenuFacil"
+                    fill
+                    priority
+                    style={{ objectFit: 'contain', objectPosition: 'left' }}
+                  />
+                </div>
               </div>
               <p className="text-sm text-gray-300 mb-4">
                 Digital menus made simple for restaurants of all sizes.
