@@ -71,7 +71,7 @@ export default function LandingPage() {
                 <img 
                   src="/images/logos/primary/primary-logo-clean.svg"
                   alt="MenuFacil"
-                  className="h-8 w-auto animate-logoFadeIn"
+                  className="h-10 w-auto animate-logoFadeIn"
                 />
               </Link>
             </div>
@@ -908,7 +908,7 @@ export default function LandingPage() {
                 <img 
                   src="/images/logos/primary/primary-logo-clean-white.png"
                   alt="MenuFacil"
-                  className="h-6 w-auto animate-logoFadeIn"
+                  className="h-8 w-auto animate-logoFadeIn"
                 />
               </div>
               <p className="text-sm text-gray-300 mb-4">
