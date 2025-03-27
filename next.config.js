@@ -89,6 +89,7 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'menufacil.vercel.app', '*.menufacil.app'],
     },
+    instrumentationHook: true,
   },
 };
 
