@@ -168,6 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: SignInCredentials) => {
     setIsLoading(true);
     setError(null);
+    
     try {
       console.log('Login attempt started');
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -184,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
+      // Important: Update state first before redirecting
       setUser(data.user);
       setSession(data.session);
       console.log('User and session set in context');
@@ -197,19 +199,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Store role in localStorage for backup navigation
         if (typeof window !== 'undefined') {
           localStorage.setItem('userRole', role);
+          localStorage.setItem('currentUserEmail', data.user.email || '');
+          // Set a login timestamp to ensure fresh state
+          localStorage.setItem('last_login_timestamp', Date.now().toString());
         }
         
-        // Determine home route based on user role
-        const homeRoute = getHomeRoute();
-        console.log('About to redirect to:', homeRoute);
+        // Always redirect to the dashboard
+        console.log('Redirecting to dashboard');
         
-        // Use navigation helper with fallback
-        const navigationResult = await navigateTo(router, homeRoute, { 
-          fallback: true,
-          delay: 150
-        });
-        
-        console.log('Navigation result:', navigationResult);
+        // Use a small delay to ensure state updates have propagated
+        setTimeout(async () => {
+          try {
+            // First try with router navigation
+            const navigationResult = await navigateTo(router, '/dashboard', { 
+              fallback: true,
+              delay: 300,
+              forceReload: false
+            });
+            
+            console.log('Navigation result:', navigationResult);
+            
+            // If we're still not at the dashboard, force a reload
+            if (typeof window !== 'undefined' && 
+                !window.location.pathname.endsWith('/dashboard')) {
+              console.log('Forcing direct navigation to dashboard');
+              window.location.href = '/dashboard';
+            }
+          } catch (navError) {
+            console.error('Navigation error:', navError);
+            // Final fallback
+            if (typeof window !== 'undefined') {
+              window.location.href = '/dashboard';
+            }
+          }
+        }, 500);
       }
     } catch (error: any) {
       console.error('Login error caught:', error);
@@ -273,17 +296,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.clear();
       }
       
-      console.log('Redirecting to login page');
+      console.log('Redirecting to home page');
       
       // Use the navigation helper with a full page reload
-      navigateTo(router, '/auth/login', {
+      navigateTo(router, '/', {
         fallback: true,
         delay: 100
       }).then(() => {
         // Force a full page reload to clear any React state
         if (typeof window !== 'undefined') {
           console.log('Forcing full page reload');
-          window.location.href = '/auth/login';
+          window.location.href = '/';
         }
       });
     } catch (error: any) {

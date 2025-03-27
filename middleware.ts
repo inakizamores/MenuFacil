@@ -108,6 +108,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
   
+  // Redirect root path for authenticated users to dashboard
+  if (pathname === '/' && session) {
+    const redirectUrl = new URL('/dashboard', request.url)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
   // Redirect problematic routes that use special naming conventions
   // This prevents build errors when Vercel tries to generate client reference manifests
   if (pathname.includes('(marketing)') || pathname.includes('(routes)/(marketing)')) {

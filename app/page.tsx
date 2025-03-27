@@ -4,12 +4,15 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
+import { useAuth } from './context/auth-context';
 
 // UI Components
 import Button from '@/app/components/ui/button';
 
 export default function LandingPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   
   // Refs for scroll animations
   const heroRef = useRef(null);
@@ -68,7 +71,7 @@ export default function LandingPage() {
                 <img 
                   src="/images/logos/primary/primary-logo-clean.svg"
                   alt="MenuFacil"
-                  className="h-8 w-auto"
+                  className="h-8 w-auto animate-logoFadeIn"
                 />
               </Link>
             </div>
@@ -93,16 +96,26 @@ export default function LandingPage() {
               <Link href="/contact" className="text-brand-text hover:text-brand-accent px-3 py-2 rounded-md text-sm font-medium transition duration-250">
                 Contact
               </Link>
-              <Link href="/auth/login" className="ml-2">
-                <Button variant="outline" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/auth/register" className="ml-2">
-                <Button size="sm">
-                  Get Started
-                </Button>
-              </Link>
+              {isAuthenticated ? (
+                <Link href="/dashboard" className="ml-2">
+                  <Button size="sm">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth/login" className="ml-2">
+                    <Button variant="outline" size="sm">
+                      Log in
+                    </Button>
+                  </Link>
+                  <Link href="/auth/register" className="ml-2">
+                    <Button size="sm">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
             
             {/* Mobile Menu Button */}
@@ -162,16 +175,26 @@ export default function LandingPage() {
                 <Link href="/contact" className="text-brand-text hover:text-brand-accent block px-3 py-2 rounded-md text-base font-medium">
                   Contact
                 </Link>
-                <Link href="/auth/login" className="block w-full px-3 py-2">
-                  <Button variant="outline" className="w-full">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/auth/register" className="block w-full px-3 py-2">
-                  <Button className="w-full">
-                    Get Started
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <Link href="/dashboard" className="block w-full px-3 py-2">
+                    <Button className="w-full">
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/auth/login" className="block w-full px-3 py-2">
+                      <Button variant="outline" className="w-full">
+                        Log in
+                      </Button>
+                    </Link>
+                    <Link href="/auth/register" className="block w-full px-3 py-2">
+                      <Button className="w-full">
+                        Get Started
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </motion.div>
           )}
@@ -255,15 +278,27 @@ export default function LandingPage() {
                 Create beautiful digital menus for your restaurant in minutes. No technical skills required.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Link href="/auth/register">
-                  <Button 
-                    size="lg" 
-                    className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold"
-                    aria-label="Start free trial - no credit card required"
-                  >
-                    Start Free Trial
-                  </Button>
-                </Link>
+                {isAuthenticated ? (
+                  <Link href="/dashboard">
+                    <Button 
+                      size="lg" 
+                      className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold"
+                      aria-label="Go to your dashboard"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/auth/register">
+                    <Button 
+                      size="lg" 
+                      className="bg-white !text-brand-primary hover:!bg-brand-primary hover:!text-white transform hover:scale-105 transition duration-250 font-bold"
+                      aria-label="Start free trial - no credit card required"
+                    >
+                      Start Free Trial
+                    </Button>
+                  </Link>
+                )}
                 <Link href="/about">
                   <Button 
                     size="lg" 
@@ -873,7 +908,7 @@ export default function LandingPage() {
                 <img 
                   src="/images/logos/primary/primary-logo-clean-white.png"
                   alt="MenuFacil"
-                  className="h-6 w-auto"
+                  className="h-6 w-auto animate-logoFadeIn"
                 />
               </div>
               <p className="text-sm text-gray-300 mb-4">

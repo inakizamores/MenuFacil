@@ -55,159 +55,159 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+    <>
+      <div className="text-center mb-6">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
           Create your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600">
           Or{' '}
-          <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
+          <Link href="/auth/login" className="font-medium text-brand-accent hover:text-brand-accent/80">
             sign in to an existing account
           </Link>
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-          {/* Display server-side errors during registration */}
-          {serverError && (
-            <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
-              {serverError}
-            </div>
-          )}
-          
-          {/* Registration form with comprehensive validation */}
-          <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
-            {/* Full name field with validation */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="name"
-                      type="text"
-                      autoComplete="name"
-                      placeholder="John Doe"
-                      {...field} 
-                    />
-                  </FormControl>
+      <div className="bg-white p-8 shadow-lg rounded-xl">
+        {/* Display server-side errors during registration */}
+        {serverError && (
+          <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+            {serverError}
+          </div>
+        )}
+        
+        {/* Registration form with comprehensive validation */}
+        <Form form={form} onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
+          {/* Full name field with validation */}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full name</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="name"
+                    type="text"
+                    autoComplete="name"
+                    placeholder="John Doe"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Email field with validation */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email address</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="email"
+                    type="email" 
+                    autoComplete="email"
+                    placeholder="your@email.com"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password field with validation and requirements description */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="password"
+                    type="password" 
+                    autoComplete="new-password"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Confirm password field with matching validation */}
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm password</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="confirmPassword"
+                    type="password" 
+                    autoComplete="new-password"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Terms acceptance checkbox with required validation */}
+          <FormField
+            control={form.control}
+            name="terms"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-y-0 space-x-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    id="terms" 
+                    className="h-4 w-4 mt-1 rounded border-gray-300 text-brand-primary focus:ring-brand-accent"
+                    checked={field.value}
+                    onChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="m-0">
+                    I agree to the{' '}
+                    <Link href="/terms" className="font-medium text-brand-accent hover:text-brand-accent/80">
+                      Terms of Service
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" className="font-medium text-brand-accent hover:text-brand-accent/80">
+                      Privacy Policy
+                    </Link>
+                  </FormLabel>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
+                </div>
+              </FormItem>
+            )}
+          />
 
-            {/* Email field with validation */}
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email address</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="email"
-                      type="email" 
-                      autoComplete="email"
-                      placeholder="your@email.com"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Password field with validation and requirements description */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="password"
-                      type="password" 
-                      autoComplete="new-password"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Confirm password field with matching validation */}
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="confirmPassword"
-                      type="password" 
-                      autoComplete="new-password"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Terms acceptance checkbox with required validation */}
-            <FormField
-              control={form.control}
-              name="terms"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-y-0 space-x-2">
-                  <FormControl>
-                    <input
-                      type="checkbox"
-                      id="terms" 
-                      className="h-4 w-4 mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      checked={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="m-0">
-                      I agree to the{' '}
-                      <Link href="/terms" className="font-medium text-primary-600 hover:text-primary-500">
-                        Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link href="/privacy" className="font-medium text-primary-600 hover:text-primary-500">
-                        Privacy Policy
-                      </Link>
-                    </FormLabel>
-                    <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            {/* Submit button with loading state */}
-            <Button
-              type="submit"
-              fullWidth
-              isLoading={form.formState.isSubmitting}
-              disabled={form.formState.isSubmitting}
-            >
-              Create account
-            </Button>
-          </Form>
-        </div>
+          {/* Submit button with loading state */}
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            isLoading={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting}
+            className="mt-6"
+          >
+            Create account
+          </Button>
+        </Form>
       </div>
-    </div>
+    </>
   );
 } 

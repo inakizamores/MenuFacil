@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { navigateTo } from '@/app/utils/navigation';
 
 export default function RouteProtection({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,16 +14,34 @@ export default function RouteProtection({ children }: { children: React.ReactNod
   useEffect(() => {
     async function checkAuthentication() {
       try {
+        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
+          console.log('Session found, user is authenticated');
           setIsAuthenticated(true);
         } else {
-          router.push('/auth/login');
+          console.log('No active session found, redirecting to login page');
+          // First try the router
+          await navigateTo(router, '/auth/login', { 
+            fallback: true, 
+            delay: 100,
+            forceReload: false
+          });
+          
+          // If still here, force a redirect
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/auth/login';
+            }
+          }, 200);
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
-        router.push('/auth/login');
+        // Force navigation to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
+        }
       } finally {
         setIsLoading(false);
       }
@@ -34,7 +53,7 @@ export default function RouteProtection({ children }: { children: React.ReactNod
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent"></div>
       </div>
     );
   }

@@ -76,101 +76,101 @@ export default function ResetPasswordPage() {
   // Show success message after password reset
   if (isSuccess) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+      <>
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
             Password reset successful
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-600">
             Your password has been reset successfully. You will be redirected to login shortly.
           </p>
-          <div className="mt-4 text-center">
-            <Link href="/auth/login" className="font-medium text-primary-600 hover:text-primary-500">
+          <div className="mt-4">
+            <Link href="/auth/login" className="font-medium text-brand-accent hover:text-brand-accent/80">
               Go to login
             </Link>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+    <>
+      <div className="text-center mb-6">
+        <h2 className="text-3xl font-bold tracking-tight text-gray-900">
           Reset your password
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600">
           Enter a new password for your account
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
-          {/* Display server-side errors */}
-          {serverError && (
-            <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700">
-              {serverError}
-            </div>
-          )}
-          
-          {/* Password reset form with validation */}
-          <Form form={form} onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-6">
-            {/* New password field with validation and requirements description */}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="password"
-                      type="password" 
-                      autoComplete="new-password"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="bg-white p-8 shadow-lg rounded-xl">
+        {/* Display server-side errors */}
+        {serverError && (
+          <div className="mb-6 rounded-md bg-red-50 p-4 text-sm text-red-700">
+            {serverError}
+          </div>
+        )}
+        
+        {/* Password reset form with validation */}
+        <Form form={form} onSubmit={form.handleSubmit(handleResetPassword)} className="space-y-6">
+          {/* New password field with validation and requirements description */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>New password</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="password"
+                    type="password" 
+                    autoComplete="new-password"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {/* Confirm password field with matching validation */}
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm new password</FormLabel>
-                  <FormControl>
-                    <Input 
-                      id="confirmPassword"
-                      type="password" 
-                      autoComplete="new-password"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {/* Confirm password field with matching validation */}
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm new password</FormLabel>
+                <FormControl>
+                  <Input 
+                    id="confirmPassword"
+                    type="password" 
+                    autoComplete="new-password"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {/* Submit button with loading state */}
-            <Button
-              type="submit"
-              fullWidth
-              isLoading={form.formState.isSubmitting}
-              disabled={form.formState.isSubmitting}
-            >
-              Reset password
-            </Button>
-          </Form>
-        </div>
+          {/* Submit button with loading state */}
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            isLoading={form.formState.isSubmitting}
+            disabled={form.formState.isSubmitting}
+            className="mt-6"
+          >
+            Reset password
+          </Button>
+        </Form>
       </div>
-    </div>
+    </>
   );
 } 

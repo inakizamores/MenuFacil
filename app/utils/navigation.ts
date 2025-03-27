@@ -15,18 +15,37 @@ export const navigateTo = (
   options: { 
     fallback?: boolean; // Whether to use window.location as fallback
     delay?: number; // Delay before navigation in ms
+    forceReload?: boolean; // Whether to force a full page reload
   } = {}
 ): Promise<boolean> => {
-  const { fallback = true, delay = 100 } = options;
+  const { fallback = true, delay = 250, forceReload = false } = options;
   
   return new Promise((resolve) => {
     // If specified, add a small delay to ensure React state updates have processed
     setTimeout(() => {
       try {
+        // If forceReload is true, use window.location directly
+        if (forceReload && typeof window !== 'undefined') {
+          console.log(`Force reloading to ${path}`);
+          window.location.href = path;
+          resolve(true);
+          return;
+        }
+
         // Try using Next.js router
         console.log(`Navigating to ${path} using Next.js router`);
         router.push(path);
-        resolve(true);
+        
+        // Double-check that navigation actually happened
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && 
+              fallback && 
+              !window.location.pathname.endsWith(path)) {
+            console.log(`Detected failed navigation, falling back to location change for ${path}`);
+            window.location.href = path;
+          }
+          resolve(true);
+        }, 200);
       } catch (error) {
         console.error('Router navigation failed:', error);
         

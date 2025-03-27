@@ -111,6 +111,20 @@ module.exports = {
           foreground: "#ffffff",
         },
       },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        logoFadeIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.5s ease-out forwards',
+        logoFadeIn: 'logoFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+      },
       boxShadow: {
         'sm-brand': '0 1px 2px rgba(5, 10, 48, 0.05)',
         'brand': '0 1px 3px rgba(5, 10, 48, 0.1), 0 1px 2px rgba(5, 10, 48, 0.06)',

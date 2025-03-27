@@ -128,7 +128,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-accent"></div>
       </div>
     );
   }
@@ -138,73 +138,82 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">System Admin Dashboard</h1>
+          <h1 className="text-2xl font-bold text-brand-text">System Admin Dashboard</h1>
         </div>
         
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Platform Overview</h2>
-          <p className="text-gray-600">Welcome to the admin dashboard. You have access to all system features.</p>
+        <div className="bg-white shadow-md rounded-lg p-6 border border-gray-100">
+          <h2 className="text-xl font-semibold mb-4 text-brand-text">Platform Overview</h2>
+          <p className="text-brand-text/70">Welcome to the admin dashboard. You have access to all system features.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500">Users</p>
-                <h3 className="text-3xl font-bold mt-1">-</h3>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-brand-text/70">Users</p>
+                  <h3 className="text-3xl font-bold mt-1 text-brand-text">-</h3>
+                </div>
+                <div className="bg-brand-primary/10 p-3 rounded-full">
+                  <Users className="h-6 w-6 text-brand-primary" />
+                </div>
               </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
+              <div className="mt-4">
+                <Link 
+                  href="/dashboard/users" 
+                  className="text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250"
+                >
+                  Manage Users →
+                </Link>
               </div>
             </div>
-            <div className="mt-4">
-              <Link 
-                href="/dashboard/users" 
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center"
-              >
-                Manage Users →
-              </Link>
-            </div>
+            <div className="h-1 bg-primary-gradient-horizontal"></div>
           </div>
           
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500">Restaurants</p>
-                <h3 className="text-3xl font-bold mt-1">-</h3>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-brand-text/70">Restaurants</p>
+                  <h3 className="text-3xl font-bold mt-1 text-brand-text">-</h3>
+                </div>
+                <div className="bg-brand-secondary/10 p-3 rounded-full">
+                  <Utensils className="h-6 w-6 text-brand-secondary" />
+                </div>
               </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <Utensils className="h-6 w-6 text-green-600" />
+              <div className="mt-4">
+                <Link 
+                  href="/dashboard/restaurants" 
+                  className="text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250"
+                >
+                  Manage Restaurants →
+                </Link>
               </div>
             </div>
-            <div className="mt-4">
-              <Link 
-                href="/dashboard/restaurants" 
-                className="text-green-600 hover:text-green-700 font-medium text-sm flex items-center"
-              >
-                Manage Restaurants →
-              </Link>
-            </div>
+            <div className="h-1 bg-secondary-gradient-horizontal"></div>
           </div>
           
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-gray-500">Analytics</p>
-                <h3 className="text-3xl font-bold mt-1">-</h3>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-brand-text/70">Analytics</p>
+                  <h3 className="text-3xl font-bold mt-1 text-brand-text">-</h3>
+                </div>
+                <div className="bg-brand-accent/10 p-3 rounded-full">
+                  <BarChart2 className="h-6 w-6 text-brand-accent" />
+                </div>
               </div>
-              <div className="bg-purple-100 p-3 rounded-full">
-                <BarChart2 className="h-6 w-6 text-purple-600" />
+              <div className="mt-4">
+                <Link 
+                  href="/dashboard/analytics" 
+                  className="text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250"
+                >
+                  View Analytics →
+                </Link>
               </div>
             </div>
-            <div className="mt-4">
-              <Link 
-                href="/dashboard/analytics" 
-                className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center"
-              >
-                View Analytics →
-              </Link>
-            </div>
+            <div className="h-1 bg-cta-gradient"></div>
           </div>
         </div>
       </div>
@@ -214,23 +223,23 @@ export default function DashboardPage() {
   // If no restaurant data for owner or staff
   if (!stats.restaurant) {
     return (
-      <div className="text-center py-12">
-        <Utensils className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">No Restaurant Found</h2>
+      <div className="text-center py-12 bg-white shadow-md rounded-lg p-8 max-w-md mx-auto">
+        <Utensils className="h-16 w-16 mx-auto text-brand-text/40 mb-4" />
+        <h2 className="text-2xl font-bold mb-2 text-brand-text">No Restaurant Found</h2>
         {isOwner ? (
           <>
-            <p className="text-gray-600 mb-6">You don't have a restaurant set up yet. Create one to get started.</p>
+            <p className="text-brand-text/70 mb-6">You don't have a restaurant set up yet. Create one to get started.</p>
             <Link 
               href="/dashboard/restaurants/create" 
-              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+              className="inline-flex items-center px-4 py-2 bg-primary-gradient-horizontal text-white rounded-md hover:opacity-90 shadow-md transition-all duration-250"
             >
               <Plus className="h-4 w-4 mr-2" /> Create Restaurant
             </Link>
           </>
         ) : isStaff ? (
-          <p className="text-gray-600 mb-6">You haven't been assigned to a restaurant yet. Please contact your manager.</p>
+          <p className="text-brand-text/70 mb-6">You haven't been assigned to a restaurant yet. Please contact your manager.</p>
         ) : (
-          <p className="text-gray-600 mb-6">No restaurant information is available.</p>
+          <p className="text-brand-text/70 mb-6">No restaurant information is available.</p>
         )}
       </div>
     );
@@ -240,18 +249,18 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Restaurant Dashboard</h1>
+        <h1 className="text-2xl font-bold text-brand-text">Restaurant Dashboard</h1>
         {isOwner && (
           <div className="flex space-x-2">
             <Link 
               href="/dashboard/menus/create" 
-              className="inline-flex items-center px-3 py-2 bg-primary-600 text-white text-sm rounded-md hover:bg-primary-700"
+              className="inline-flex items-center px-3 py-2 bg-primary-gradient-horizontal text-white text-sm rounded-md hover:opacity-90 shadow-md transition-all duration-250"
             >
               <Plus className="h-4 w-4 mr-1" /> Add Menu Item
             </Link>
             <Link 
               href="/dashboard/staff/create" 
-              className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+              className="inline-flex items-center px-3 py-2 bg-cta-gradient text-white text-sm rounded-md hover:opacity-90 shadow-md transition-all duration-250"
             >
               <Plus className="h-4 w-4 mr-1" /> Add Staff
             </Link>
@@ -260,8 +269,8 @@ export default function DashboardPage() {
       </div>
       
       {/* Restaurant Info Card */}
-      <div className="bg-white shadow-sm rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">{stats.restaurant.name}</h2>
+      <div className="bg-white shadow-md rounded-lg p-6 border border-gray-100">
+        <h2 className="text-xl font-semibold mb-4 text-brand-text">{stats.restaurant.name}</h2>
         {isStaff && !isOwner && (
           <div className="mb-4 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-md flex items-center">
             <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
@@ -270,23 +279,23 @@ export default function DashboardPage() {
         )}
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <p className="text-gray-500 text-sm">Address</p>
-            <p>{stats.restaurant.address || 'Not provided'}</p>
+            <p className="text-brand-text/70 text-sm">Address</p>
+            <p className="text-brand-text">{stats.restaurant.address || 'Not provided'}</p>
           </div>
           <div>
-            <p className="text-gray-500 text-sm">Created</p>
-            <p>{new Date(stats.restaurant.created_at).toLocaleDateString()}</p>
+            <p className="text-brand-text/70 text-sm">Created</p>
+            <p className="text-brand-text">{new Date(stats.restaurant.created_at).toLocaleDateString()}</p>
           </div>
           <div className="md:col-span-2">
-            <p className="text-gray-500 text-sm">Description</p>
-            <p>{stats.restaurant.description || 'No description available'}</p>
+            <p className="text-brand-text/70 text-sm">Description</p>
+            <p className="text-brand-text">{stats.restaurant.description || 'No description available'}</p>
           </div>
         </div>
         {isOwner && (
           <div className="mt-4">
             <Link 
               href="/dashboard/settings" 
-              className="text-primary-600 text-sm hover:underline"
+              className="text-brand-accent text-sm hover:text-brand-accent/80 transition-colors duration-250"
             >
               Edit Restaurant Information
             </Link>
@@ -297,107 +306,126 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Staff Card */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500">Staff Members</p>
-              <h3 className="text-3xl font-bold mt-1">{stats.staffCount}</h3>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-brand-text/70">Staff Members</p>
+                <h3 className="text-3xl font-bold mt-1 text-brand-text">{stats.staffCount}</h3>
+              </div>
+              <div className="bg-brand-accent/10 p-3 rounded-full">
+                <Users className="h-6 w-6 text-brand-accent" />
+              </div>
             </div>
-            <div className="bg-purple-100 p-3 rounded-full">
-              <Users className="h-6 w-6 text-purple-600" />
+            <div className="mt-4">
+              <Link 
+                href="/dashboard/staff" 
+                className={`text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250 ${!isOwner && 'opacity-50 pointer-events-none'}`}
+              >
+                Manage Staff →
+              </Link>
             </div>
           </div>
-          <div className="mt-4">
-            <Link 
-              href="/dashboard/staff" 
-              className={`text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center ${!isOwner && 'opacity-50 pointer-events-none'}`}
-            >
-              Manage Staff →
-            </Link>
-          </div>
+          <div className="h-1 bg-brand-gradient-horizontal"></div>
         </div>
         
         {/* Menu Items Card */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500">Menu Items</p>
-              <h3 className="text-3xl font-bold mt-1">{stats.menuItemsCount}</h3>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-brand-text/70">Menu Items</p>
+                <h3 className="text-3xl font-bold mt-1 text-brand-text">{stats.menuItemsCount}</h3>
+              </div>
+              <div className="bg-brand-secondary/10 p-3 rounded-full">
+                <MenuIcon className="h-6 w-6 text-brand-secondary" />
+              </div>
             </div>
-            <div className="bg-amber-100 p-3 rounded-full">
-              <MenuIcon className="h-6 w-6 text-amber-600" />
+            <div className="mt-4">
+              <Link 
+                href="/dashboard/menus" 
+                className="text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250"
+              >
+                Manage Menu →
+              </Link>
             </div>
           </div>
-          <div className="mt-4">
-            <Link 
-              href="/dashboard/menus" 
-              className="text-amber-600 hover:text-amber-700 font-medium text-sm flex items-center"
-            >
-              Manage Menu →
-            </Link>
-          </div>
+          <div className="h-1 bg-secondary-gradient-horizontal"></div>
         </div>
         
         {/* Categories Card */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-gray-500">Categories</p>
-              <h3 className="text-3xl font-bold mt-1">{stats.categoriesCount}</h3>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-brand-text/70">Categories</p>
+                <h3 className="text-3xl font-bold mt-1 text-brand-text">{stats.categoriesCount}</h3>
+              </div>
+              <div className="bg-brand-primary/10 p-3 rounded-full">
+                <QrCode className="h-6 w-6 text-brand-primary" />
+              </div>
             </div>
-            <div className="bg-teal-100 p-3 rounded-full">
-              <QrCode className="h-6 w-6 text-teal-600" />
+            <div className="mt-4">
+              <Link 
+                href="/dashboard/menus/categories" 
+                className="text-brand-accent hover:text-brand-accent/80 font-medium text-sm flex items-center transition-colors duration-250"
+              >
+                Manage Categories →
+              </Link>
             </div>
           </div>
-          <div className="mt-4">
-            <Link 
-              href="/dashboard/menus/categories" 
-              className="text-teal-600 hover:text-teal-700 font-medium text-sm flex items-center"
-            >
-              Manage Categories →
-            </Link>
-          </div>
+          <div className="h-1 bg-primary-gradient-horizontal"></div>
         </div>
       </div>
       
       {/* Quick Insights & Analysis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 border-b border-gray-100 pb-3">
-                <Clock className="h-5 w-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">Menu updated</p>
-                  <p className="text-xs text-gray-500">2 days ago</p>
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4 text-brand-text">Recent Activity</h2>
+            <div className="space-y-4">
+              {[1, 2, 3].map((_, i) => (
+                <div key={i} className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                  <div className="bg-brand-background p-2 rounded-full">
+                    <Clock className="h-4 w-4 text-brand-text/60" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-brand-text">Menu updated</p>
+                    <p className="text-xs text-brand-text/60">2 days ago</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <Link href="/dashboard/activity" className="text-sm text-primary-600 hover:underline">
-              View all activity
-            </Link>
-          </div>
-        </div>
-        
-        {/* Revenue Overview - Only visible to owners */}
-        <div className="bg-white shadow-sm rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Revenue Overview</h2>
-          <div className="flex justify-center items-center h-40">
-            <div className="text-center">
-              <DollarSign className="h-12 w-12 text-gray-300 mx-auto" />
-              <p className="mt-2 text-gray-500">Enable analytics to view revenue data</p>
-              <Link 
-                href="/dashboard/analytics" 
-                className={`mt-3 inline-block text-sm text-primary-600 hover:underline ${!isOwner && 'opacity-50 pointer-events-none'}`}
-              >
-                Set up analytics
+              ))}
+            </div>
+            <div className="mt-4">
+              <Link href="/dashboard/activity" className="text-sm text-brand-accent hover:text-brand-accent/80 transition-colors duration-250">
+                View all activity
               </Link>
             </div>
           </div>
+          <div className="h-1 bg-brand-gradient-diagonal"></div>
+        </div>
+        
+        {/* Revenue Overview - Only visible to owners */}
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold mb-4 text-brand-text">Revenue Overview</h2>
+            <div className="flex justify-center items-center h-40">
+              <div className="text-center">
+                <div className="bg-brand-background w-16 h-16 flex items-center justify-center rounded-full mx-auto">
+                  <DollarSign className="h-8 w-8 text-brand-text/30" />
+                </div>
+                <p className="mt-4 text-brand-text/70">Enable analytics to view revenue data</p>
+                <Link 
+                  href="/dashboard/analytics" 
+                  className={`mt-3 inline-block text-sm text-brand-accent hover:text-brand-accent/80 transition-colors duration-250 ${!isOwner && 'opacity-50 pointer-events-none'}`}
+                >
+                  Set up analytics
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="h-1 bg-complementary-diagonal"></div>
         </div>
       </div>
     </div>

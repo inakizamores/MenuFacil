@@ -165,28 +165,34 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-500 border-t-transparent"></div>
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-accent border-t-transparent"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-brand-background">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        {/* Backdrop */}
+        {/* Backdrop with blur */}
         <div 
-          className="fixed inset-0 bg-gray-600 bg-opacity-75" 
+          className="fixed inset-0 bg-brand-text/10 backdrop-blur-sm transition-opacity duration-250"
           onClick={() => setSidebarOpen(false)} 
           aria-hidden="true"
         ></div>
         
         {/* Sidebar */}
-        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white">
+        <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-white shadow-xl-brand transition-transform duration-250">
           <div className="flex h-16 flex-shrink-0 items-center justify-between px-4">
-            <div className="text-xl font-bold text-gray-900">MenuFacil</div>
+            <Link href="/dashboard" className="flex items-center">
+              <img 
+                src="/images/logos/primary/primary-logo-clean.svg"
+                alt="MenuFacil"
+                className="h-8 w-auto animate-logoFadeIn"
+              />
+            </Link>
             <button
-              className="rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
+              className="rounded-md text-brand-text p-1 hover:bg-brand-primary/5 hover:text-brand-accent transition-colors duration-250 focus:outline-none focus:ring-2 focus:ring-brand-accent"
               onClick={() => setSidebarOpen(false)}
             >
               <CloseIcon />
@@ -199,14 +205,16 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
                   key={item.name}
                   href={item.href}
                   className={`
-                    group flex items-center rounded-md px-3 py-2 text-sm font-medium
+                    group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
                     ${pathname === item.href
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
+                      ? 'bg-primary-50 text-primary-700 shadow-sm'
+                      : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
                   `}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="mr-3 text-gray-500">{<item.icon />}</span>
+                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-brand-accent' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                    {<item.icon />}
+                  </span>
                   {item.name}
                 </Link>
               ))}
@@ -217,63 +225,71 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white pt-5">
-          <div className="flex flex-shrink-0 items-center px-4 pb-5">
-            <div className="text-xl font-bold text-gray-900">MenuFacil</div>
+        <div className="flex flex-grow flex-col overflow-y-auto border-r border-gray-200 bg-white shadow-md pt-5">
+          <div className="flex flex-shrink-0 items-center px-6 pb-5">
+            <Link href="/dashboard" className="flex items-center">
+              <img 
+                src="/images/logos/primary/primary-logo-clean.svg"
+                alt="MenuFacil"
+                className="h-8 w-auto animate-logoFadeIn"
+              />
+            </Link>
           </div>
           <div className="mt-5 flex flex-grow flex-col">
-            <nav className="flex-1 space-y-1 px-2 pb-4">
+            <nav className="flex-1 space-y-2 px-4 pb-4">
               {filteredNavigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`
-                    group flex items-center rounded-md px-3 py-2 text-sm font-medium
+                    group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
                     ${pathname === item.href 
-                      ? 'bg-primary-100 text-primary-900' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'}
+                      ? 'bg-primary-gradient-horizontal text-white shadow-md' 
+                      : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
                   `}
                 >
-                  <span className="mr-3 text-gray-500">{<item.icon />}</span>
+                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                    {<item.icon />}
+                  </span>
                   {item.name}
                 </Link>
               ))}
             </nav>
           </div>
-          <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
-            <div className="flex items-center">
+          <div className="flex flex-shrink-0 border-t border-gray-200 p-0">
+            <div className="flex items-center w-full bg-brand-background/30 rounded-lg m-4 p-4 shadow-sm hover:shadow-md transition-all duration-250 hover:bg-brand-background/50">
               <div className="flex-shrink-0">
                 {user?.user_metadata?.avatar_url ? (
                   <img
-                    className="h-10 w-10 rounded-full"
+                    className="h-12 w-12 rounded-full border-2 border-white shadow-md"
                     src={user.user_metadata.avatar_url}
                     alt="User avatar"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-800">
-                    {user?.email?.[0]?.toUpperCase() || 'U'}
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-primary text-white shadow-md border-2 border-white">
+                    <span className="text-lg font-semibold">{user?.email?.[0]?.toUpperCase() || 'U'}</span>
                   </div>
                 )}
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-semibold text-brand-text">
                   {user?.user_metadata?.full_name || user?.email}
                 </p>
                 {isRestaurantStaff(user) ? (
                   <>
-                    <p className="text-xs text-gray-500 mb-1">Restaurant Staff</p>
+                    <p className="text-xs font-medium text-brand-accent mb-1">Restaurant Staff</p>
                     {restaurantName && (
-                      <p className="text-xs text-gray-500 mb-1">{restaurantName}</p>
+                      <p className="text-xs text-brand-text/70 mb-1 truncate max-w-[160px]">{restaurantName}</p>
                     )}
                   </>
                 ) : (
-                  <p className="text-xs text-gray-500 mb-1">
+                  <p className="text-xs font-medium text-brand-accent mb-1">
                     {getUserRoleDisplay(user)}
                   </p>
                 )}
                 <LogoutButton
-                  className="text-xs font-medium text-gray-500 hover:text-gray-700"
-                  showIcon={false}
+                  className="text-xs font-medium text-brand-text hover:text-brand-accent transition-colors duration-250 mt-1"
+                  showIcon={true}
                 />
               </div>
             </div>
@@ -283,43 +299,52 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white shadow">
+        <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white shadow-md backdrop-blur-sm bg-white/90">
           <button
-            className="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 lg:hidden"
+            className="border-r border-gray-200 px-4 text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-accent lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <MobileMenuIcon />
           </button>
           <div className="flex flex-1 justify-between px-4">
-            <div className="flex flex-1"></div>
+            <div className="flex flex-1 items-center">
+              <h1 className="text-xl font-semibold text-brand-text hidden sm:block">
+                {pathname === '/dashboard' ? 'Dashboard' : 
+                 pathname.startsWith('/dashboard/restaurants') ? 'Restaurants' : 
+                 pathname.startsWith('/dashboard/menus') ? 'Menus' : 
+                 pathname.startsWith('/dashboard/qr-codes') ? 'QR Codes' : 
+                 pathname.startsWith('/dashboard/analytics') ? 'Analytics' : 
+                 pathname.startsWith('/dashboard/settings') ? 'Settings' : 'Dashboard'}
+              </h1>
+            </div>
             <div className="ml-4 flex items-center lg:hidden">
               <div className="flex items-center">
                 {user?.user_metadata?.avatar_url ? (
                   <img
-                    className="h-8 w-8 rounded-full"
+                    className="h-8 w-8 rounded-full border-2 border-brand-background shadow-sm"
                     src={user.user_metadata.avatar_url}
                     alt="User avatar"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-800">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent text-white shadow-sm">
                     {user?.email?.[0]?.toUpperCase() || 'U'}
                   </div>
                 )}
                 <div className="ml-2 flex flex-col">
                   {isRestaurantStaff(user) ? (
                     <>
-                      <span className="text-xs text-gray-700">Restaurant Staff</span>
+                      <span className="text-xs text-brand-text">Restaurant Staff</span>
                       {restaurantName && (
-                        <span className="text-xs text-gray-700">{restaurantName}</span>
+                        <span className="text-xs text-brand-text truncate max-w-[100px]">{restaurantName}</span>
                       )}
                     </>
                   ) : (
-                    <span className="text-xs text-gray-700">
+                    <span className="text-xs text-brand-text">
                       {getUserRoleDisplay(user)}
                     </span>
                   )}
                   <LogoutButton
-                    className="text-xs font-medium text-gray-500 hover:text-gray-700"
+                    className="text-xs font-medium text-brand-text/70 hover:text-brand-accent transition-colors duration-250"
                     showIcon={false}
                   />
                 </div>
