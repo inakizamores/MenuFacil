@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 /**
  * Utility function to completely reset user authentication state
@@ -6,6 +6,9 @@ import { supabase } from '../config/supabase';
  */
 export const resetAuthState = async (): Promise<void> => {
   try {
+    // Create a client
+    const supabase = createClient();
+    
     // Sign out from Supabase
     await supabase.auth.signOut();
     
@@ -13,6 +16,7 @@ export const resetAuthState = async (): Promise<void> => {
     if (typeof window !== 'undefined') {
       // Clear auth-related items
       localStorage.removeItem('userRole');
+      localStorage.removeItem('currentUserEmail');
       localStorage.removeItem('staffRestaurantName');
       localStorage.removeItem('staffRestaurantId');
       

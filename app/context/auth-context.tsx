@@ -11,7 +11,6 @@ import {
   isRestaurantStaff 
 } from '../../types/user-roles';
 import { navigateTo } from '@/app/utils/navigation';
-import { supabase } from '@/app/config/supabase';
 
 // Define the auth credentials types
 export type SignInCredentials = {
@@ -274,10 +273,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      console.log('Logout initiated');
+      console.log('Logout initiated from auth context');
       
       // Sign out from Supabase
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Supabase signOut error:', error);
+        // Continue with cleanup even if Supabase has an error
+      } else {
+        console.log('Supabase signOut successful');
+      }
       
       // Clear all auth state
       setUser(null);
@@ -294,24 +300,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Force clear any cached data
         sessionStorage.clear();
+        
+        // Also clear any Supabase-specific items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth') || 
+              key.startsWith('sb-') || 
+              key.includes('supabase')) {
+            console.log(`Removing localStorage item: ${key}`);
+            localStorage.removeItem(key);
+          }
+        });
       }
       
-      console.log('Redirecting to home page');
+      console.log('Redirecting to home page from auth context');
       
-      // Use the navigation helper with a full page reload
+      // Force a direct navigation rather than using the helper
+      if (typeof window !== 'undefined') {
+        console.log('Forcing full page reload');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Use the navigation helper as a fallback
       navigateTo(router, '/', {
         fallback: true,
-        delay: 100
-      }).then(() => {
-        // Force a full page reload to clear any React state
-        if (typeof window !== 'undefined') {
-          console.log('Forcing full page reload');
-          window.location.href = '/';
-        }
+        delay: 100,
+        forceReload: true
       });
     } catch (error: any) {
       console.error('Error during logout:', error);
-      setError(error.message);
+      
+      // Even if there's an error, try to force a logout
+      if (typeof window !== 'undefined') {
+        // Clear any persisted auth data
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Force navigation to home
+        window.location.href = '/';
+      }
     }
   };
 
