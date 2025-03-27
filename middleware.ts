@@ -79,8 +79,9 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ['/', '/about', '/contact', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/menus']
   const isPublicRoute = publicRoutes.some(route => pathname === route) || pathname.startsWith('/menus/') || pathname.includes('/api/')
   
-  // Check if this is a dashboard route
+  // Check if this is a dashboard route (either regular or admin)
   const isDashboardRoute = pathname.startsWith('/dashboard')
+  const isAdminDashboardRoute = pathname.startsWith('/admindashboard')
   
   // Handle redirects for legacy dashboard routes
   if (pathname.startsWith('/owner/dashboard') || pathname.startsWith('/staff/dashboard')) {
@@ -97,20 +98,37 @@ export async function middleware(request: NextRequest) {
   }
   
   // Redirect to login if trying to access dashboard without authentication
-  if (isDashboardRoute && !session) {
+  if ((isDashboardRoute || isAdminDashboardRoute) && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Redirect authenticated users trying to access auth pages back to the dashboard
+  // If trying to access admin dashboard but not an admin, redirect to regular dashboard
+  if (isAdminDashboardRoute && session) {
+    const userRole = session.user?.user_metadata?.role || '';
+    if (userRole !== 'system_admin') {
+      const redirectUrl = new URL('/dashboard', request.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
+  
+  // Redirect authenticated users trying to access auth pages based on their role
   if (pathname.startsWith('/auth/') && session) {
-    const redirectUrl = new URL('/dashboard', request.url)
+    const userRole = session.user?.user_metadata?.role || '';
+    const redirectUrl = new URL(
+      userRole === 'system_admin' ? '/admindashboard' : '/dashboard', 
+      request.url
+    )
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Redirect root path for authenticated users to dashboard
+  // Redirect root path for authenticated users based on their role
   if (pathname === '/' && session) {
-    const redirectUrl = new URL('/dashboard', request.url)
+    const userRole = session.user?.user_metadata?.role || '';
+    const redirectUrl = new URL(
+      userRole === 'system_admin' ? '/admindashboard' : '/dashboard', 
+      request.url
+    )
     return NextResponse.redirect(redirectUrl)
   }
   

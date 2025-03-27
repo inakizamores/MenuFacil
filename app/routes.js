@@ -85,4 +85,16 @@ export const routeMap = {
   
   // Test pages
   '/variants-test': { page: '/variants-test' },
+  
+  // Admin Dashboard routes
+  '/admindashboard': { page: '/admindashboard' },
+  '/admindashboard/users': { page: '/admindashboard/users' },
+  '/admindashboard/users/create': { page: '/admindashboard/users/create' },
+  '/admindashboard/restaurants': { page: '/admindashboard/restaurants' },
+  '/admindashboard/restaurants/create': { page: '/admindashboard/restaurants/create' },
+  '/admindashboard/menus': { page: '/admindashboard/menus' },
+  '/admindashboard/qrcodes': { page: '/admindashboard/qrcodes' },
+  '/admindashboard/analytics': { page: '/admindashboard/analytics' },
+  '/admindashboard/content': { page: '/admindashboard/content' },
+  '/admindashboard/settings': { page: '/admindashboard/settings' },
 }; 

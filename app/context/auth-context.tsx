@@ -160,8 +160,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getHomeRoute = (): string => {
     if (!user) return '/';
     
-    // All users now go to the unified dashboard
-    return '/dashboard';
+    // Check if user is a system admin
+    const role = user.user_metadata?.role as SystemRole || 'restaurant_owner';
+    return role === 'system_admin' ? '/admindashboard' : '/dashboard';
   };
 
   const login = async (credentials: SignInCredentials) => {
@@ -203,14 +204,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('last_login_timestamp', Date.now().toString());
         }
         
-        // Always redirect to the dashboard
-        console.log('Redirecting to dashboard');
+        // Determine the appropriate dashboard based on user role
+        const dashboardPath = role === 'system_admin' ? '/admindashboard' : '/dashboard';
+        console.log(`Redirecting to ${dashboardPath} based on role: ${role}`);
         
         // Use a small delay to ensure state updates have propagated
         setTimeout(async () => {
           try {
             // First try with router navigation
-            const navigationResult = await navigateTo(router, '/dashboard', { 
+            const navigationResult = await navigateTo(router, dashboardPath, { 
               fallback: true,
               delay: 300,
               forceReload: false
@@ -218,17 +220,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             console.log('Navigation result:', navigationResult);
             
-            // If we're still not at the dashboard, force a reload
+            // If we're still not at the right dashboard, force a reload
             if (typeof window !== 'undefined' && 
-                !window.location.pathname.endsWith('/dashboard')) {
-              console.log('Forcing direct navigation to dashboard');
-              window.location.href = '/dashboard';
+                !window.location.pathname.endsWith(dashboardPath)) {
+              console.log(`Forcing direct navigation to ${dashboardPath}`);
+              window.location.href = dashboardPath;
             }
           } catch (navError) {
             console.error('Navigation error:', navError);
             // Final fallback
             if (typeof window !== 'undefined') {
-              window.location.href = '/dashboard';
+              window.location.href = dashboardPath;
             }
           }
         }, 500);
@@ -262,7 +264,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(data.user);
       setSession(data.session);
-      router.push('/dashboard');
+      
+      // Determine the appropriate dashboard based on user role
+      const role = credentials.role || 'restaurant_owner';
+      const dashboardPath = role === 'system_admin' ? '/admindashboard' : '/dashboard';
+      
+      // Navigate to the appropriate dashboard
+      router.push(dashboardPath);
     } catch (error: any) {
       setError(error.message || 'Failed to sign up');
       throw error;
