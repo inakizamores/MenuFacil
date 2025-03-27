@@ -4,6 +4,8 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Database } from '../types/supabase.types';
 import { toUUID } from '@/lib/utils';
+import { z } from 'zod';
+import { createDetailedError, handleApiError, logError } from '@/lib/errorHandling';
 
 /**
  * Create a Supabase client for server components with cookies for auth
@@ -38,74 +40,149 @@ const createClient = () => {
 };
 
 /**
+ * Profile data validation schema using Zod
+ */
+const profileSchema = z.object({
+  full_name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  first_name: z.string().min(1, 'First name is required').optional(),
+  last_name: z.string().optional(),
+  avatar_url: z.string().url('Invalid URL').nullable().optional(),
+  bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
+  website: z.string().url('Invalid URL').optional(),
+  company: z.string().optional(),
+  position: z.string().optional(),
+  location: z.string().optional(),
+  phone: z.string().optional(),
+  timezone: z.string().optional(),
+  language: z.string().optional(),
+  preferences: z.record(z.any()).optional(),
+  social_accounts: z.record(z.string().url('Invalid URL')).optional(),
+});
+
+/**
+ * Type for profile update data with proper validation
+ */
+export type ProfileUpdateData = z.infer<typeof profileSchema>;
+
+/**
+ * Fetches a user's profile from the database
+ * 
+ * @param userId - The ID of the user to fetch profile for
+ * @returns The user profile data or null if not found
+ */
+export async function getUserProfile(userId: string) {
+  try {
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (error) {
+      // Don't throw for "no rows returned" as this is a valid scenario
+      if (error.code === 'PGRST116') {
+        return { data: null, error: null };
+      }
+      throw error;
+    }
+    
+    return { data, error: null };
+  } catch (error) {
+    const handledError = handleApiError(error);
+    return { data: null, error: handledError };
+  }
+}
+
+/**
  * Updates or creates a user profile with the provided data
  * 
  * This function handles both the creation of a new profile if one doesn't exist,
- * and updating an existing profile. It parses the full name into first and last name
- * components for database storage.
+ * and updating an existing profile. It follows proper validation and error handling.
  * 
  * @param userId - The ID of the user to update
- * @param profileData - Profile data to update (full_name, avatar_url, etc.)
+ * @param profileData - Profile data to update
  * @returns An object indicating success or failure with a message
  */
 export async function updateUserProfile(
   userId: string,
-  profileData: {
-    full_name?: string;
-    avatar_url?: string | null;
-    bio?: string;
-    website?: string;
-    company?: string;
-    position?: string;
-  }
+  profileData: ProfileUpdateData
 ) {
   try {
+    // Validate the profile data
+    const validationResult = profileSchema.safeParse(profileData);
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors.map(e => `${e.path}: ${e.message}`).join(', ');
+      throw createDetailedError(
+        `Invalid profile data: ${errorMessage}`,
+        'form',
+        { details: validationResult.error.format() }
+      );
+    }
+    
     const supabase = createClient();
     
-    // First check if profile exists by querying the profiles table
+    // Check if profile exists
     const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
       
-    // Handle errors, but ignore "not found" errors (PGRST116)
+    // Handle errors, but ignore "not found" errors
     if (fetchError && fetchError.code !== 'PGRST116') {
       throw new Error(`Error fetching profile: ${fetchError.message}`);
     }
     
-    // Parse the profile data to extract first and last name from full_name
-    const fullName = profileData.full_name || '';
-    const nameParts = fullName.split(' ');
-    const firstName = nameParts[0] || '';
-    // Join all remaining parts as last name, or null if there's only one part
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
+    // Process full name into first and last names if provided and first/last not explicitly set
+    let updateData: any = { ...profileData };
+    
+    if (profileData.full_name && (!profileData.first_name || !profileData.last_name)) {
+      const nameParts = profileData.full_name.split(' ');
+      if (!profileData.first_name) {
+        updateData.first_name = nameParts[0] || '';
+      }
+      if (!profileData.last_name && nameParts.length > 1) {
+        updateData.last_name = nameParts.slice(1).join(' ');
+      }
+    }
+    
+    // If first and last name are provided but full_name is not, create it
+    if (profileData.first_name && !profileData.full_name) {
+      const lastName = profileData.last_name || '';
+      updateData.full_name = `${profileData.first_name} ${lastName}`.trim();
+    }
+    
+    // Add timestamp
+    updateData.updated_at = new Date().toISOString();
     
     if (existingProfile) {
-      // Update existing profile if one exists
+      // Update existing profile
       const { error } = await supabase
         .from('profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          avatar_url: profileData.avatar_url,
-          updated_at: new Date().toISOString(), // Update the timestamp
-        } as Database['public']['Tables']['profiles']['Update'])
-        .eq('user_id', userId);
+        .update(updateData)
+        .eq('id', userId);
       
       if (error) throw new Error(`Error updating profile: ${error.message}`);
     } else {
-      // Create new profile if none exists
+      // Create new profile with additional required fields
+      updateData.id = userId;
+      updateData.created_at = new Date().toISOString();
+      
+      // Get email from auth.users if possible
+      try {
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+        if (!userError && userData?.user) {
+          updateData.email = userData.user.email;
+        }
+      } catch (emailError) {
+        console.warn('Could not fetch user email:', emailError);
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .insert({
-          user_id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          avatar_url: profileData.avatar_url,
-          created_at: new Date().toISOString(), // Set initial timestamps
-          updated_at: new Date().toISOString(),
-        } as Database['public']['Tables']['profiles']['Insert']);
+        .insert(updateData);
       
       if (error) throw new Error(`Error creating profile: ${error.message}`);
     }
@@ -115,7 +192,7 @@ export async function updateUserProfile(
       message: existingProfile ? 'Profile updated successfully' : 'Profile created successfully',
     };
   } catch (error: any) {
-    console.error('Profile update error:', error);
+    logError(error, { action: 'updateUserProfile', userId });
     
     return {
       success: false,
@@ -128,84 +205,63 @@ export async function updateUserProfile(
  * Updates a user's settings in the database and Supabase Auth metadata
  * 
  * This function performs two key operations:
- * 1. Updates the user's profile in the profiles table (first_name, last_name)
- * 2. Updates the user's metadata in Supabase Auth (language, notifications, theme)
- * 
- * The function handles both new and existing profiles and properly updates timestamps.
+ * 1. Updates the user's profile in the profiles table
+ * 2. Updates the user's metadata in Supabase Auth
  * 
  * @param userId - The ID of the user to update settings for
- * @param settings - The settings data to update (full_name, language, notifications, theme)
+ * @param settings - The settings data to update
  * @returns An object indicating success or failure with a message
  */
 export async function updateUserSettings(
   userId: string,
   settings: {
     full_name?: string;
+    first_name?: string;
+    last_name?: string;
     language?: string;
+    timezone?: string;
+    preferences?: Record<string, any>;
     notifications?: {
       email?: boolean;
       push?: boolean;
     };
-    theme?: 'light' | 'system';
+    theme?: 'light' | 'dark' | 'system';
   }
 ) {
   try {
     const supabase = createClient();
     
-    // Check if profile exists to determine if we need to create or update
-    const { data: existingProfile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-      
-    // Handle errors, but ignore "not found" errors (PGRST116)
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw new Error(`Error fetching profile: ${fetchError.message}`);
+    // Prepare profile update data
+    const profileData: ProfileUpdateData = {
+      full_name: settings.full_name,
+      first_name: settings.first_name,
+      last_name: settings.last_name,
+      language: settings.language,
+      timezone: settings.timezone,
+    };
+    
+    // Add preferences if provided
+    if (settings.preferences) {
+      profileData.preferences = settings.preferences;
     }
     
-    // Parse name components from full_name for database storage
-    const fullName = settings.full_name || '';
-    const nameParts = fullName.split(' ');
-    const firstName = nameParts[0] || '';
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : null;
-    
-    // Step 1: Update or create profile in profiles table
-    if (existingProfile) {
-      // Update existing profile
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          updated_at: new Date().toISOString(),
-        } as Database['public']['Tables']['profiles']['Update'])
-        .eq('user_id', userId);
-      
-      if (error) throw new Error(`Error updating profile: ${error.message}`);
-    } else {
-      // Create new profile
-      const { error } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as Database['public']['Tables']['profiles']['Insert']);
-      
-      if (error) throw new Error(`Error creating profile: ${error.message}`);
+    // Update profile in database
+    const profileResult = await updateUserProfile(userId, profileData);
+    if (!profileResult.success) {
+      throw new Error(profileResult.error || 'Failed to update profile settings');
     }
     
-    // Step 2: Update user metadata in Supabase Auth
-    // This stores settings like language, notifications, and theme preferences
+    // Update user metadata in Supabase Auth
     const { error: metadataError } = await supabase.auth.updateUser({
       data: {
-        full_name: fullName,
+        full_name: settings.full_name,
+        first_name: settings.first_name,
+        last_name: settings.last_name,
         language: settings.language,
+        timezone: settings.timezone,
         notifications: settings.notifications,
-        theme: settings.theme || 'light', // Default to light theme if not specified
+        theme: settings.theme || 'light',
+        preferences: settings.preferences,
       }
     });
     
@@ -216,7 +272,7 @@ export async function updateUserSettings(
       message: 'Settings updated successfully',
     };
   } catch (error: any) {
-    console.error('Settings update error:', error);
+    logError(error, { action: 'updateUserSettings', userId });
     
     return {
       success: false,
@@ -228,10 +284,6 @@ export async function updateUserSettings(
 /**
  * Updates a user's password in Supabase Auth
  * 
- * This function securely updates the user's password. The current implementation
- * doesn't verify the current password - this occurs automatically on the Supabase
- * side when using the updateUser API with a password change.
- * 
  * @param currentPassword - The user's current password (not used in this implementation)
  * @param newPassword - The new password to set
  * @returns An object indicating success or failure with a message
@@ -241,10 +293,14 @@ export async function updateUserPassword(
   newPassword: string
 ) {
   try {
+    // Validate password strength
+    if (newPassword.length < 8) {
+      throw new Error('Password must be at least 8 characters long');
+    }
+    
     const supabase = createClient();
     
     // Update user password using Supabase Auth API
-    // Note: This doesn't verify the current password - Supabase handles this
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
@@ -256,7 +312,7 @@ export async function updateUserPassword(
       message: 'Password updated successfully',
     };
   } catch (error: any) {
-    console.error('Password update error:', error);
+    logError(error, { action: 'updateUserPassword' });
     
     return {
       success: false,
@@ -266,61 +322,144 @@ export async function updateUserPassword(
 }
 
 /**
- * Upload a profile picture to Supabase Storage and update the user's profile
+ * Uploads a profile picture for the user
  * 
- * This function performs several operations:
- * 1. Uploads the image file to Supabase Storage with a unique name
- * 2. Gets the public URL for the uploaded image
- * 3. Updates the user's profile with the new avatar URL
+ * This function handles the uploading of a profile picture to Supabase Storage
+ * and updates the user's profile with the new avatar URL.
  * 
- * @param userId - The ID of the user
- * @param file - The file to upload
- * @returns An object with the URL of the uploaded image or an error
+ * @param userId - The ID of the user to update
+ * @param file - The profile picture file to upload
+ * @returns An object indicating success or failure with a message and the new avatar URL
  */
 export async function uploadProfilePicture(
   userId: string,
   file: File
 ) {
   try {
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Invalid file type. Please upload a JPEG, PNG, WebP, or GIF image.');
+    }
+    
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      throw new Error('File too large. Maximum size is 2MB.');
+    }
+    
     const supabase = createClient();
     
-    // Generate a unique file name by combining userId and a random string
+    // Upload the file to Supabase Storage
     const fileExt = file.name.split('.').pop();
-    const randomId = Math.random().toString(36).substring(2); // Random ID for uniqueness
-    const fileName = `${userId}-${randomId}.${fileExt}`;
-    const filePath = `profile-pictures/${fileName}`;
+    const fileName = `avatar-${userId}-${Date.now()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
     
-    // Step 1: Upload file to Supabase Storage
-    const { error: uploadError, data } = await supabase.storage
-      .from('public')
+    const { error: uploadError } = await supabase.storage
+      .from('profiles')
       .upload(filePath, file, {
-        cacheControl: '3600', // Cache control for 1 hour
-        upsert: true // Overwrite existing file if it exists
+        cacheControl: '3600',
+        upsert: true,
       });
     
     if (uploadError) throw new Error(`Error uploading file: ${uploadError.message}`);
     
-    // Step 2: Get the public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from('public')
+    // Get the public URL for the uploaded file
+    const { data: urlData } = supabase.storage
+      .from('profiles')
       .getPublicUrl(filePath);
     
-    // Step 3: Update the user's profile with the new avatar URL
-    await updateUserProfile(userId, {
-      avatar_url: publicUrl
+    if (!urlData || !urlData.publicUrl) {
+      throw new Error('Failed to get public URL for uploaded file');
+    }
+    
+    // Update the user's profile with the new avatar URL
+    const { success, error } = await updateUserProfile(userId, {
+      avatar_url: urlData.publicUrl,
     });
+    
+    if (!success) {
+      throw new Error(error || 'Failed to update profile with new avatar');
+    }
     
     return {
       success: true,
-      url: publicUrl,
       message: 'Profile picture uploaded successfully',
+      avatarUrl: urlData.publicUrl,
     };
   } catch (error: any) {
-    console.error('Profile picture upload error:', error);
+    logError(error, { action: 'uploadProfilePicture', userId });
     
     return {
       success: false,
       error: error.message || 'Failed to upload profile picture',
+      avatarUrl: null,
+    };
+  }
+}
+
+/**
+ * Verifies a user's email address (for admin use)
+ * 
+ * This function allows admins to manually mark a user's email as verified.
+ * 
+ * @param userId - The ID of the user to verify
+ * @returns An object indicating success or failure with a message
+ */
+export async function verifyUserEmail(userId: string) {
+  try {
+    const supabase = createClient();
+    
+    // Update the verified flag in the profile
+    const { error } = await supabase
+      .from('profiles')
+      .update({ verified: true })
+      .eq('id', userId);
+    
+    if (error) throw new Error(`Error verifying user: ${error.message}`);
+    
+    return {
+      success: true,
+      message: 'User verified successfully',
+    };
+  } catch (error: any) {
+    logError(error, { action: 'verifyUserEmail', userId });
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to verify user',
+    };
+  }
+}
+
+/**
+ * Marks a user's onboarding as completed
+ * 
+ * @param userId - The ID of the user to mark as onboarded
+ * @returns An object indicating success or failure with a message
+ */
+export async function completeUserOnboarding(userId: string) {
+  try {
+    const supabase = createClient();
+    
+    // Update the onboarding_completed flag in the profile
+    const { error } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('id', userId);
+    
+    if (error) throw new Error(`Error completing onboarding: ${error.message}`);
+    
+    return {
+      success: true,
+      message: 'Onboarding completed successfully',
+    };
+  } catch (error: any) {
+    logError(error, { action: 'completeUserOnboarding', userId });
+    
+    return {
+      success: false,
+      error: error.message || 'Failed to complete onboarding',
     };
   }
 } 

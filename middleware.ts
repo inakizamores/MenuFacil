@@ -14,9 +14,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { isSystemAdmin } from './types/user-roles'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  console.log(`Middleware processing: ${pathname}`)
+  
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -76,7 +79,7 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
   
   // Handle public routes (marketing routes, auth routes)
-  const publicRoutes = ['/', '/about', '/contact', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/menus']
+  const publicRoutes = ['/', '/about', '/contact', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/menus', '/debug']
   const isPublicRoute = publicRoutes.some(route => pathname === route) || pathname.startsWith('/menus/') || pathname.includes('/api/')
   
   // Check if this is a dashboard route
@@ -88,28 +91,29 @@ export async function middleware(request: NextRequest) {
   // If attempting to access admin dashboard, check if user has admin role
   if (isAdminDashboardRoute) {
     if (!session) {
+      console.log('Admin access denied: No session found')
       // Not logged in, redirect to login
       const redirectUrl = new URL('/auth/login', request.url)
       return NextResponse.redirect(redirectUrl)
     }
     
-    // Check if user has admin role
-    const userRole = session.user?.user_metadata?.role
-    const userEmail = session.user?.email
+    // Use the isSystemAdmin utility function to check all possible role locations
+    const isAdmin = isSystemAdmin(session.user)
     
-    // Special case for test@menufacil.app - always treat as admin
-    if (userEmail === 'test@menufacil.app') {
-      console.log('Admin user detected in middleware:', userEmail);
-      // Allow access to admin dashboard
-      return response;
-    }
-    
-    if (userRole !== 'system_admin') {
-      console.log('Non-admin user attempted to access admin dashboard:', session.user.email)
+    // Enhanced logging for admin access
+    if (!isAdmin) {
+      console.log('Admin access denied details:')
+      console.log(`- Email: ${session.user.email}`)
+      console.log(`- user_metadata:`, session.user.user_metadata)
+      console.log(`- app_metadata:`, session.user.app_metadata)
+      
       // Not an admin, redirect to regular dashboard
       const redirectUrl = new URL('/dashboard', request.url)
+      console.log(`Redirecting non-admin user to: ${redirectUrl.toString()}`)
       return NextResponse.redirect(redirectUrl)
     }
+    
+    console.log(`Admin access granted for ${session.user.email}`)
   }
   
   // Handle redirects for legacy dashboard routes
@@ -129,18 +133,33 @@ export async function middleware(request: NextRequest) {
   // Redirect to login if trying to access dashboard without authentication
   if (isDashboardRoute && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
+    console.log(`Redirecting unauthenticated user to login: ${redirectUrl.toString()}`)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
+  // Redirect admin users trying to access regular dashboard to admin dashboard
+  if (isDashboardRoute && session && isSystemAdmin(session.user)) {
+    console.log(`Admin user detected at regular dashboard path: ${pathname}`)
+    console.log(`Redirecting admin user ${session.user.email} to admin dashboard`)
+    const redirectUrl = new URL('/admindashboard', request.url)
     return NextResponse.redirect(redirectUrl)
   }
   
   // Redirect authenticated users trying to access auth pages back to the dashboard
   if (pathname.startsWith('/auth/') && session) {
-    const redirectUrl = new URL('/dashboard', request.url)
+    // Use the appropriate dashboard based on user role
+    const dashboardPath = isSystemAdmin(session.user) ? '/admindashboard' : '/dashboard'
+    const redirectUrl = new URL(dashboardPath, request.url)
+    console.log(`Redirecting authenticated user from auth page to: ${redirectUrl.toString()}`)
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Redirect root path for authenticated users to dashboard
+  // Redirect root path for authenticated users to the appropriate dashboard
   if (pathname === '/' && session) {
-    const redirectUrl = new URL('/dashboard', request.url)
+    // Determine which dashboard to use based on role
+    const dashboardPath = isSystemAdmin(session.user) ? '/admindashboard' : '/dashboard'
+    const redirectUrl = new URL(dashboardPath, request.url)
+    console.log(`Redirecting authenticated user from root to: ${redirectUrl.toString()}`)
     return NextResponse.redirect(redirectUrl)
   }
   

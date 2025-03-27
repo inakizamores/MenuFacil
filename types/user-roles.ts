@@ -52,11 +52,6 @@ export interface StaffMemberCreationData {
 export const isSystemAdmin = (user: any): boolean => {
   if (!user) return false;
   
-  // Special case: test@menufacil.app should always be treated as admin
-  if (user?.email === 'test@menufacil.app') {
-    return true;
-  }
-  
   // Check in multiple possible locations
   return (
     user?.user_metadata?.role === 'system_admin' || 
@@ -108,9 +103,6 @@ export const hasRestaurantAccess = (user: any, restaurantId: string): boolean =>
  */
 export const getUserRoleDisplay = (user: any): string => {
   if (!user) return 'Guest';
-  
-  // Force test@menufacil.app to always show as System Administrator
-  if (user?.email === 'test@menufacil.app') return 'System Administrator';
   
   // Force owner@testrestaurant.com to always show as Restaurant Owner
   if (user?.email === 'owner@testrestaurant.com') return 'Restaurant Owner';

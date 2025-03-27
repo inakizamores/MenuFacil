@@ -13,10 +13,14 @@ import {
   DollarSign,
   Utensils,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Mail
 } from 'lucide-react';
 import { isRestaurantOwner, isSystemAdmin, isRestaurantStaff } from '@/types/user-roles';
 import { useStaffRestaurant } from '@/app/hooks/useStaffRestaurant';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
 
 interface DashboardStats {
   staffCount: number;
@@ -29,6 +33,37 @@ interface DashboardStats {
     description: string;
     created_at: string;
   } | null;
+}
+
+function EmailVerificationAlert() {
+  const { profile, user } = useAuth();
+  const router = useRouter();
+  
+  // Only show for users with unverified emails
+  if (!user || profile?.verified) {
+    return null;
+  }
+  
+  return (
+    <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+      <AlertTitle className="text-yellow-800">Email not verified</AlertTitle>
+      <AlertDescription className="text-yellow-700 flex flex-col sm:flex-row sm:items-center gap-4">
+        <div>
+          Your email address {user.email} has not been verified. Verify your email to access all features of MenuFacil.
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="sm:whitespace-nowrap border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+          onClick={() => router.push('/auth/verify-email')}
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Verify Email
+        </Button>
+      </AlertDescription>
+    </Alert>
+  );
 }
 
 export default function DashboardPage() {
@@ -248,6 +283,7 @@ export default function DashboardPage() {
   // Main dashboard view for restaurant owners and staff
   return (
     <div className="space-y-6">
+      <EmailVerificationAlert />
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-brand-text">Restaurant Dashboard</h1>
         {isOwner && (

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/auth-context';
 import RouteProtection from '@/app/components/RouteProtection';
 import LogoutButton from '@/app/components/LogoutButton';
@@ -70,6 +70,7 @@ type NavItem = {
   href: string;
   icon: React.FC;
   requiredRoles?: Array<'owner' | 'admin' | 'staff'>;
+  subItems?: Array<{ name: string; href: string }>;
 };
 
 const navigation: NavItem[] = [
@@ -99,7 +100,11 @@ const navigation: NavItem[] = [
   { 
     name: 'Settings', 
     href: '/dashboard/settings', 
-    icon: SettingsIcon 
+    icon: SettingsIcon,
+    subItems: [
+      { name: 'General', href: '/dashboard/settings' },
+      { name: 'Profile', href: '/dashboard/settings/profile' }
+    ]
   },
 ];
 
@@ -113,10 +118,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardUI({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<{[key: string]: boolean}>({});
   const pathname = usePathname();
-  const { user, logout, isLoading } = useAuth();
+  const { user, signOut, isLoading } = useAuth();
   const { restaurant } = useStaffRestaurant();
   const [restaurantName, setRestaurantName] = useState<string | null>(null);
+  const router = useRouter();
   
   // Use the user ID as a key to force component refresh when user changes
   const userKey = user?.id || 'no-user';
@@ -125,18 +132,41 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
   const isOwner = isRestaurantOwner(user);
   const isAdmin = isSystemAdmin(user);
   const isStaff = isRestaurantStaff(user);
+  
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    // If user is a system admin, redirect to admin dashboard
+    if (user && isAdmin && pathname.startsWith('/dashboard')) {
+      console.log('Admin user detected in regular dashboard, redirecting to admin dashboard');
+      router.push('/admindashboard');
+    }
+  }, [user, isAdmin, pathname, router]);
 
-  // Filter navigation items based on user role
+  // Handle expanding/collapsing sidebar items
+  const toggleExpand = (name: string) => {
+    setExpandedItems(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
+
+  // Check if current path is or is a child of the given path
+  const isActivePath = (path: string) => {
+    if (path === '/dashboard' && pathname === '/dashboard') return true;
+    if (path !== '/dashboard' && pathname.startsWith(path)) return true;
+    return false;
+  };
+
+  // Filter navigation based on user role
   const filteredNavigation = navigation.filter(item => {
-    // If no required roles specified, show to everyone
     if (!item.requiredRoles) return true;
     
-    // Check if user has one of the required roles
-    return (
-      (isOwner && item.requiredRoles.includes('owner')) ||
-      (isAdmin && item.requiredRoles.includes('admin')) ||
-      (isStaff && item.requiredRoles.includes('staff'))
-    );
+    // Check if user has any of the required roles
+    if (isRestaurantOwner(user) && item.requiredRoles.includes('owner')) return true;
+    if (isSystemAdmin(user) && item.requiredRoles.includes('admin')) return true;
+    if (isRestaurantStaff(user) && item.requiredRoles.includes('staff')) return true;
+    
+    return false;
   });
 
   // For staff members, get their associated restaurant name
@@ -201,22 +231,75 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
           <div className="h-0 flex-1 overflow-y-auto">
             <nav className="flex-1 space-y-1 px-2 py-4">
               {filteredNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
-                    ${pathname === item.href
-                      ? 'bg-primary-gradient-horizontal text-white shadow-md'
-                      : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
-                  `}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
-                    {<item.icon />}
-                  </span>
-                  {item.name}
-                </Link>
+                <div key={item.name}>
+                  {item.subItems ? (
+                    // Item with subitems
+                    <>
+                      <button
+                        className={`
+                          w-full group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
+                          ${isActivePath(item.href)
+                            ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                            : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                        `}
+                        onClick={() => toggleExpand(item.name)}
+                      >
+                        <div className="flex items-center">
+                          <span className={`mr-3 transition-colors duration-250 ${isActivePath(item.href) ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                            {<item.icon />}
+                          </span>
+                          {item.name}
+                        </div>
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className={`h-4 w-4 transition-transform duration-200 ${expandedItems[item.name] ? 'rotate-180' : ''}`} 
+                          viewBox="0 0 20 20" 
+                          fill="currentColor"
+                        >
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      
+                      {/* Subitems */}
+                      {expandedItems[item.name] && (
+                        <div className="mt-1 ml-6 space-y-1">
+                          {item.subItems.map((subItem) => (
+                            <Link
+                              key={subItem.name}
+                              href={subItem.href}
+                              className={`
+                                block rounded-lg px-3 py-2 text-sm font-medium transition-all duration-250
+                                ${pathname === subItem.href
+                                  ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                                  : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                              `}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              {subItem.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Regular item without subitems
+                    <Link
+                      href={item.href}
+                      className={`
+                        group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
+                        ${pathname === item.href
+                          ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                          : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                      `}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                        {<item.icon />}
+                      </span>
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
             </nav>
           </div>
@@ -238,22 +321,75 @@ function DashboardUI({ children }: { children: React.ReactNode }) {
           <div className="mt-5 flex flex-grow flex-col">
             <nav className="flex-1 space-y-2 px-4 pb-4">
               {filteredNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
-                    ${pathname === item.href
-                      ? 'bg-primary-gradient-horizontal text-white shadow-md'
-                      : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
-                  `}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
-                    {<item.icon />}
-                  </span>
-                  {item.name}
-                </Link>
+                <div key={item.name}>
+                  {item.subItems ? (
+                    // Item with subitems
+                    <>
+                      <button
+                        className={`
+                          w-full group flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
+                          ${isActivePath(item.href)
+                            ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                            : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                        `}
+                        onClick={() => toggleExpand(item.name)}
+                      >
+                        <div className="flex items-center">
+                          <span className={`mr-3 transition-colors duration-250 ${isActivePath(item.href) ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                            {<item.icon />}
+                          </span>
+                          {item.name}
+                        </div>
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className={`h-4 w-4 transition-transform duration-200 ${expandedItems[item.name] ? 'rotate-180' : ''}`} 
+                          viewBox="0 0 20 20" 
+                          fill="currentColor"
+                        >
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      
+                      {/* Subitems */}
+                      {expandedItems[item.name] && (
+                        <div className="mt-1 ml-6 space-y-1">
+                          {item.subItems.map((subItem) => (
+                            <Link
+                              key={subItem.name}
+                              href={subItem.href}
+                              className={`
+                                block rounded-lg px-3 py-2 text-sm font-medium transition-all duration-250
+                                ${pathname === subItem.href
+                                  ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                                  : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                              `}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              {subItem.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Regular item without subitems
+                    <Link
+                      href={item.href}
+                      className={`
+                        group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-250
+                        ${pathname === item.href
+                          ? 'bg-primary-gradient-horizontal text-white shadow-md'
+                          : 'text-brand-text hover:bg-brand-background hover:text-brand-accent'}
+                      `}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <span className={`mr-3 transition-colors duration-250 ${pathname === item.href ? 'text-white' : 'text-brand-text group-hover:text-brand-accent'}`}>
+                        {<item.icon />}
+                      </span>
+                      {item.name}
+                    </Link>
+                  )}
+                </div>
               ))}
             </nav>
           </div>

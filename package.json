@@ -45,6 +45,7 @@
     "@types/react-dnd": "^2.0.36",
     "@vercel/analytics": "^1.1.1",
     "@vercel/client": "^15.1.6",
+    "class-variance-authority": "^0.7.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

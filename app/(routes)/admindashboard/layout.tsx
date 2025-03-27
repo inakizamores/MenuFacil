@@ -26,16 +26,13 @@ export default function AdminDashboardLayout({
   const { user, isLoading, isSystemAdmin } = useAuth();
   const router = useRouter();
 
-  // Check if user is admin or specifically test@menufacil.app
-  const isAdminUser = isSystemAdmin || user?.email === 'test@menufacil.app';
-
   // Admin access control
   useEffect(() => {
-    if (!isLoading && !isAdminUser) {
+    if (!isLoading && !isSystemAdmin) {
       console.log('Unauthorized access attempt to admin dashboard');
       router.push('/auth/login');
     }
-  }, [isLoading, isAdminUser, router]);
+  }, [isLoading, isSystemAdmin, router]);
 
   if (isLoading) {
     return (
@@ -46,7 +43,7 @@ export default function AdminDashboardLayout({
   }
 
   // Redirect if not admin
-  if (!isAdminUser) {
+  if (!isSystemAdmin) {
     return null;
   }
 
@@ -163,9 +160,7 @@ export default function AdminDashboardLayout({
                 )}
                 <div className="ml-3">
                   <p className="text-sm font-medium text-neutral-800">
-                    {user?.email === 'test@menufacil.app' 
-                      ? 'Admin Test Account' 
-                      : user?.user_metadata?.full_name || user?.email}
+                    {user?.user_metadata?.full_name || user?.email}
                   </p>
                   <p className="text-xs text-neutral-500">
                     System Administrator
