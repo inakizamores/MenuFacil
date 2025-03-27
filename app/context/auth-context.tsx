@@ -160,9 +160,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getHomeRoute = (): string => {
     if (!user) return '/';
     
-    // Check if user is a system admin
-    const role = user.user_metadata?.role as SystemRole || 'restaurant_owner';
-    return role === 'system_admin' ? '/admindashboard' : '/dashboard';
+    // Check for admin role
+    if (isSystemAdmin(user)) {
+      return '/admindashboard';
+    }
+    
+    // All other users go to the unified dashboard
+    return '/dashboard';
   };
 
   const login = async (credentials: SignInCredentials) => {
@@ -204,9 +208,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.setItem('last_login_timestamp', Date.now().toString());
         }
         
-        // Determine the appropriate dashboard based on user role
+        // Determine which dashboard to redirect to based on role
         const dashboardPath = role === 'system_admin' ? '/admindashboard' : '/dashboard';
-        console.log(`Redirecting to ${dashboardPath} based on role: ${role}`);
+        console.log(`Redirecting to ${dashboardPath}`);
         
         // Use a small delay to ensure state updates have propagated
         setTimeout(async () => {
@@ -220,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             console.log('Navigation result:', navigationResult);
             
-            // If we're still not at the right dashboard, force a reload
+            // If we're still not at the dashboard, force a reload
             if (typeof window !== 'undefined' && 
                 !window.location.pathname.endsWith(dashboardPath)) {
               console.log(`Forcing direct navigation to ${dashboardPath}`);
@@ -264,13 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setUser(data.user);
       setSession(data.session);
-      
-      // Determine the appropriate dashboard based on user role
-      const role = credentials.role || 'restaurant_owner';
-      const dashboardPath = role === 'system_admin' ? '/admindashboard' : '/dashboard';
-      
-      // Navigate to the appropriate dashboard
-      router.push(dashboardPath);
+      router.push('/dashboard');
     } catch (error: any) {
       setError(error.message || 'Failed to sign up');
       throw error;

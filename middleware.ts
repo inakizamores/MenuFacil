@@ -79,9 +79,29 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = ['/', '/about', '/contact', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/menus']
   const isPublicRoute = publicRoutes.some(route => pathname === route) || pathname.startsWith('/menus/') || pathname.includes('/api/')
   
-  // Check if this is a dashboard route (either regular or admin)
+  // Check if this is a dashboard route
   const isDashboardRoute = pathname.startsWith('/dashboard')
+  
+  // Check if this is an admin dashboard route
   const isAdminDashboardRoute = pathname.startsWith('/admindashboard')
+  
+  // If attempting to access admin dashboard, check if user has admin role
+  if (isAdminDashboardRoute) {
+    if (!session) {
+      // Not logged in, redirect to login
+      const redirectUrl = new URL('/auth/login', request.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+    
+    // Check if user has admin role
+    const userRole = session.user?.user_metadata?.role
+    if (userRole !== 'system_admin') {
+      console.log('Non-admin user attempted to access admin dashboard:', session.user.email)
+      // Not an admin, redirect to regular dashboard
+      const redirectUrl = new URL('/dashboard', request.url)
+      return NextResponse.redirect(redirectUrl)
+    }
+  }
   
   // Handle redirects for legacy dashboard routes
   if (pathname.startsWith('/owner/dashboard') || pathname.startsWith('/staff/dashboard')) {
@@ -98,37 +118,20 @@ export async function middleware(request: NextRequest) {
   }
   
   // Redirect to login if trying to access dashboard without authentication
-  if ((isDashboardRoute || isAdminDashboardRoute) && !session) {
+  if (isDashboardRoute && !session) {
     const redirectUrl = new URL('/auth/login', request.url)
     return NextResponse.redirect(redirectUrl)
   }
   
-  // If trying to access admin dashboard but not an admin, redirect to regular dashboard
-  if (isAdminDashboardRoute && session) {
-    const userRole = session.user?.user_metadata?.role || '';
-    if (userRole !== 'system_admin') {
-      const redirectUrl = new URL('/dashboard', request.url)
-      return NextResponse.redirect(redirectUrl)
-    }
-  }
-  
-  // Redirect authenticated users trying to access auth pages based on their role
+  // Redirect authenticated users trying to access auth pages back to the dashboard
   if (pathname.startsWith('/auth/') && session) {
-    const userRole = session.user?.user_metadata?.role || '';
-    const redirectUrl = new URL(
-      userRole === 'system_admin' ? '/admindashboard' : '/dashboard', 
-      request.url
-    )
+    const redirectUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Redirect root path for authenticated users based on their role
+  // Redirect root path for authenticated users to dashboard
   if (pathname === '/' && session) {
-    const userRole = session.user?.user_metadata?.role || '';
-    const redirectUrl = new URL(
-      userRole === 'system_admin' ? '/admindashboard' : '/dashboard', 
-      request.url
-    )
+    const redirectUrl = new URL('/dashboard', request.url)
     return NextResponse.redirect(redirectUrl)
   }
   
