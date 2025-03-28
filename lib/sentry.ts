@@ -11,16 +11,8 @@ export function initSentry() {
       environment: process.env.NODE_ENV,
       // Performance Monitoring
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0, // Sample 10% in production, all in development
-      // Session Replay
-      replaysSessionSampleRate: 0.1, // Sample 10% of sessions
-      replaysOnErrorSampleRate: 1.0, // Sample 100% of sessions with errors
-      // Custom configuration
-      integrations: [
-        new Sentry.BrowserTracing({
-          tracePropagationTargets: ['localhost', /^https:\/\/menufacil\.vercel\.app/],
-        }),
-        new Sentry.Replay(),
-      ],
+      // Debug mode in non-production environments
+      debug: process.env.NODE_ENV !== 'production',
     });
   } else {
     console.warn('Sentry DSN not found. Error tracking is disabled.');
@@ -84,6 +76,26 @@ export function startTransaction(name: string, options?: Sentry.TransactionOptio
   return null;
 }
 
+// Export initialized Sentry instance
+export { Sentry };
+
+// Helper function to capture errors with context
+export const captureError = (error: Error, context?: Record<string, any>) => {
+  Sentry.withScope((scope) => {
+    if (context) {
+      Object.entries(context).forEach(([key, value]) => {
+        scope.setExtra(key, value);
+      });
+    }
+    Sentry.captureException(error);
+  });
+};
+
+// Helper function to capture messages
+export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
+  Sentry.captureMessage(message, level);
+};
+
 export default {
   initSentry,
   captureException,
@@ -91,4 +103,6 @@ export default {
   clearUser,
   setTag,
   startTransaction,
+  captureError,
+  captureMessage,
 }; 
