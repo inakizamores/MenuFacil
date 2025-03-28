@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import { handleApiError, handleAuthError, handleValidationError, ErrorType } from '@/lib/api/error-handler';
 import { applyRateLimit, signupRateLimitConfig } from '@/lib/api/rate-limiter';
-import type { Database } from '@/types/database.types';
 
 /**
  * Registration API Route
@@ -20,7 +19,7 @@ import type { Database } from '@/types/database.types';
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])/;
 
-// Define a schema for registration data validation with clear error messages
+// Define a schema for registration data validation
 const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -31,21 +30,18 @@ export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname;
   
   try {
-    // Apply rate limiting to prevent brute force attacks
-    // This uses IP and email-based rate limiting (3 attempts per hour)
+    // Apply rate limiting
     const rateLimitResponse = applyRateLimit(req, signupRateLimitConfig);
     if (rateLimitResponse) {
-      return rateLimitResponse; // Return 429 Too Many Requests if rate limited
+      return rateLimitResponse;
     }
     
-    // Parse request body as JSON
+    // Parse request body
     const body = await req.json();
     
-    // Validate request body against the schema
-    // This provides strong input validation and prevents malformed data
+    // Validate request body
     const validationResult = registerSchema.safeParse(body);
     if (!validationResult.success) {
-      // Return a structured validation error response (400 Bad Request)
       return handleValidationError(
         { 
           message: 'Invalid registration data',
@@ -55,24 +51,23 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Extract validated data (now type-safe)
     const { email, password, name } = validationResult.data;
     
-    // Initialize Supabase client for auth and database operations
+    // Initialize Supabase client
     const supabase = await createClient();
     
-    // Attempt user registration with Supabase Auth
+    // Attempt registration
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          full_name: name // Store name in user metadata for quick access
+          full_name: name
         }
       }
     });
     
-    // Handle authentication errors (email in use, invalid format, etc.)
+    // Handle registration errors
     if (authError) {
       return handleAuthError(
         { 
@@ -80,37 +75,22 @@ export async function POST(req: NextRequest) {
           cause: { code: authError.code, status: authError.status }
         },
         path,
-        400 // Use 400 Bad Request for registration failures
+        400
       );
     }
     
-    // Once auth registration succeeds, create a profile record in the database
-    // This stores additional user information and allows for future extension
+    // Simplified profile creation
     if (authData.user) {
-      // @ts-ignore - Suppress type error for Supabase client
-      // Known issue: Types for the profiles table need to be fixed in a future update
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id, // Use the same ID as the auth user
-          full_name: name,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          role: 'restaurant_owner' // Default role for new registrations
-        });
-        
-      if (profileError) {
-        // Log the error but don't fail the registration
-        // We prioritize user creation in auth system even if profile creation fails
-        console.error('Failed to create user profile:', profileError);
-      }
+      // Separate function to create profile
+      createUserProfile(authData.user.id, name, supabase).catch(err => {
+        console.error('Failed to create user profile:', err);
+      });
     }
     
-    // Determine if email confirmation is required based on session existence
-    // If session is null, email confirmation is required
+    // Determine if email confirmation is required
     const confirmationRequired = !authData.session;
     
-    // Return a success response with appropriate status code and data
+    // Return success response
     return NextResponse.json({
       success: true,
       message: confirmationRequired 
@@ -121,10 +101,9 @@ export async function POST(req: NextRequest) {
         id: authData.user?.id,
         email: authData.user?.email,
       }
-    }, { status: 201 }); // 201 Created is appropriate for registration
+    }, { status: 201 });
   } catch (error: any) {
-    // Generic error handling for unexpected errors
-    // This logs the error to the database and returns a structured error response
+    // Generic error handling
     return handleApiError(
       error,
       path,
@@ -133,4 +112,15 @@ export async function POST(req: NextRequest) {
       'An error occurred during registration'
     );
   }
+}
+
+// Separated to avoid build issues
+async function createUserProfile(userId: string, name: string, supabase: any) {
+  await supabase.from('profiles').insert({
+    id: userId,
+    full_name: name,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    role: 'restaurant_owner'
+  });
 } 
