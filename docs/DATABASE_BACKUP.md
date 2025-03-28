@@ -57,7 +57,6 @@ npm run supabase:backup:daily
 1. Set up a [Vercel Cron Job](https://vercel.com/docs/cron-jobs) in your project settings
 2. Configure a daily schedule (e.g., `0 0 * * *` for midnight every day)
 3. Set the endpoint to trigger the backup script
-4. **Important**: Follow the secure setup instructions in [VERCEL_CRON_SETUP.md](./VERCEL_CRON_SETUP.md) to properly configure authentication
 
 ### Using GitHub Actions
 

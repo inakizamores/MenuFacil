@@ -1,46 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Verifying that this is a cron job request from Vercel
-function isVercelCronRequest(req: NextRequest) {
-  const cronHeader = req.headers.get('x-vercel-cron');
-  const authToken = req.headers.get('authorization')?.split(' ')[1];
-  
-  // The authorization token should match your environment variable
-  const isValidToken = authToken === process.env.CRON_SECRET;
-  
-  // Log warning if CRON_SECRET is not set
-  if (!process.env.CRON_SECRET) {
-    console.warn('WARNING: CRON_SECRET environment variable is not set. This endpoint is not fully secured!');
-  }
-  
-  // Log warning if token is missing or invalid, but proceed anyway for now
-  if (!authToken) {
-    console.warn('WARNING: Authorization token missing from request');
-  } else if (!isValidToken) {
-    console.warn('WARNING: Invalid authorization token');
-  }
-  
-  // Allow requests with a valid cron header even without valid token for now
-  // In production, you should return false if !isValidToken
-  return !!cronHeader;
-}
-
 export async function GET(req: NextRequest) {
   try {
-    // Only allow this endpoint to be called by Vercel Cron
-    if (!isVercelCronRequest(req)) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    // This is a simplified version of the backup endpoint
+    // that just returns a success message
+    // The actual backup is handled by GitHub Actions
 
     return NextResponse.json(
       { 
         success: true, 
         message: 'Backup system is configured and working',
-        note: 'Actual backups are handled by GitHub Actions workflow',
-        securityNote: 'NOTE: You should configure CRON_SECRET in Vercel environment variables for production security.'
+        note: 'Actual backups are handled by GitHub Actions workflow'
       },
       { status: 200 }
     );
