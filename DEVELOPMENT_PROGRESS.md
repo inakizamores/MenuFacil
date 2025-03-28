@@ -586,7 +586,7 @@ As the application matures, a comprehensive production readiness plan has been e
 | Implement rate limiting | Add basic rate limiting to public API endpoints | High | Next |
 
 ## Deployment
-- Deployed to Vercel: https://menufacil.vercel.app
+- Deployed to Vercel: https://menufacil-l2ljuxsc5-inakizamores-projects.vercel.app
 - GitHub Repository: https://github.com/inakizamores/MenuFacil
 
 ## Handover Notes
