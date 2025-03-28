@@ -13,6 +13,8 @@
     "supabase:migrations:new": "npx supabase migration new",
     "supabase:migrations:apply": "npx supabase db push",
     "supabase:studio": "npx supabase studio",
+    "supabase:backup": "node scripts/backup-database.js",
+    "supabase:backup:daily": "node scripts/backup-database.js --type=daily",
     "setup-test-data": "node scripts/ensure-test-data.js"
   },
   "repository": {
