@@ -14,7 +14,6 @@ import type { Database } from '@/types/database.types';
  * - IP and email-based rate limiting
  * - Structured error handling with appropriate status codes
  * - Database error logging for security monitoring
- * - Type-safe Supabase client operations
  */
 
 // Password validation constants
@@ -27,9 +26,6 @@ const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(2, 'Name must be at least 2 characters'),
 });
-
-// Export the type for use in client-side validation or other components
-export type RegistrationData = z.infer<typeof registerSchema>;
 
 export async function POST(req: NextRequest) {
   const path = req.nextUrl.pathname;
