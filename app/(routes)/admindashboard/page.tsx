@@ -9,7 +9,8 @@ import {
   ArrowUpRight, 
   Activity,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Database
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -246,6 +247,52 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Quick Access Links */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-neutral-200">
+          <h2 className="text-lg font-semibold text-neutral-800 mb-6">Administration Tools</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <Link 
+              href="/admindashboard/users"
+              className="flex flex-col items-center p-4 border border-neutral-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
+            >
+              <Users className="h-6 w-6 text-neutral-600 mb-2" />
+              <span className="text-sm font-medium text-neutral-700">User Management</span>
+            </Link>
+            
+            <Link 
+              href="/admindashboard/restaurants"
+              className="flex flex-col items-center p-4 border border-neutral-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
+            >
+              <Building2 className="h-6 w-6 text-neutral-600 mb-2" />
+              <span className="text-sm font-medium text-neutral-700">Restaurants</span>
+            </Link>
+            
+            <Link 
+              href="/admindashboard/menus"
+              className="flex flex-col items-center p-4 border border-neutral-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
+            >
+              <Pizza className="h-6 w-6 text-neutral-600 mb-2" />
+              <span className="text-sm font-medium text-neutral-700">Menus</span>
+            </Link>
+            
+            <Link 
+              href="/admindashboard/analytics"
+              className="flex flex-col items-center p-4 border border-neutral-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
+            >
+              <Activity className="h-6 w-6 text-neutral-600 mb-2" />
+              <span className="text-sm font-medium text-neutral-700">Analytics</span>
+            </Link>
+            
+            <Link 
+              href="/admindashboard/database"
+              className="flex flex-col items-center p-4 border border-neutral-200 rounded-lg hover:bg-yellow-50 hover:border-yellow-200 transition-colors"
+            >
+              <Database className="h-6 w-6 text-neutral-600 mb-2" />
+              <span className="text-sm font-medium text-neutral-700">Database</span>
+            </Link>
           </div>
         </div>
       </div>

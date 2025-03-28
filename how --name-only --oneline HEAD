@@ -1,0 +1,18 @@
+[33mcommit 96d9a4eb7928e62f033bcb7e39539a354de87109[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: inakizamores <64514642+inakizamores@users.noreply.github.com>
+Date:   Fri Mar 28 13:19:36 2025 -0600
+
+    Implement authentication security enhancements with rate limiting and error handling
+
+M	DEVELOPMENT_PROGRESS.md
+A	app/api/auth/healthcheck/route.ts
+M	app/api/auth/login/route.ts
+M	app/api/auth/register/route.ts
+D	docs/API_AUTHENTICATION.md
+D	lib/api/error-handler.ts
+A	lib/api/errorHandler.ts
+D	lib/api/rate-limiter.ts
+A	lib/middleware/rateLimitMiddleware.ts
+A	lib/rateLimit.ts
+D	supabase/migrations/20240329_error_logs.sql
+M	types/supabase.types.ts
