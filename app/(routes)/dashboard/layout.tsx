@@ -13,6 +13,7 @@ import {
   isSystemAdmin 
 } from '@/types/user-roles';
 import { useStaffRestaurant } from '@/app/hooks/useStaffRestaurant';
+import { generateMetadata, generateViewport } from '@/app/lib/metadata';
 
 // Icons (using Heroicons classes with Tailwind)
 const DashboardIcon = () => (
@@ -107,6 +108,13 @@ const navigation: NavItem[] = [
     ]
   },
 ];
+
+export const metadata = generateMetadata(
+  'Dashboard',
+  'Manage your restaurant menus and settings'
+);
+
+export const viewport = generateViewport();
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
