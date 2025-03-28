@@ -7,7 +7,7 @@ import type { Database } from '@/types/supabase.types';
 /**
  * Create a Supabase client for server-side usage
  */
-export function createClient() {
+export async function createClient() {
   const cookieStore = cookies();
   
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL as string;
