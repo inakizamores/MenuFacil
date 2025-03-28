@@ -2,9 +2,10 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
+import { AuthProvider } from './context/auth-context';
 import { Toaster } from 'react-hot-toast';
-import { AuthProviderWrapper } from './components/AuthProviderWrapper';
 import GlobalErrorWrapper from './components/GlobalErrorWrapper';
+import RoleFixer from './components/RoleFixer';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -41,13 +42,18 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.variable} font-sans`}>
-        <AuthProviderWrapper>
+        <AuthProvider>
           <GlobalErrorWrapper isPageWrapper>
             {children}
           </GlobalErrorWrapper>
+          <RoleFixer 
+            adminEmails={['test@menufacil.app']} 
+            autoFix={true} 
+            debug={false} 
+          />
           <Analytics />
           <Toaster position="top-right" />
-        </AuthProviderWrapper>
+        </AuthProvider>
       </body>
     </html>
   );

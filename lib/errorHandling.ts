@@ -2,8 +2,6 @@
  * Error handling utilities for consistent error management across the application
  */
 
-import { captureException } from './sentry';
-
 // Define error categories for better organization
 export type ErrorCategory = 
   | 'api' 
@@ -98,7 +96,7 @@ export function formatErrorMessage(error: Error | DetailedError | unknown): stri
 }
 
 /**
- * Log an error with consistent formatting and send to monitoring service
+ * Log an error with consistent formatting and potentially send to monitoring service
  */
 export function logError(
   error: Error | DetailedError | unknown,
@@ -126,15 +124,10 @@ export function logError(
     console.info('INFO:', logData);
   }
   
-  // Send error to Sentry
-  if (level === 'error') {
-    captureException(error, {
-      ...context,
-      errorCategory: (error as DetailedError)?.category || 'unknown',
-      errorCode: (error as DetailedError)?.code,
-      errorDetails: (error as DetailedError)?.details,
-    });
-  }
+  // Here you would integrate with error monitoring services like Sentry
+  // if (typeof window !== 'undefined' && window.Sentry) {
+  //   window.Sentry.captureException(error, { extra: { ...context } });
+  // }
   
   // Mark error as handled
   if ((error as DetailedError)?.handled !== undefined) {

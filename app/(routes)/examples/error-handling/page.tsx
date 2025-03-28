@@ -123,83 +123,6 @@ const AsyncErrorDemo = () => {
   );
 };
 
-/**
- * Component to demonstrate Sentry error tracking
- */
-const SentryErrorDemo = () => {
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const handleSentryError = async () => {
-    setIsLoading(true);
-    setStatus('idle');
-    
-    try {
-      // Import dynamically to avoid server-side issues
-      const { captureException } = await import('@/lib/sentry');
-      
-      // Create a detailed error
-      const error = createDetailedError(
-        'This is a test error sent to Sentry',
-        'client',
-        { 
-          code: 'SENTRY_TEST_ERROR',
-          details: { 
-            source: 'SentryErrorDemo', 
-            timestamp: new Date().toISOString(),
-            testCase: 'Manual Sentry integration test'
-          } 
-        }
-      );
-      
-      // Capture the exception with Sentry
-      captureException(error, {
-        testMode: true,
-        component: 'SentryErrorDemo',
-        location: 'error-handling-examples'
-      });
-      
-      // If we got here, the error was sent successfully
-      setStatus('success');
-    } catch (err) {
-      console.error('Failed to send test error to Sentry:', err);
-      setStatus('error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  return (
-    <div className="p-4 border rounded-md bg-white mb-4">
-      <h3 className="text-lg font-medium mb-2">Sentry Integration Test</h3>
-      <p className="mb-4">
-        Test Sentry error tracking by sending a test error to Sentry.
-        This requires a valid Sentry DSN in your environment variables.
-      </p>
-      
-      {status === 'success' && (
-        <div className="mb-4 p-3 rounded bg-green-50 text-green-800 border border-green-200">
-          Test error successfully sent to Sentry! Check your Sentry dashboard.
-        </div>
-      )}
-      
-      {status === 'error' && (
-        <div className="mb-4 p-3 rounded bg-red-50 text-red-800 border border-red-200">
-          Failed to send test error to Sentry. Check your console and make sure Sentry is configured properly.
-        </div>
-      )}
-      
-      <button 
-        onClick={handleSentryError}
-        disabled={isLoading}
-        className="px-4 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? 'Sending...' : 'Send Test Error to Sentry'}
-      </button>
-    </div>
-  );
-};
-
 // Wrap the ErrorComponent with an error boundary using the HOC
 const WrappedErrorComponent = withErrorBoundary(ErrorComponent, {
   fallbackProps: {
@@ -249,11 +172,6 @@ export default function ErrorHandlingExamplesPage() {
           <h2 className="text-xl font-semibold mb-4">Manual Error Handling</h2>
           <AsyncErrorDemo />
         </div>
-        
-        <div className="md:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Sentry Error Tracking</h2>
-          <SentryErrorDemo />
-        </div>
       </div>
       
       <div className="mt-8 p-4 bg-blue-50 rounded-md border border-blue-100">
@@ -273,9 +191,6 @@ export default function ErrorHandlingExamplesPage() {
           </li>
           <li>
             <strong>Global Error Handling</strong> - The app uses <code>GlobalErrorWrapper</code> at the layout level for application-wide protection.
-          </li>
-          <li>
-            <strong>Sentry Integration</strong> - Sends errors to Sentry for monitoring and alerting.
           </li>
         </ul>
       </div>

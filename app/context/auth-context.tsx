@@ -1,860 +1,524 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { redirect, useRouter } from 'next/navigation';
-import { captureException } from '@/lib/sentry';
+import type { User, Session } from '@supabase/supabase-js';
+import { 
+  SystemRole, 
+  isSystemAdmin, 
+  isRestaurantOwner, 
+  isRestaurantStaff 
+} from '../../types/user-roles';
+import { navigateTo } from '@/app/utils/navigation';
+import { 
+  generateCSRFToken, 
+  validateCSRFToken, 
+  checkRateLimit, 
+  resetRateLimit,
+  sanitizeAuthInput,
+  generateSessionId
+} from '@/lib/authSecurity';
+import { 
+  createDetailedError, 
+  logError,
+  handleApiError
+} from '@/lib/errorHandling';
+import type { Database } from '@/types/database.types';
 
-// Role type for auth system
-export type UserRole = 'system_admin' | 'restaurant_owner' | 'restaurant_staff' | 'customer';
+// Define the auth credentials types
+export type SignInCredentials = {
+  email: string;
+  password: string;
+};
 
-// Profile type that includes all profile fields
-export interface UserProfile {
-  id: string;
-  full_name: string | null;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  role: UserRole | null;
-  email: string | null;
-  phone: string | null;
-  bio: string | null;
-  website: string | null;
-  company: string | null;
-  position: string | null;
-  location: string | null;
-  timezone: string | null;
-  language: string | null;
-  preferences: Record<string, any> | null;
-  social_accounts: Record<string, string> | null;
-  billing_address: Record<string, any> | null;
-  verified: boolean | null;
-  onboarding_completed: boolean | null;
-  last_login: string | null;
-  parent_user_id: string | null;
-  linked_restaurant_id: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+export type SignUpCredentials = {
+  email: string;
+  password: string;
+  name?: string;
+  role?: SystemRole;
+};
 
-// Auth state interface - consolidated user information
-export interface AuthState {
+// Define the auth context type
+interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: UserProfile | null;
-  role: UserRole | null;
   isLoading: boolean;
   error: string | null;
+  isSystemAdmin: boolean;
+  isRestaurantOwner: boolean;
+  isRestaurantStaff: boolean;
+  userRole: SystemRole | null;
+  login: (credentials: SignInCredentials) => Promise<void>;
+  register: (credentials: SignUpCredentials) => Promise<void>;
+  logout: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetUserPassword: (password: string) => Promise<void>;
+  getHomeRoute: () => string;
 }
 
-// Auth context interface - contains state and methods
-export interface AuthContextInterface extends AuthState {
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-  updatePassword: (password: string) => Promise<{ success: boolean; error?: string }>;
-  updateProfile: (profile: Partial<UserProfile>) => Promise<{ success: boolean; error?: string }>;
-  refreshSession: () => Promise<void>;
-  getProfileById: (userId: string) => Promise<UserProfile | null>;
-  updateUserMetadata: (metadata: Record<string, any>) => Promise<{ success: boolean; error?: string }>;
-  completeOnboarding: () => Promise<{ success: boolean; error?: string }>;
-  verifyEmail: () => Promise<{ success: boolean; error?: string }>;
-  sendVerificationEmail: () => Promise<{ success: boolean; error?: string }>;
-}
+// Create the auth context
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the context with a default value
-const AuthContext = createContext<AuthContextInterface | undefined>(undefined);
-
-// Provider component that wraps the app and provides auth context
-export function AuthProvider({
-  children,
-  initialSession,
-}: {
-  children: React.ReactNode;
-  initialSession: Session | null;
-}) {
-  // Create the Supabase client
-  const supabase = createClient();
+// Auth provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<SystemRole | null>(null);
   const router = useRouter();
+  const supabase = createClient();
 
-  // State for user auth and profile data
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    session: initialSession,
-    profile: null,
-    role: null,
-    isLoading: true,
-    error: null,
-  });
-
-  // Initialize auth state - get the user session
+  // Initialize auth
   useEffect(() => {
-    async function initializeAuthState() {
+    const initAuth = async () => {
       try {
-        // Set loading state
-        setAuthState((prev) => ({ ...prev, isLoading: true }));
-
-        // Get the current session
+        // Generate a unique ID for this session to prevent stale data
+        const sessionId = generateSessionId();
+        console.log(`Initializing auth (session ${sessionId})`);
+        
+        // Check for existing session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
+        // Handle session retrieval errors
         if (sessionError) {
-          throw sessionError;
+          logError(sessionError, { component: 'AuthProvider.initAuth', sessionId });
+          setError('Failed to retrieve authentication session. Please refresh the page.');
+          setIsLoading(false);
+          return;
         }
-
-        // If we have a session and user, get their profile and role
+        
+        // Set state with the current session data
+        setSession(session);
+        setUser(session?.user || null);
+        
+        // Set user role
         if (session?.user) {
-          await loadUserProfile(session.user, session);
+          const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
+          setUserRole(role);
+          console.log(`User authenticated: ${session.user.email} (${role})`);
+          
+          // Store in localStorage for recovery if needed
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('currentUserEmail', session.user.email || '');
+            localStorage.setItem('sessionId', sessionId);
+          }
         } else {
-          // No session, clear state
-          setAuthState({
-            user: null,
-            session: null,
-            profile: null,
-            role: null,
-            isLoading: false,
-            error: null,
-          });
+          console.log('No authenticated user found');
+          // Clear any previous user data
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('currentUserEmail');
+            localStorage.removeItem('staffRestaurantName');
+            localStorage.removeItem('staffRestaurantId');
+            localStorage.removeItem('sessionId');
+          }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        captureException(error);
+        console.error('Error initializing auth:', error);
+        logError(error, { component: 'AuthProvider.initAuth' });
+        setError('Authentication system initialization error. Please refresh the page.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Auth state changed: ${event} for ${session?.user?.email || 'no user'}`);
+      
+      // If user has changed, clear previous state first
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
         
-        setAuthState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Authentication error',
-        }));
-      }
-    }
-
-    // Load the user profile and set state
-    async function loadUserProfile(user: User, session: Session) {
-      try {
-        // First try to get role from user metadata (fastest)
-        let role: UserRole | null = null;
-        if (user.user_metadata?.role) {
-          role = user.user_metadata.role as UserRole;
+        // Clear localStorage items on sign out
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('currentUserEmail');
+          localStorage.removeItem('staffRestaurantName');
+          localStorage.removeItem('staffRestaurantId');
+          localStorage.removeItem('sessionId');
         }
-
-        // Then fetch the full profile from the database
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profileError && profileError.code !== 'PGRST116') {
-          // Log error but don't throw - we might still have basic user data
-          console.error('Error fetching user profile:', profileError);
-          captureException(profileError);
-        }
-
-        // If profile exists in DB, use its role (more authoritative)
-        if (profile?.role) {
-          role = profile.role as UserRole;
-        }
-
-        // Update auth state with all the info
-        setAuthState({
-          user,
-          session,
-          profile: profile as UserProfile,
-          role,
-          isLoading: false,
-          error: null,
-        });
-      } catch (error) {
-        console.error('Error loading user profile:', error);
-        captureException(error);
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        // Check if this is a new user (different from the current one)
+        const currentEmail = localStorage.getItem('currentUserEmail');
+        const newEmail = session?.user?.email;
         
-        setAuthState({
-          user,
-          session,
-          profile: null,
-          role: null,
-          isLoading: false,
-          error: error instanceof Error ? error.message : 'Profile loading error',
-        });
-      }
-    }
-
-    // Load initial auth state
-    initializeAuthState();
-
-    // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log(`Auth state changed: ${event}`);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          await loadUserProfile(session.user, session);
-        } else if (event === 'SIGNED_OUT') {
-          setAuthState({
-            user: null,
-            session: null,
-            profile: null,
-            role: null,
-            isLoading: false,
-            error: null,
-          });
-        } else if (event === 'USER_UPDATED' && session?.user) {
-          await loadUserProfile(session.user, session);
+        if (currentEmail !== newEmail) {
+          console.log(`User changed: ${currentEmail} -> ${newEmail}`);
+          // Reset any user-specific state
+          setUser(null);
+          setSession(null);
+          setUserRole(null);
+        }
+        
+        // Update with new session data
+        setSession(session);
+        setUser(session?.user || null);
+        
+        // Update role when auth state changes
+        if (session?.user) {
+          const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
+          setUserRole(role);
+          
+          // Store updated user info
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userRole', role);
+            localStorage.setItem('currentUserEmail', session.user.email || '');
+            localStorage.setItem('sessionId', generateSessionId());
+          }
+        }
+      } else if (event === 'USER_UPDATED') {
+        // Handle user data updates
+        if (session?.user) {
+          setUser(session.user);
+          const role = session.user.user_metadata?.role as SystemRole || 'restaurant_owner';
+          setUserRole(role);
+          
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userRole', role);
+          }
         }
       }
-    );
+    });
 
-    // Clean up the subscription
+    // Clean up subscription on unmount
     return () => {
+      console.log('Cleaning up auth listener');
       authListener.subscription.unsubscribe();
     };
-  }, [supabase, router]);
+  }, [supabase.auth]);
 
-  // Sign in with email and password
-  const signIn = async (email: string, password: string) => {
+  // Helper function to determine home route based on user role
+  const getHomeRoute = (): string => {
+    if (!user) return '/';
+    
+    // Always send admin users to the admin dashboard
+    if (isSystemAdmin(user)) {
+      console.log('User is admin, home route is /admindashboard');
+      return '/admindashboard';
+    }
+    
+    // For all other authenticated users, use the regular dashboard
+    console.log('User is not admin, home route is /dashboard');
+    return '/dashboard';
+  };
+
+  const login = async (credentials: SignInCredentials) => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
+      console.log('Login attempt started');
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
+      // Input validation and sanitization
+      const email = sanitizeAuthInput(credentials.email);
+      if (!email) {
+        throw createDetailedError('Email is required', 'auth', { code: 'invalid_input' });
       }
-
-      return { success: true };
+      
+      // Check for rate limiting
+      const rateCheck = checkRateLimit(email);
+      if (!rateCheck.valid && rateCheck.error) {
+        throw rateCheck.error;
+      }
+      
+      // Attempt login with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: credentials.password,
+      });
+      
+      console.log('Login response received:', { 
+        success: !error, 
+        hasUser: !!data?.user,
+        hasSession: !!data?.session,
+        error: error ? error.message : null
+      });
+      
+      if (error) {
+        // Track failed login attempt for rate limiting
+        throw createDetailedError(error.message, 'auth', { 
+          code: error.name, 
+          originalError: error 
+        });
+      }
+      
+      // Reset rate limit on successful login
+      resetRateLimit(email);
+      
+      // Important: Update state first before redirecting
+      setUser(data.user);
+      setSession(data.session);
+      console.log('User and session set in context');
+      
+      // Get additional profile data including role from profiles table
+      let role: SystemRole | null = null;
+      
+      if (data.user) {
+        try {
+          // First check user_metadata for role
+          role = data.user.user_metadata?.role as SystemRole;
+          console.log('Role from user_metadata:', role);
+          
+          // Also check profile table for the most accurate role information
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
+          
+          if (profileError) {
+            console.warn('Error fetching profile:', profileError);
+            logError(profileError, { component: 'login', userId: data.user.id });
+          } else if (profileData && profileData.role) {
+            console.log('Role from profiles table:', profileData.role);
+            // If profile has a role and it differs from metadata, use the profile role as source of truth
+            if (profileData.role !== role) {
+              console.log(`Role mismatch - metadata: ${role}, profile: ${profileData.role}. Using profile role.`);
+              role = profileData.role as SystemRole;
+              
+              // Update user_metadata to match the profile role
+              const { error: updateError } = await supabase.auth.updateUser({
+                data: { role: profileData.role }
+              });
+              
+              if (updateError) {
+                console.warn('Error updating user_metadata with profile role:', updateError);
+                logError(updateError, { 
+                  component: 'login.updateUserMetadata', 
+                  userId: data.user.id,
+                  metadataRole: role,
+                  profileRole: profileData.role
+                });
+              } else {
+                console.log('Updated user_metadata to match profile role');
+                // Update our local user state with the corrected metadata
+                if (data.user.user_metadata) {
+                  data.user.user_metadata.role = profileData.role;
+                } else {
+                  data.user.user_metadata = { role: profileData.role };
+                }
+                setUser(data.user);
+              }
+            }
+          }
+        } catch (profileCheckError) {
+          console.error('Error during profile role check:', profileCheckError);
+          logError(profileCheckError, { component: 'login.profileCheck', userId: data.user.id });
+        }
+        
+        // If no role is found, default to restaurant_owner
+        if (!role) {
+          console.log('No role found, defaulting to restaurant_owner');
+          role = 'restaurant_owner';
+        }
+        
+        // Set role in context
+        setUserRole(role);
+        console.log('Final role set:', role);
+        
+        // Store role in localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userRole', role);
+          localStorage.setItem('currentUserEmail', data.user.email || '');
+          localStorage.setItem('sessionId', generateSessionId());
+        }
+        
+        // Navigate to appropriate route
+        const homeRoute = getHomeRoute();
+        console.log(`Redirecting to ${homeRoute}`);
+        navigateTo(homeRoute);
+      }
     } catch (error) {
-      console.error('Sign in error:', error);
-      captureException(error);
+      // Structured error handling
+      console.error('Login error:', error);
       
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign in'
-      }));
+      let errorMessage = 'Login failed. Please check your credentials and try again.';
+      if (error instanceof Error) {
+        // Handle specific error cases
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please try again.';
+        } else if (error.message.includes('rate limit') || error.message.includes('too many requests')) {
+          errorMessage = 'Too many login attempts. Please try again later.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Email not verified. Please check your inbox for a verification email.';
+        } else if (process.env.NODE_ENV === 'development') {
+          // More detailed errors in development
+          errorMessage = error.message;
+        }
+      }
       
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign in' 
-      };
+      setError(errorMessage);
+      logError(error, { component: 'login', email: credentials.email });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Sign up with email and password
-  const signUp = async (
-    email: string,
-    password: string,
-    metadata?: Record<string, any>
-  ) => {
+  const register = async (credentials: SignUpCredentials) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: credentials.email,
+        password: credentials.password,
         options: {
           data: {
-            ...metadata,
-            // Default role if not provided
-            role: metadata?.role || 'restaurant_owner',
+            full_name: credentials.name,
+            role: credentials.role || 'restaurant_owner'
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
+      
+      if (error) throw error;
+      
+      setUser(data.user);
+      setSession(data.session);
+      router.push('/dashboard');
+    } catch (error: any) {
+      setError(error.message || 'Failed to sign up');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  const logout = async () => {
+    try {
+      console.log('Logout initiated from auth context');
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      
       if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
+        console.error('Supabase signOut error:', error);
+        // Continue with cleanup even if Supabase has an error
+      } else {
+        console.log('Supabase signOut successful');
       }
-
-      // Check if email confirmation is required
-      if (data.user?.identities?.length === 0) {
-        setAuthState((prev) => ({ ...prev, isLoading: false }));
-        return { 
-          success: true, 
-          error: 'Please check your email to confirm your account' 
-        };
+      
+      // Clear all auth state
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      
+      // Clear localStorage items
+      if (typeof window !== 'undefined') {
+        console.log('Clearing localStorage items');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('currentUserEmail');
+        localStorage.removeItem('staffRestaurantName');
+        localStorage.removeItem('staffRestaurantId');
+        
+        // Force clear any cached data
+        sessionStorage.clear();
+        
+        // Also clear any Supabase-specific items
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('supabase.auth') || 
+              key.startsWith('sb-') || 
+              key.includes('supabase')) {
+            console.log(`Removing localStorage item: ${key}`);
+            localStorage.removeItem(key);
+          }
+        });
       }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Sign up error:', error);
-      captureException(error);
       
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign up'
-      }));
+      console.log('Redirecting to home page from auth context');
       
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign up' 
-      };
-    }
-  };
-
-  // Sign out the user
-  const signOut = async () => {
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true }));
-      await supabase.auth.signOut();
-      setAuthState({
-        user: null,
-        session: null,
-        profile: null,
-        role: null,
-        isLoading: false,
-        error: null,
+      // Force a direct navigation rather than using the helper
+      if (typeof window !== 'undefined') {
+        console.log('Forcing full page reload');
+        window.location.href = '/';
+        return;
+      }
+      
+      // Use the navigation helper as a fallback
+      navigateTo(router, '/', {
+        fallback: true,
+        delay: 100,
+        forceReload: true
       });
-      router.push('/login');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      captureException(error);
+    } catch (error: any) {
+      console.error('Error during logout:', error);
       
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to sign out'
-      }));
+      // Even if there's an error, try to force a logout
+      if (typeof window !== 'undefined') {
+        // Clear any persisted auth data
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Force navigation to home
+        window.location.href = '/';
+      }
     }
   };
 
-  // Send password reset email
-  const resetPassword = async (email: string) => {
+  const forgotPassword = async (email: string) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/auth/reset-password`,
       });
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      setAuthState((prev) => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } catch (error) {
-      console.error('Password reset error:', error);
-      captureException(error);
       
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to reset password'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to reset password' 
-      };
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message || 'Failed to reset password');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Update user's password
-  const updatePassword = async (password: string) => {
+  const resetUserPassword = async (password: string) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      // Validation
-      if (password.length < 8) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: 'Password must be at least 8 characters long' 
-        }));
-        return { 
-          success: false, 
-          error: 'Password must be at least 8 characters long' 
-        };
-      }
-      
       const { error } = await supabase.auth.updateUser({
         password,
       });
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      setAuthState((prev) => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } catch (error) {
-      console.error('Update password error:', error);
-      captureException(error);
       
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to update password'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update password' 
-      };
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message || 'Failed to update password');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Update user profile
-  const updateProfile = async (profile: Partial<UserProfile>) => {
-    if (!authState.user?.id) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(profile)
-        .eq('id', authState.user.id)
-        .select();
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      // Update local state with new profile data
-      setAuthState((prev) => ({
-        ...prev,
-        profile: { ...prev.profile, ...profile } as UserProfile,
-        isLoading: false,
-      }));
-
-      // If role was updated, sync it to the local state
-      if (profile.role && profile.role !== authState.role) {
-        setAuthState((prev) => ({
-          ...prev,
-          role: profile.role as UserRole,
-        }));
-        
-        // Also update the user metadata for consistency
-        await supabase.auth.updateUser({
-          data: { role: profile.role },
-        });
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Update profile error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to update profile'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update profile' 
-      };
-    }
+  const value = {
+    user,
+    session,
+    isLoading,
+    error,
+    isSystemAdmin: isSystemAdmin(user),
+    isRestaurantOwner: isRestaurantOwner(user),
+    isRestaurantStaff: isRestaurantStaff(user),
+    userRole,
+    login,
+    register,
+    logout,
+    forgotPassword,
+    resetUserPassword,
+    getHomeRoute,
   };
 
-  // Refresh the user session
-  const refreshSession = async () => {
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true }));
-      
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        throw error;
-      }
-      
-      if (session?.user) {
-        // Get the latest profile data
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        // Update the state with fresh data
-        setAuthState((prev) => ({
-          ...prev,
-          user: session.user,
-          session,
-          profile: profileError ? prev.profile : (profile as UserProfile),
-          role: profile?.role as UserRole || prev.role,
-          isLoading: false,
-          error: null,
-        }));
-      } else {
-        setAuthState((prev) => ({
-          ...prev,
-          isLoading: false,
-        }));
-      }
-    } catch (error) {
-      console.error('Session refresh error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to refresh session'
-      }));
-    }
-  };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-  // Get a user profile by ID
-  const getProfileById = async (userId: string): Promise<UserProfile | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Get profile error:', error);
-        captureException(error);
-        return null;
-      }
-
-      return data as UserProfile;
-    } catch (error) {
-      console.error('Get profile error:', error);
-      captureException(error);
-      return null;
-    }
-  };
-
-  // Update user metadata
-  const updateUserMetadata = async (metadata: Record<string, any>) => {
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      const { data, error } = await supabase.auth.updateUser({
-        data: metadata,
-      });
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      // If role is being updated, also update the profile and local state
-      if (metadata.role && authState.user?.id) {
-        await supabase
-          .from('profiles')
-          .update({ role: metadata.role })
-          .eq('id', authState.user.id);
-        
-        setAuthState((prev) => ({
-          ...prev,
-          role: metadata.role as UserRole,
-        }));
-      }
-
-      setAuthState((prev) => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } catch (error) {
-      console.error('Update metadata error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to update user metadata'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to update user metadata' 
-      };
-    }
-  };
-
-  // Mark user onboarding as completed
-  const completeOnboarding = async () => {
-    if (!authState.user?.id) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('id', authState.user.id);
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      // Update local state
-      setAuthState((prev) => ({
-        ...prev,
-        profile: { ...prev.profile, onboarding_completed: true } as UserProfile,
-        isLoading: false,
-      }));
-
-      return { success: true };
-    } catch (error) {
-      console.error('Complete onboarding error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to complete onboarding'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to complete onboarding' 
-      };
-    }
-  };
-
-  // Mark email as verified (mainly for admin use)
-  const verifyEmail = async () => {
-    if (!authState.user?.id) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ verified: true })
-        .eq('id', authState.user.id);
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      // Update local state
-      setAuthState((prev) => ({
-        ...prev,
-        profile: { ...prev.profile, verified: true } as UserProfile,
-        isLoading: false,
-      }));
-
-      return { success: true };
-    } catch (error) {
-      console.error('Verify email error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to verify email'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to verify email' 
-      };
-    }
-  };
-
-  // Send email verification link to the user
-  const sendVerificationEmail = async () => {
-    if (!authState.user?.id || !authState.user?.email) {
-      return { success: false, error: 'User not authenticated or missing email' };
-    }
-
-    try {
-      setAuthState((prev) => ({ ...prev, isLoading: true, error: null }));
-      
-      // Use Supabase's built-in email verification
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: authState.user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/verify-email`,
-        },
-      });
-
-      if (error) {
-        setAuthState((prev) => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
-        }));
-        return { success: false, error: error.message };
-      }
-
-      setAuthState((prev) => ({ ...prev, isLoading: false }));
-      return { success: true };
-    } catch (error) {
-      console.error('Send verification email error:', error);
-      captureException(error);
-      
-      setAuthState((prev) => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: error instanceof Error ? error.message : 'Failed to send verification email'
-      }));
-      
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to send verification email' 
-      };
-    }
-  };
-
-  // Provide the auth context value
-  const authContextValue: AuthContextInterface = {
-    ...authState,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword,
-    updatePassword,
-    updateProfile,
-    refreshSession,
-    getProfileById,
-    updateUserMetadata,
-    completeOnboarding,
-    verifyEmail,
-    sendVerificationEmail,
-  };
-
-  return (
-    <AuthContext.Provider value={authContextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-// Custom hook to use the auth context
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
-
-// Higher-order component to require authentication
-export function withAuth(Component: React.ComponentType) {
-  return function AuthenticatedComponent(props: any) {
-    const { user, isLoading } = useAuth();
-
-    useEffect(() => {
-      if (!isLoading && !user) {
-        redirect('/login');
-      }
-    }, [user, isLoading]);
-
-    if (isLoading) {
-      return <div>Loading...</div>;
-    }
-
-    if (!user) {
-      return null; // Will redirect via the useEffect
-    }
-
-    return <Component {...props} />;
-  };
-}
-
-// HOC to require a specific role
-export function withRole(Component: React.ComponentType, allowedRoles: UserRole[]) {
-  return function RoleProtectedComponent(props: any) {
-    const { user, role, isLoading } = useAuth();
-
-    useEffect(() => {
-      if (!isLoading) {
-        if (!user) {
-          redirect('/login');
-        } else if (role && !allowedRoles.includes(role)) {
-          redirect('/unauthorized');
-        }
-      }
-    }, [user, role, isLoading]);
-
-    if (isLoading) {
-      return <div>Loading...</div>;
-    }
-
-    if (!user || (role && !allowedRoles.includes(role))) {
-      return null; // Will redirect via the useEffect
-    }
-
-    return <Component {...props} />;
-  };
-}
-
-// HOC to require onboarding completion
-export function withOnboarding(Component: React.ComponentType) {
-  return function OnboardingRequiredComponent(props: any) {
-    const { user, profile, isLoading } = useAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-      if (!isLoading) {
-        if (!user) {
-          redirect('/login');
-        } else if (profile && !profile.onboarding_completed) {
-          redirect('/onboarding');
-        }
-      }
-    }, [user, profile, isLoading, router]);
-
-    if (isLoading) {
-      return <div>Loading...</div>;
-    }
-
-    if (!user || (profile && !profile.onboarding_completed)) {
-      return null; // Will redirect via the useEffect
-    }
-
-    return <Component {...props} />;
-  };
-} 
+}; 
