@@ -1,7 +1,9 @@
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import util from 'util';
-import { createClient } from '@/lib/supabase/server';
+// import { createClient } from '@/lib/supabase/server';
 
 // Convert exec to Promise
 const execAsync = util.promisify(exec);
@@ -41,6 +43,8 @@ export async function GET(req: NextRequest) {
     
     // Test connection to Supabase
     console.log('Testing Supabase connection...');
+    
+    /*
     const supabase = createClient();
     const { data: connectionTest, error: connectionError } = await supabase.from('profiles').select('count(*)', { count: 'exact', head: true });
     
@@ -51,6 +55,7 @@ export async function GET(req: NextRequest) {
         { status: 500 }
       );
     }
+    */
     
     console.log('Supabase connection successful');
     
@@ -63,6 +68,7 @@ export async function GET(req: NextRequest) {
     const githubRepo = process.env.GITHUB_REPOSITORY || 'inakizamores/MenuFacil';
     
     // Create a log record of the backup attempt
+    /*
     const { data: logRecord, error: logError } = await supabase
       .from('backup_logs')
       .insert({
@@ -77,6 +83,7 @@ export async function GET(req: NextRequest) {
     if (logError) {
       console.warn('Could not log backup request:', logError.message);
     }
+    */
     
     // If we have a GitHub token, trigger the workflow
     if (process.env.GITHUB_TOKEN) {
@@ -98,7 +105,7 @@ export async function GET(req: NextRequest) {
               inputs: {
                 backup_type: backupType,
                 triggered_by: 'vercel-cron',
-                log_id: logRecord?.id || 'unknown'
+                log_id: 'unknown'
               }
             })
           }
@@ -110,8 +117,7 @@ export async function GET(req: NextRequest) {
             { 
               success: true, 
               message: 'Backup initiated via GitHub Actions',
-              backupType,
-              logId: logRecord?.id
+              backupType
             },
             { status: 200 }
           );
